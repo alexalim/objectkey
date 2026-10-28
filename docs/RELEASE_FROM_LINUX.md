@@ -20,11 +20,11 @@ Secrets 등록      ──▶  release-testflight: 서명·업로드  ──▶ 
 
 ## 3. App Store Connect (브라우저)
 **나의 앱 → + → 신규 앱**: iOS, 이름 `MOKI` (이미 쓰이고 있으면 `MOKI - 물건 단축키`처럼 부제를 붙임), 기본 언어 한국어, 번들 ID `com.aspynlim.moki`, SKU 아무 고유값.
-API 키는 ShotSort 때 만든 `AuthKey_H5WA8Q5XC8.p8`을 재사용합니다(팀 키라 모든 앱에 적용).
+API 키는 기존에 만든 `~/.shotsort-signing/AuthKey_<키ID>.p8`을 재사용합니다(팀 키라 모든 앱에 적용).
 
 ## 4. GitHub Secrets 등록 (리눅스, 저장소 폴더에서)
 ```bash
-tools/signing.sh secrets ~/Downloads/MOKI_AppStore.mobileprovision ~/.shotsort-signing/AuthKey_H5WA8Q5XC8.p8 <Issuer-ID>
+tools/signing.sh secrets ~/Downloads/MOKI_AppStore.mobileprovision ~/.shotsort-signing/AuthKey_<키ID>.p8 <Issuer-ID>
 ```
 프로파일에서 팀 ID·이름을 읽어 보여준 뒤 확인을 받고 8개 Secrets를 등록합니다.
 
