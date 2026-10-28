@@ -1,0 +1,67 @@
+# XcodeGen 설정. `brew install xcodegen && xcodegen` 으로 ObjectKey.xcodeproj를 만듭니다.
+# 맥 없이 GitHub Actions(macos-26)에서 빌드합니다 — docs/RELEASE_FROM_LINUX.md 참고.
+name: ObjectKey
+options:
+  bundleIdPrefix: com.aspynlim
+  deploymentTarget:
+    iOS: "17.0"
+  developmentLanguage: ko
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"            # Swift 6 컴파일러에서도 Swift 5 언어 모드로 빌드
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    # 팀 ID는 CI에서 환경 변수(TEAM_ID)로 넣습니다.
+    DEVELOPMENT_TEAM: "${TEAM_ID}"
+
+packages:
+  ObjectKeyCore:
+    path: ObjectKeyCore
+
+targets:
+  ObjectKey:
+    type: application
+    platform: iOS
+    sources:
+      - path: ObjectKey
+    dependencies:
+      - package: ObjectKeyCore
+    info:
+      path: ObjectKey/Info.plist
+      properties:
+        CFBundleDisplayName: ObjectKey
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        ITSAppUsesNonExemptEncryption: false
+        NSCameraUsageDescription: "등록한 물건을 알아보기 위해 카메라를 사용합니다. 촬영한 이미지는 기기 밖으로 전송되지 않습니다."
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.aspynlim.objectkey
+        PRODUCT_NAME: ObjectKey
+        GENERATE_INFOPLIST_FILE: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        TARGETED_DEVICE_FAMILY: "1"   # iPhone 전용
+        SUPPORTS_MACCATALYST: NO
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
+        CODE_SIGN_STYLE: Automatic
+      configs:
+        # 출시 빌드는 수동 서명. 서명 설정을 앱 타깃에만 두어야 SPM 패키지 타깃 빌드가 깨지지 않습니다.
+        Release:
+          CODE_SIGN_STYLE: Manual
+          CODE_SIGN_IDENTITY: "Apple Distribution"
+          PROVISIONING_PROFILE_SPECIFIER: "${PROFILE_NAME}"
+
+schemes:
+  ObjectKey:
+    build:
+      targets:
+        ObjectKey: all
+    run:
+      config: Debug
+    archive:
+      config: Release

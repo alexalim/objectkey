@@ -1,0 +1,12 @@
+*.xcodeproj/
+ObjectKey/Info.plist
+.build/
+DerivedData/
+xcuserdata/
+*.ipa
+*.p12
+*.mobileprovision
+.env
+*.pem
+*.key
+*credentials*
