@@ -1,4 +1,4 @@
-# 리눅스에서 App Store까지 (ObjectKey)
+# 리눅스에서 App Store까지 (MOKI)
 
 맥 없이 진행합니다. 빌드는 **GitHub Actions의 클라우드 맥(`macos-26`)**, 서명 준비는 리눅스, 테스트는 **본인 아이폰의 TestFlight**로 합니다. ShotSort와 같은 방식이고, 배포 인증서와 App Store Connect API 키는 `~/.shotsort-signing`에 있는 것을 그대로 씁니다.
 
@@ -13,18 +13,18 @@ Secrets 등록      ──▶  release-testflight: 서명·업로드  ──▶ 
 비공개 저장소는 맥 러너 사용량이 월 무료분에서 빨리 차감되니 빌드 횟수를 보면서 씁니다.
 
 ## 2. Apple 개발자 사이트 (브라우저)
-1. **Identifiers → +** → App IDs → App → 번들 ID `com.aspynlim.objectkey` (추가 기능 체크 불필요)
-2. **Profiles → + → Distribution → App Store Connect** → 위 App ID → 기존 Apple Distribution 인증서 선택 → 이름 `ObjectKey AppStore` → 다운로드
+1. **Identifiers → +** → App IDs → App → 번들 ID `com.aspynlim.moki` (추가 기능 체크 불필요)
+2. **Profiles → + → Distribution → App Store Connect** → 위 App ID → 기존 Apple Distribution 인증서 선택 → 이름 `MOKI AppStore` → 다운로드
 
 새 인증서는 필요 없습니다(인증서는 팀 공용).
 
 ## 3. App Store Connect (브라우저)
-**나의 앱 → + → 신규 앱**: iOS, 이름(예: `ObjectKey`, 사용 중이면 다른 이름), 기본 언어 한국어, 번들 ID `com.aspynlim.objectkey`, SKU 아무 고유값.
+**나의 앱 → + → 신규 앱**: iOS, 이름 `MOKI` (이미 쓰이고 있으면 `MOKI - 물건 단축키`처럼 부제를 붙임), 기본 언어 한국어, 번들 ID `com.aspynlim.moki`, SKU 아무 고유값.
 API 키는 ShotSort 때 만든 `AuthKey_H5WA8Q5XC8.p8`을 재사용합니다(팀 키라 모든 앱에 적용).
 
 ## 4. GitHub Secrets 등록 (리눅스, 저장소 폴더에서)
 ```bash
-tools/signing.sh secrets ~/Downloads/ObjectKey_AppStore.mobileprovision ~/.shotsort-signing/AuthKey_H5WA8Q5XC8.p8 <Issuer-ID>
+tools/signing.sh secrets ~/Downloads/MOKI_AppStore.mobileprovision ~/.shotsort-signing/AuthKey_H5WA8Q5XC8.p8 <Issuer-ID>
 ```
 프로파일에서 팀 ID·이름을 읽어 보여준 뒤 확인을 받고 8개 Secrets를 등록합니다.
 

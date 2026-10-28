@@ -1,4 +1,6 @@
-# ObjectKey
+# MOKI (모키)
+
+> 내부 코드명: ObjectKey (타깃·폴더·`ObjectKeyCore` 패키지 이름)
 
 평범한 물건이 나만의 버튼이 되는 iPhone 앱입니다. 책을 비추면 독서 시간 기록이 시작되고, 컵을 비추면 휴식 타이머가 돌아갑니다.
 
@@ -64,4 +66,4 @@ swift test --package-path ObjectKeyCore
 
 ## App Review Notes 초안
 
-> ObjectKey does not require an account or a server. To try it: tap "+", name any object (e.g. a mug), take 3 photos of it, and save. Then tap "물건 비추기" and point the camera at the same object, or tap the object in the list to run its action without the camera. All data stays on the device.
+> MOKI does not require an account or a server. To try it: tap "+", name any object (e.g. a mug), take 3 photos of it, and save. Then tap "물건 비추기" and point the camera at the same object, or tap the object in the list to run its action without the camera. All data stays on the device.

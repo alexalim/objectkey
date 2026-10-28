@@ -1,6 +1,6 @@
 # XcodeGen 설정. `brew install xcodegen && xcodegen` 으로 ObjectKey.xcodeproj를 만듭니다.
 # 맥 없이 GitHub Actions(macos-26)에서 빌드합니다 — docs/RELEASE_FROM_LINUX.md 참고.
-name: ObjectKey
+name: ObjectKey   # 내부 코드명. 사용자에게 보이는 앱 이름은 MOKI(모키)
 options:
   bundleIdPrefix: com.aspynlim
   deploymentTarget:
@@ -31,7 +31,7 @@ targets:
     info:
       path: ObjectKey/Info.plist
       properties:
-        CFBundleDisplayName: ObjectKey
+        CFBundleDisplayName: MOKI
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         UILaunchScreen: {}
@@ -40,8 +40,8 @@ targets:
         NSCameraUsageDescription: "등록한 물건을 알아보기 위해 카메라를 사용합니다. 촬영한 이미지는 기기 밖으로 전송되지 않습니다."
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.aspynlim.objectkey
-        PRODUCT_NAME: ObjectKey
+        PRODUCT_BUNDLE_IDENTIFIER: com.aspynlim.moki
+        PRODUCT_NAME: MOKI
         GENERATE_INFOPLIST_FILE: NO
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor

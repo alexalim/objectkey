@@ -42,7 +42,7 @@ struct HomeView: View {
                     }
                 }
             }
-            .navigationTitle("ObjectKey")
+            .navigationTitle("MOKI")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     NavigationLink { HistoryView() } label: { Image(systemName: "clock.arrow.circlepath") }
