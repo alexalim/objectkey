@@ -7,22 +7,32 @@ struct HomeView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.scenePhase) private var scenePhase
     @Query(sort: \KeyObject.createdAt) private var keys: [KeyObject]
+    @Query private var logs: [ActivityLog]
 
     @State private var showScan = false
     @State private var showRegister = false
     @State private var pending: PendingSwitch?
+    @State private var editingGoal: KeyObject?
 
     private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     var body: some View {
         NavigationStack {
+            let tracked = keys.filter(\.supportsGoal).map { (key: $0, progress: KeyProgress.of($0, logs: logs, state: store.state)) }
+            let progressByID = Dictionary(uniqueKeysWithValues: tracked.map { ($0.key.id, $0.progress) })
             List {
+                if !tracked.isEmpty { MoodHeader(items: tracked) }
                 ActiveBanner(state: store.state, keys: keys)
 
                 Section {
                     ForEach(keys) { key in
-                        Button { activateManually(key) } label: { KeyRow(key: key, active: store.state.activeKeyID == key.id) }
-                            .tint(.primary)
+                        Button { activateManually(key) } label: {
+                            KeyRow(key: key, active: store.state.activeKeyID == key.id, progress: progressByID[key.id])
+                        }
+                        .tint(.primary)
+                        .contextMenu {
+                            if key.supportsGoal { Button("하루 목표…", systemImage: "target") { editingGoal = key } }
+                        }
                     }
                     .onDelete(perform: delete)
                 } header: {
@@ -65,6 +75,7 @@ struct HomeView: View {
                 }
             }
             .sheet(isPresented: $showRegister) { RegisterView() }
+            .sheet(item: $editingGoal) { GoalEditor(key: $0) }
             .fullScreenCover(isPresented: $showScan) { ScanView() }
             .switchConfirmation($pending, keys: keys)
             .resultToast(message: Binding(get: { store.lastMessage }, set: { store.lastMessage = $0 }))
@@ -91,18 +102,26 @@ struct HomeView: View {
 struct KeyRow: View {
     let key: KeyObject
     var active = false
+    var progress: KeyProgress?
 
     var body: some View {
         HStack(spacing: 12) {
             KeyBadge(symbol: key.emoji)
             VStack(alignment: .leading, spacing: 2) {
                 Text(key.name).font(.headline)
-                Text(key.action.label).font(.subheadline).foregroundStyle(.secondary)
+                Text(subtitle).font(.subheadline).foregroundStyle(.secondary)
             }
             Spacer()
+            if let progress { ProgressMark(progress: progress) }
             if active { Image(systemName: "dot.radiowaves.left.and.right").foregroundStyle(.green) }
         }
         .padding(.vertical, 4)
+    }
+
+    /// 오늘 기록이 있으면 동작 이름 대신 진행 상황("오늘 20/30분")을 보여준다.
+    private var subtitle: String {
+        guard let progress, progress.today > 0 || progress.goal != nil else { return key.action.label }
+        return "오늘 " + progress.summary(forCounter: key.actionKind == "counter")
     }
 }
 

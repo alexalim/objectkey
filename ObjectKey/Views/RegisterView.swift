@@ -14,6 +14,7 @@ struct RegisterView: View {
     @State private var emoji = ""
     @State private var kind = "session"
     @State private var minutes = 5
+    @State private var goal = 0
     @State private var shots: [CameraController.Frame] = []
     @State private var latest: CameraController.Frame?
     @State private var cameraAllowed: Bool?
@@ -61,6 +62,15 @@ struct RegisterView: View {
                     .labelsHidden()
                     if kind == "countdown" {
                         Stepper("\(minutes)분", value: $minutes, in: 1...60)
+                    }
+                }
+                if kind != "countdown" {
+                    Section {
+                        GoalStepper(actionKind: kind, goal: $goal)
+                    } header: {
+                        Text("하루 목표 (선택)")
+                    } footer: {
+                        Text("목표를 채운 날이 이어지면 연속 일수가 올라갑니다. 나중에 목록에서 길게 눌러 바꿀 수 있어요.")
                     }
                 }
                 Section {
@@ -162,7 +172,8 @@ struct RegisterView: View {
     private func save() {
         let vectors = shots.map(\.vector)
         let key = KeyObject(name: name.trimmingCharacters(in: .whitespaces), emoji: emoji, action: action,
-                            threshold: Calibration.suggestThreshold(for: vectors))
+                            threshold: Calibration.suggestThreshold(for: vectors),
+                            dailyGoal: kind == "countdown" ? 0 : goal)
         context.insert(key)
         key.shots = shots.map { ReferenceShot(vector: $0.vector, thumbnail: $0.thumbnail) }
         try? context.save()

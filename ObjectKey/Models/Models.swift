@@ -12,10 +12,12 @@ final class KeyObject {
     var countdownMinutes: Int
     var threshold: Float
     var createdAt: Date
+    /// 하루 목표. 세션은 분, 카운터는 횟수. 0이면 목표 없음. (v0.2에 추가, 기본값으로 가벼운 마이그레이션)
+    var dailyGoal: Int = 0
     @Relationship(deleteRule: .cascade, inverse: \ReferenceShot.key)
     var shots: [ReferenceShot] = []
 
-    init(name: String, emoji: String, action: KeyAction, threshold: Float) {
+    init(name: String, emoji: String, action: KeyAction, threshold: Float, dailyGoal: Int = 0) {
         self.id = UUID()
         self.name = name
         self.emoji = emoji
@@ -23,7 +25,17 @@ final class KeyObject {
         self.countdownMinutes = 5
         self.threshold = threshold
         self.createdAt = .now
+        self.dailyGoal = dailyGoal
         self.action = action
+    }
+
+    /// 휴식 타이머는 기록이 남지 않으므로 목표·연속 일수를 두지 않는다.
+    var supportsGoal: Bool { actionKind != "countdown" }
+
+    /// Progress 계산에 넘길 목표량. 세션은 초, 카운터는 횟수.
+    var goalAmount: Double? {
+        guard supportsGoal, dailyGoal > 0 else { return nil }
+        return actionKind == "counter" ? Double(dailyGoal) : Double(dailyGoal * 60)
     }
 
     var action: KeyAction {
