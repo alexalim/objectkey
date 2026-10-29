@@ -86,7 +86,7 @@ final class MatchingTests: XCTestCase {
     func test_calibration_isClampedAndScalesWithSpread() {
         XCTAssertEqual(Calibration.suggestThreshold(for: [v([1, 0, 0])]), Calibration.minimumThreshold)
         XCTAssertEqual(Calibration.suggestThreshold(for: [v([1, 0, 0]), v([0, 1, 0])]), Calibration.maximumThreshold)
-        let mid = Calibration.suggestThreshold(for: [v([1, 0, 0]), v([1, 0.3, 0])])
-        XCTAssertEqual(mid, 0.3 * Calibration.marginFactor, accuracy: 1e-5)
+        let mid = Calibration.suggestThreshold(for: [v([1, 0, 0]), v([1, 0.5, 0])])
+        XCTAssertEqual(mid, 0.5 * Calibration.marginFactor, accuracy: 1e-5)
     }
 }

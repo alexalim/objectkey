@@ -69,7 +69,7 @@ swift test --package-path ObjectKeyCore
 
 ## 실기기에서 조정할 값 (기기 실측 전 가설값)
 
-- `Calibration.minimumThreshold` 0.35 / `maximumThreshold` 0.9 / `marginFactor` 1.6
+- `Calibration.minimumThreshold` 0.45 / `maximumThreshold` 0.72 / `marginFactor` 1.2 — 2026-10-29 실측 기준(같은 물건 ≥0.56, 다른 물건 0.78, 무관 1.01). 실측 전 가설값은 0.35 / 0.9 / 1.6이었고 오실행을 냈다.
 - `MatcherConfig.ambiguityRatio` 0.85
 - `StabilityFilter.requiredStreak` 3, 프레임 간격 0.2초
 

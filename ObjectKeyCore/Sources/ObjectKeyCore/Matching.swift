@@ -140,12 +140,16 @@ public struct StabilityFilter: Sendable {
 }
 
 public enum Calibration {
-    public static let minimumThreshold: Float = 0.35
-    public static let maximumThreshold: Float = 0.9
-    public static let marginFactor: Float = 1.6
+    public static let minimumThreshold: Float = 0.45
+    public static let maximumThreshold: Float = 0.72
+    public static let marginFactor: Float = 1.2
 
     /// 같은 물건 참조끼리의 최대 거리에 여유를 둔 값을 임계값으로 제안한다.
-    /// 기본 범위는 기기 실측 전의 가설값이며 실제 테스트로 조정해야 한다.
+    ///
+    /// 실측(iPhone, Vision feature print 리비전 2, 물체 크롭 적용, 2026-10-29):
+    /// 같은 물건의 참조 사진끼리 ≥ 0.56, 다른 물건(키보드↔영양제) 0.78, 무관한 물건 1.01.
+    /// 이전 값(상한 0.9, 여유 1.6)은 다른 물건까지 기준 안에 들어와 오실행을 냈다.
+    /// 상한 0.72는 0.78 아래, 여유 1.2는 참조 사진 분산이 크면 상한에서 잘리도록 둔 값이다.
     public static func suggestThreshold(for references: [FeatureVector]) -> Float {
         min(max(maxIntraDistance(of: references) * marginFactor, minimumThreshold), maximumThreshold)
     }
