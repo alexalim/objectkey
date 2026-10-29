@@ -6,6 +6,7 @@ import ObjectKeyCore
 struct RegisterView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var context
+    @Query private var existing: [KeyObject]
 
     private static let requiredShots = 3
     private static let maxShots = 6
@@ -19,6 +20,7 @@ struct RegisterView: View {
     @State private var latest: CameraController.Frame?
     @State private var cameraAllowed: Bool?
     @State private var camera = CameraController()
+    @State private var duplicateOf: KeyObject?
     @FocusState private var focus: Field?
 
     private enum Field { case name, emoji }
@@ -126,6 +128,14 @@ struct RegisterView: View {
                 if allowed { camera.start(includeThumbnail: true) { latest = $0 } }
             }
             .onDisappear { camera.stop() }
+            .alert("이미 등록한 물건과 비슷해요",
+                   isPresented: Binding(get: { duplicateOf != nil }, set: { if !$0 { duplicateOf = nil } }),
+                   presenting: duplicateOf) { _ in
+                Button("그래도 등록", action: commit)
+                Button("취소", role: .cancel) {}
+            } message: { key in
+                Text("'\(key.name)'과 비슷해 보여요. 둘 다 두면 비출 때마다 어느 쪽인지 골라야 합니다.")
+            }
         }
     }
 
@@ -194,7 +204,24 @@ struct RegisterView: View {
         }
     }
 
+    /// 같은 물건을 또 등록하면 비출 때마다 골라야 하므로 막지는 않고 알려만 준다.
     private func save() {
+        if let similar = closestExisting() { duplicateOf = similar } else { commit() }
+    }
+
+    /// 새 사진이 기존 물건의 임계값 안에 들어오면 그중 가장 가까운 물건.
+    private func closestExisting() -> KeyObject? {
+        let vectors = shots.map(\.vector)
+        return existing.compactMap { key -> (KeyObject, Float)? in
+            let references = key.shots.map(\.vector)
+            let nearest = vectors.flatMap { v in references.compactMap { v.distance(to: $0) } }.min()
+            guard let nearest, nearest <= key.threshold else { return nil }
+            return (key, nearest)
+        }
+        .min { $0.1 < $1.1 }?.0
+    }
+
+    private func commit() {
         let vectors = shots.map(\.vector)
         let key = KeyObject(name: name.trimmingCharacters(in: .whitespaces), emoji: emoji, action: action,
                             threshold: Calibration.suggestThreshold(for: vectors),
