@@ -19,6 +19,8 @@ struct ScanView: View {
     @State private var showManual = false
     @State private var mood: Moki = .scan
     @State private var lastSeen = Date()
+    /// 기준값 보정용 진단 표시. 실측이 끝나면 뺀다.
+    @State private var diagnostics = ""
 
     private let matcher = ObjectMatcher()
 
@@ -42,6 +44,10 @@ struct ScanView: View {
                 }
                 .foregroundStyle(.white)
                 .padding()
+                Text(diagnostics)
+                    .font(.caption.monospacedDigit()).foregroundStyle(.white)
+                    .padding(.horizontal, 10).padding(.vertical, 6)
+                    .background(.black.opacity(0.5), in: RoundedRectangle(cornerRadius: 8))
                 Spacer()
                 Image(mood).resizable().scaledToFit().frame(height: 110)
                     .animation(.spring, value: mood)
@@ -75,7 +81,12 @@ struct ScanView: View {
 
     private func process(_ vector: FeatureVector) {
         guard !paused, choices.isEmpty, pending == nil else { return }
-        let outcome = matcher.evaluate(vector, against: keys.map(\.registered))
+        let registered = keys.map(\.registered)
+        let outcome = matcher.evaluate(vector, against: registered)
+        diagnostics = matcher.distances(vector, against: registered).prefix(2).map { c in
+            let key = keys.first { $0.id == c.keyID }
+            return "\(key?.name ?? "?") \(String(format: "%.2f", c.distance))/기준 \(String(format: "%.2f", key?.threshold ?? 0))"
+        }.joined(separator: "  ·  ")
         if case .match(let candidate) = outcome, let key = keys.first(where: { $0.id == candidate.keyID }) {
             hint = "\(key.name) 확인 중…"
             mood = .key

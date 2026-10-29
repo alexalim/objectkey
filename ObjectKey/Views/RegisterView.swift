@@ -105,7 +105,16 @@ struct RegisterView: View {
                 } header: {
                     Text("참조 사진 \(shots.count)/\(Self.requiredShots)+")
                 } footer: {
-                    Text("각도와 거리를 조금씩 바꿔 \(Self.requiredShots)장 이상 찍어 주세요. 비슷한 물건과 구별하는 데 도움이 됩니다. 사진은 기기 안에만 저장됩니다.")
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("각도와 거리를 조금씩 바꿔 \(Self.requiredShots)장 이상 찍어 주세요. 비슷한 물건과 구별하는 데 도움이 됩니다. 사진은 기기 안에만 저장됩니다.")
+                        if shots.count >= 2 {
+                            // 기준값 보정용 진단 표시. 실측이 끝나면 뺀다.
+                            let vectors = shots.map(\.vector)
+                            Text(String(format: "진단: 사진끼리 최대 거리 %.2f → 인식 기준 %.2f",
+                                        Calibration.maxIntraDistance(of: vectors), Calibration.suggestThreshold(for: vectors)))
+                                .monospacedDigit()
+                        }
+                    }
                 }
             }
             .scrollDismissesKeyboard(.immediately)

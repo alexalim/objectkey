@@ -65,6 +65,14 @@ public struct ObjectMatcher: Sendable {
         self.config = config
     }
 
+    /// 진단용: 물건별 최소 거리를 가까운 순으로. evaluate와 같은 계산이며 임계값은 적용하지 않는다.
+    public func distances(_ query: FeatureVector, against keys: [RegisteredKey]) -> [Candidate] {
+        keys.compactMap { key in
+            key.references.compactMap { query.distance(to: $0) }.min().map { Candidate(keyID: key.id, distance: $0) }
+        }
+        .sorted { $0.distance < $1.distance }
+    }
+
     public func evaluate(_ query: FeatureVector, against keys: [RegisteredKey]) -> ScanOutcome {
         // 물건별 거리 = 참조 이미지들 중 가장 가까운 것. revision이 맞지 않는 참조는 건너뛴다.
         let ranked = keys.compactMap { key -> (Candidate, Float)? in
@@ -139,12 +147,17 @@ public enum Calibration {
     /// 같은 물건 참조끼리의 최대 거리에 여유를 둔 값을 임계값으로 제안한다.
     /// 기본 범위는 기기 실측 전의 가설값이며 실제 테스트로 조정해야 한다.
     public static func suggestThreshold(for references: [FeatureVector]) -> Float {
+        min(max(maxIntraDistance(of: references) * marginFactor, minimumThreshold), maximumThreshold)
+    }
+
+    /// 같은 물건 참조끼리의 최대 거리. 등록 화면의 진단 표시에도 쓴다.
+    public static func maxIntraDistance(of references: [FeatureVector]) -> Float {
         var maxIntra: Float = 0
         for i in references.indices {
             for j in references.indices where j > i {
                 if let d = references[i].distance(to: references[j]) { maxIntra = max(maxIntra, d) }
             }
         }
-        return min(max(maxIntra * marginFactor, minimumThreshold), maximumThreshold)
+        return maxIntra
     }
 }
