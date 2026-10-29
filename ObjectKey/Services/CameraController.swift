@@ -9,6 +9,9 @@ final class CameraController: NSObject, AVCaptureVideoDataOutputSampleBufferDele
         let thumbnail: Data?
     }
 
+    /// 세로로 돌린 버퍼의 가로/세로 비율. 미리보기 위에 가이드를 그릴 때 쓴다.
+    static let bufferAspect: CGFloat = 9.0 / 16.0
+
     let session = AVCaptureSession()
     private let queue = DispatchQueue(label: "objectkey.camera")
     private var configured = false
@@ -46,7 +49,6 @@ final class CameraController: NSObject, AVCaptureVideoDataOutputSampleBufferDele
 
     private func configure() {
         session.beginConfiguration()
-        session.sessionPreset = .high
         guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
               let input = try? AVCaptureDeviceInput(device: device),
               session.canAddInput(input) else {
@@ -54,6 +56,8 @@ final class CameraController: NSObject, AVCaptureVideoDataOutputSampleBufferDele
             return
         }
         session.addInput(input)
+        // 16:9로 고정해 bufferAspect와 맞춘다.
+        session.sessionPreset = session.canSetSessionPreset(.hd1920x1080) ? .hd1920x1080 : .high
 
         let output = AVCaptureVideoDataOutput()
         output.alwaysDiscardsLateVideoFrames = true
@@ -97,13 +101,15 @@ struct CameraPreview: UIViewRepresentable {
     func updateUIView(_ uiView: PreviewView, context: Context) {}
 }
 
-/// 특징값을 뽑는 중앙 영역을 보여주는 가이드. FeaturePrinter.regionOfInterest와 맞춘다.
+/// 특징값을 뽑는 가운데 정사각형을 보여주는 가이드. FeaturePrinter.regionFraction과 맞춘다.
+/// 미리보기는 버퍼를 aspect-fill로 채우므로, 화면에 실제로 그려지는 버퍼의 짧은 변을 기준으로 변 길이를 구한다.
 struct ScanGuide: View {
     var body: some View {
         GeometryReader { geo in
+            let side = FeaturePrinter.regionFraction * max(geo.size.width, geo.size.height * CameraController.bufferAspect)
             RoundedRectangle(cornerRadius: 24)
                 .strokeBorder(.white.opacity(0.9), style: StrokeStyle(lineWidth: 3, dash: [12, 8]))
-                .frame(width: geo.size.width * 0.6, height: geo.size.height * 0.6)
+                .frame(width: side, height: side)
                 .position(x: geo.size.width / 2, y: geo.size.height / 2)
         }
         .allowsHitTesting(false)

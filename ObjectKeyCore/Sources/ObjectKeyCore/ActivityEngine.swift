@@ -92,6 +92,11 @@ public struct ActivityEngine: Sendable {
         if case .counter = action {
             return .executed(expired + [.incrementCounter(keyID: keyID, at: now), .feedback(.counted)])
         }
+        // 휴식 중에 멈춰 둔 세션의 물건을 다시 비추면 휴식을 끝내고 그 세션을 이어간다. 기록을 둘로 쪼개지 않는다.
+        if case .session = action, case .countdown(_, _, let paused?) = state, paused.keyID == keyID {
+            state = resumed(paused, now: now)
+            return .executed(expired + [.cancelCountdownEnd, .feedback(.started)])
+        }
         if let active = state.activeKeyID, active != keyID, requiresConfirmation(switchingTo: action) {
             return .needsConfirmation(PendingSwitch(from: active, to: keyID, action: action))
         }

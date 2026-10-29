@@ -100,6 +100,15 @@ final class ActivityEngineTests: XCTestCase {
         XCTAssertEqual(engine.state, .session(keyID: book, startedAt: t0, segmentStart: at(90), accumulated: 60))
     }
 
+    func test_scanPausedObjectDuringBreak_endsBreakAndResumesSameSession() {
+        var engine = ActivityEngine()
+        _ = engine.handle(match(book), actions: actions, now: t0)
+        _ = engine.handle(match(mug), actions: actions, now: at(60))
+        XCTAssertEqual(engine.handle(match(book), actions: actions, now: at(90)),
+                       .executed([.cancelCountdownEnd, .feedback(.started)]))
+        XCTAssertEqual(engine.state, .session(keyID: book, startedAt: t0, segmentStart: at(90), accumulated: 60))
+    }
+
     func test_breakWithoutSession_endsToIdle() {
         var engine = ActivityEngine()
         _ = engine.handle(match(mug), actions: actions, now: t0)

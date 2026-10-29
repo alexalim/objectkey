@@ -162,6 +162,7 @@ extension View {
                 } icon: {
                     Image(.success).resizable().scaledToFit().frame(width: 28, height: 28)
                 }
+                    .id(text) // 메시지가 바뀌면 아래 task를 다시 시작해 2초를 새로 센다.
                     .font(.callout.bold())
                     .padding(.horizontal, 16).padding(.vertical, 10)
                     .background(.thinMaterial, in: Capsule())
