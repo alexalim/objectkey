@@ -34,7 +34,8 @@ struct HomeView: View {
             .overlay {
                 if keys.isEmpty {
                     ContentUnavailableView {
-                        Label("아직 등록한 물건이 없어요", systemImage: "cube.transparent")
+                        Image(.peek).resizable().scaledToFit().frame(height: 140)
+                        Text("아직 등록한 물건이 없어요")
                     } description: {
                         Text("책, 컵, 붓처럼 책상 위 물건에 능력을 부여해 보세요.")
                     } actions: {
@@ -93,7 +94,7 @@ struct KeyRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Text(key.emoji.isEmpty ? "🔑" : key.emoji).font(.largeTitle)
+            KeyBadge(symbol: key.emoji)
             VStack(alignment: .leading, spacing: 2) {
                 Text(key.name).font(.headline)
                 Text(key.action.label).font(.subheadline).foregroundStyle(.secondary)
@@ -134,7 +135,11 @@ struct ActiveBanner: View {
     private func banner(_ id: UUID, title: String, value: String) -> some View {
         let key = keys.first { $0.id == id }
         return HStack {
-            Text(key?.emoji ?? "🔑").font(.title)
+            if title == "휴식" {
+                Image(.break).resizable().scaledToFit().frame(width: 52, height: 52)
+            } else {
+                KeyBadge(symbol: key?.emoji ?? "", size: 52)
+            }
             VStack(alignment: .leading) {
                 Text("\(key?.name ?? "물건") · \(title)").font(.subheadline).foregroundStyle(.secondary)
                 Text(value).font(.title2.monospacedDigit().bold())
@@ -152,7 +157,11 @@ extension View {
     func resultToast(message: Binding<String?>) -> some View {
         overlay(alignment: .top) {
             if let text = message.wrappedValue {
-                Text(text)
+                Label {
+                    Text(text)
+                } icon: {
+                    Image(.success).resizable().scaledToFit().frame(width: 28, height: 28)
+                }
                     .font(.callout.bold())
                     .padding(.horizontal, 16).padding(.vertical, 10)
                     .background(.thinMaterial, in: Capsule())

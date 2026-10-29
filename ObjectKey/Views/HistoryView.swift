@@ -31,7 +31,14 @@ struct HistoryView: View {
             }
         }
         .overlay {
-            if logs.isEmpty { ContentUnavailableView("기록이 없어요", systemImage: "clock") }
+            if logs.isEmpty {
+                ContentUnavailableView {
+                    Image(.reading).resizable().scaledToFit().frame(height: 120)
+                    Text("기록이 없어요")
+                } description: {
+                    Text("물건을 비춰 세션을 끝내면 여기에 쌓여요.")
+                }
+            }
         }
         .navigationTitle("기록")
         .toolbar {

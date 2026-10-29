@@ -24,8 +24,26 @@ struct RegisterView: View {
             Form {
                 Section("물건") {
                     TextField("이름 (예: 내가 읽는 책)", text: $name)
-                    TextField("이모지 (선택)", text: $emoji)
-                        .onChange(of: emoji) { _, new in if new.count > 1 { emoji = String(new.prefix(1)) } }
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 10) {
+                            ForEach(Moki.activities, id: \.self) { moki in
+                                Button { emoji = moki.assetName } label: {
+                                    VStack(spacing: 2) {
+                                        Image(moki).resizable().scaledToFit().frame(width: 56, height: 56)
+                                        Text(moki.label).font(.caption2)
+                                    }
+                                    .padding(4)
+                                    .background(emoji == moki.assetName ? Color.accentColor.opacity(0.15) : .clear,
+                                                in: RoundedRectangle(cornerRadius: 10))
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel("\(moki.label) 캐릭터")
+                            }
+                        }
+                    }
+                    TextField("또는 이모지 하나", text: Binding(
+                        get: { emoji.hasPrefix("moki-") ? "" : emoji },
+                        set: { emoji = String($0.prefix(1)) }))
                 }
                 Section("비추면 실행할 동작") {
                     Picker("동작", selection: $kind) {
@@ -142,7 +160,7 @@ struct RegisterView: View {
 struct CameraDeniedView: View {
     var body: some View {
         VStack(spacing: 8) {
-            Image(systemName: "camera.fill").font(.title).foregroundStyle(.secondary)
+            Image(.question).resizable().scaledToFit().frame(height: 96)
             Text("카메라 권한이 꺼져 있어요").font(.headline)
             Text("물건을 등록하고 알아보려면 카메라가 필요합니다. 등록한 물건은 목록에서 눌러 바로 실행할 수도 있어요.")
                 .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)

@@ -17,6 +17,8 @@ struct ScanView: View {
     @State private var choices: [KeyObject] = []
     @State private var pending: PendingSwitch?
     @State private var showManual = false
+    @State private var mood: Moki = .scan
+    @State private var lastSeen = Date()
 
     private let matcher = ObjectMatcher()
 
@@ -41,6 +43,8 @@ struct ScanView: View {
                 .foregroundStyle(.white)
                 .padding()
                 Spacer()
+                Image(mood).resizable().scaledToFit().frame(height: 110)
+                    .animation(.spring, value: mood)
                 Text(hint)
                     .font(.headline)
                     .padding(.horizontal, 16).padding(.vertical, 10)
@@ -60,7 +64,7 @@ struct ScanView: View {
         .confirmationDialog("어떤 물건인가요?", isPresented: Binding(get: { !choices.isEmpty }, set: { if !$0 { choices = []; paused = false } }),
                             titleVisibility: .visible) {
             ForEach(choices) { key in
-                Button("\(key.emoji) \(key.name)") { run(store.activate(key, keys: keys, context: context)) }
+                Button(key.name) { run(store.activate(key, keys: keys, context: context)) }
             }
         } message: {
             Text("비슷한 물건이 여러 개 보여요. 실행하지 않고 기다리는 중입니다.")
@@ -73,9 +77,15 @@ struct ScanView: View {
         guard !paused, choices.isEmpty, pending == nil else { return }
         let outcome = matcher.evaluate(vector, against: keys.map(\.registered))
         if case .match(let candidate) = outcome, let key = keys.first(where: { $0.id == candidate.keyID }) {
-            hint = "\(key.emoji) \(key.name) 확인 중…"
+            hint = "\(key.name) 확인 중…"
+            mood = .key
+            lastSeen = .now
+        } else if Date.now.timeIntervalSince(lastSeen) > 4 {
+            hint = "등록한 물건이 안 보여요. 가까이 비추거나 직접 선택해 주세요"
+            mood = .question
         } else {
             hint = "가이드 안에 물건을 비춰 주세요"
+            mood = .scan
         }
         guard let confirmed = filter.feed(outcome) else { return }
         paused = true
