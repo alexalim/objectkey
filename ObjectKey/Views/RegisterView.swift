@@ -47,12 +47,33 @@ struct RegisterView: View {
                             }
                         }
                     }
-                    TextField("또는 이모지 하나", text: Binding(
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 5), spacing: 6) {
+                        ForEach(EmojiPreset.all) { preset in
+                            Button {
+                                emoji = preset.emoji
+                                kind = preset.suggestedKind
+                                focus = nil
+                            } label: {
+                                VStack(spacing: 2) {
+                                    Text(preset.emoji).font(.title2)
+                                    Text(preset.label).font(.caption2).lineLimit(1).minimumScaleFactor(0.8)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 6)
+                                .background(emoji == preset.emoji ? Color.accentColor.opacity(0.15) : .clear,
+                                            in: RoundedRectangle(cornerRadius: 10))
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(preset.label)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                    TextField("직접 입력 (이모지 하나)", text: Binding(
                         get: { emoji.hasPrefix("moki-") ? "" : emoji },
                         set: { emoji = String($0.prefix(1)) }))
                         .focused($focus, equals: .emoji)
                 }
-                Section("비추면 실행할 동작") {
+                Section {
                     Picker("동작", selection: $kind) {
                         Text("시간 기록 시작·종료").tag("session")
                         Text("휴식 타이머").tag("countdown")
@@ -63,6 +84,10 @@ struct RegisterView: View {
                     if kind == "countdown" {
                         Stepper("\(minutes)분", value: $minutes, in: 1...60)
                     }
+                } header: {
+                    Text("비추면 실행할 동작")
+                } footer: {
+                    Text("아이콘은 보기 위한 것이고, 실제로 무엇을 할지는 여기서 정합니다. 프리셋을 고르면 어울리는 동작이 자동으로 선택되며 바꿔도 됩니다.")
                 }
                 if kind != "countdown" {
                     Section {

@@ -22,6 +22,33 @@ enum Moki: String, CaseIterable {
     }
 }
 
+/// 캐릭터가 없는 물건·습관용 이모지 프리셋. 고르면 어울리는 동작을 함께 제안한다.
+struct EmojiPreset: Identifiable {
+    let emoji: String
+    let label: String
+    /// KeyObject.actionKind 값.
+    let suggestedKind: String
+    var id: String { emoji }
+
+    static let all: [EmojiPreset] = [
+        .init(emoji: "💊", label: "영양제", suggestedKind: "counter"),
+        .init(emoji: "🍽️", label: "식사", suggestedKind: "counter"),
+        .init(emoji: "💧", label: "물", suggestedKind: "counter"),
+        .init(emoji: "☕", label: "커피", suggestedKind: "counter"),
+        .init(emoji: "🦷", label: "양치", suggestedKind: "counter"),
+        .init(emoji: "🧴", label: "스킨케어", suggestedKind: "counter"),
+        .init(emoji: "📚", label: "공부", suggestedKind: "session"),
+        .init(emoji: "💻", label: "작업", suggestedKind: "session"),
+        .init(emoji: "✍️", label: "일기", suggestedKind: "session"),
+        .init(emoji: "🧘", label: "명상", suggestedKind: "session"),
+        .init(emoji: "🎸", label: "악기", suggestedKind: "session"),
+        .init(emoji: "🧹", label: "청소", suggestedKind: "session"),
+        .init(emoji: "🐶", label: "산책", suggestedKind: "session"),
+        .init(emoji: "💤", label: "낮잠", suggestedKind: "countdown"),
+        .init(emoji: "🫖", label: "티타임", suggestedKind: "countdown"),
+    ]
+}
+
 extension Image {
     init(_ moki: Moki) { self.init(moki.assetName) }
 }
