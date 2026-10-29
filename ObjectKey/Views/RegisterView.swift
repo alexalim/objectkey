@@ -18,16 +18,21 @@ struct RegisterView: View {
     @State private var latest: CameraController.Frame?
     @State private var cameraAllowed: Bool?
     @State private var camera = CameraController()
+    @FocusState private var focus: Field?
+
+    private enum Field { case name, emoji }
 
     var body: some View {
         NavigationStack {
             Form {
                 Section("물건") {
                     TextField("이름 (예: 내가 읽는 책)", text: $name)
+                        .focused($focus, equals: .name)
+                        .submitLabel(.done)
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 10) {
                             ForEach(Moki.activities, id: \.self) { moki in
-                                Button { emoji = moki.assetName } label: {
+                                Button { emoji = moki.assetName; focus = nil } label: {
                                     VStack(spacing: 2) {
                                         Image(moki).resizable().scaledToFit().frame(width: 56, height: 56)
                                         Text(moki.label).font(.caption2)
@@ -44,6 +49,7 @@ struct RegisterView: View {
                     TextField("또는 이모지 하나", text: Binding(
                         get: { emoji.hasPrefix("moki-") ? "" : emoji },
                         set: { emoji = String($0.prefix(1)) }))
+                        .focused($focus, equals: .emoji)
                 }
                 Section("비추면 실행할 동작") {
                     Picker("동작", selection: $kind) {
@@ -65,12 +71,18 @@ struct RegisterView: View {
                     Text("각도와 거리를 조금씩 바꿔 \(Self.requiredShots)장 이상 찍어 주세요. 비슷한 물건과 구별하는 데 도움이 됩니다. 사진은 기기 안에만 저장됩니다.")
                 }
             }
+            .scrollDismissesKeyboard(.immediately)
             .navigationTitle("새 물건 등록")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("취소") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("저장", action: save).disabled(!canSave)
+                }
+                // 이모지 키보드에는 Return 키가 없어 내릴 방법이 따로 필요하다.
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("완료") { focus = nil }
                 }
             }
             .task {
@@ -111,6 +123,7 @@ struct RegisterView: View {
                 }
 
                 Button {
+                    focus = nil
                     if let latest { shots.append(latest) }
                 } label: {
                     Label("촬영", systemImage: "camera.circle.fill").frame(maxWidth: .infinity)
