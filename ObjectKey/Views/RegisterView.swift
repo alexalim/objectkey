@@ -106,10 +106,11 @@ struct RegisterView: View {
                     Text("참조 사진 \(shots.count)/\(Self.requiredShots)+")
                 } footer: {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("각도와 거리를 조금씩 바꿔 \(Self.requiredShots)장 이상 찍어 주세요. 비슷한 물건과 구별하는 데 도움이 됩니다. 사진은 기기 안에만 저장됩니다.")
+                        Text("노란 상자가 물건을 감싼 상태에서, 각도와 거리를 조금씩 바꿔 \(Self.requiredShots)장 이상 찍어 주세요. 사진은 기기 안에만 저장됩니다.")
+                        if let saveHint { Text(saveHint).foregroundStyle(.orange) }
                         if shots.count >= 2 {
                             // 기준값 보정용 진단 표시. 실측이 끝나면 뺀다.
-                            let vectors = shots.map(\.vector)
+                            let vectors = shots.compactMap(\.vector)
                             Text(String(format: "진단: 사진끼리 최대 거리 %.2f → 인식 기준 %.2f",
                                         Calibration.maxIntraDistance(of: vectors), Calibration.suggestThreshold(for: vectors)))
                                 .monospacedDigit()
@@ -160,6 +161,7 @@ struct RegisterView: View {
                 ZStack {
                     CameraPreview(session: camera.session)
                     ScanGuide()
+                    ObjectHighlight(region: latest?.region)
                 }
                 .aspectRatio(3 / 4, contentMode: .fit)
                 .clipShape(RoundedRectangle(cornerRadius: 16))
@@ -176,14 +178,22 @@ struct RegisterView: View {
                     }
                 }
 
+                if latest?.vector == nil {
+                    Text("가이드 안에서 물건을 찾는 중… 노란 상자가 물건을 감싸면 촬영할 수 있어요.")
+                        .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                }
                 Button {
                     focus = nil
-                    if let latest { shots.append(latest) }
+                    if let latest, latest.vector != nil { shots.append(latest) }
                 } label: {
-                    Label("촬영", systemImage: "camera.circle.fill").frame(maxWidth: .infinity)
+                    HStack(spacing: 6) {
+                        Image(systemName: "camera.fill")
+                        Text("촬영")
+                    }
+                    .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(latest == nil || shots.count >= Self.maxShots)
+                .disabled(latest?.vector == nil || shots.count >= Self.maxShots)
             }
             .listRowInsets(EdgeInsets(top: 12, leading: 12, bottom: 12, trailing: 12))
         }
@@ -201,8 +211,14 @@ struct RegisterView: View {
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
-    private var canSave: Bool {
-        !name.trimmingCharacters(in: .whitespaces).isEmpty && shots.count >= Self.requiredShots
+    private var canSave: Bool { saveHint == nil }
+
+    /// 저장 버튼이 왜 꺼져 있는지. 다 채워지면 nil.
+    private var saveHint: String? {
+        var missing: [String] = []
+        if name.trimmingCharacters(in: .whitespaces).isEmpty { missing.append("이름을 입력") }
+        if shots.count < Self.requiredShots { missing.append("사진을 \(Self.requiredShots - shots.count)장 더 촬영") }
+        return missing.isEmpty ? nil : "저장하려면 " + missing.joined(separator: "하고, ") + "해 주세요."
     }
 
     private var action: KeyAction {
@@ -220,9 +236,9 @@ struct RegisterView: View {
 
     /// 새 사진이 기존 물건의 임계값 안에 들어오면 그중 가장 가까운 물건.
     private func closestExisting() -> KeyObject? {
-        let vectors = shots.map(\.vector)
+        let vectors = shots.compactMap(\.vector)
         return existing.compactMap { key -> (KeyObject, Float)? in
-            let references = key.shots.map(\.vector)
+            let references = key.shots.compactMap(\.vector)
             let nearest = vectors.flatMap { v in references.compactMap { v.distance(to: $0) } }.min()
             guard let nearest, nearest <= key.threshold else { return nil }
             return (key, nearest)
@@ -231,12 +247,12 @@ struct RegisterView: View {
     }
 
     private func commit() {
-        let vectors = shots.map(\.vector)
+        let vectors = shots.compactMap(\.vector)
         let key = KeyObject(name: name.trimmingCharacters(in: .whitespaces), emoji: emoji, action: action,
                             threshold: Calibration.suggestThreshold(for: vectors),
                             dailyGoal: kind == "countdown" ? 0 : goal)
         context.insert(key)
-        key.shots = shots.map { ReferenceShot(vector: $0.vector, thumbnail: $0.thumbnail) }
+        key.shots = shots.compactMap { shot in shot.vector.map { ReferenceShot(vector: $0, thumbnail: shot.thumbnail) } }
         try? context.save()
         dismiss()
     }

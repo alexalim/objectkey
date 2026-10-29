@@ -4,9 +4,12 @@ import ObjectKeyCore
 
 /// 후면 카메라 세션. 프레임은 카메라 큐에서 특징값까지 계산한 뒤 메인 액터로 넘긴다.
 final class CameraController: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
+    /// 처리한 프레임 하나. 가이드 안에 물체가 없으면 vector·region이 nil이다.
     struct Frame: Sendable {
-        let vector: FeatureVector
+        let vector: FeatureVector?
         let thumbnail: Data?
+        /// 특징값을 뽑은 물체 영역(이미지 정규화 좌표, 좌하단 원점).
+        let region: CGRect?
     }
 
     /// 세로로 돌린 버퍼의 가로/세로 비율. 미리보기 위에 가이드를 그릴 때 쓴다.
@@ -74,10 +77,11 @@ final class CameraController: NSObject, AVCaptureVideoDataOutputSampleBufferDele
     func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
         let now = Date()
         guard let onFrame, now.timeIntervalSince(lastProcessed) >= minInterval,
-              let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer),
-              let vector = try? FeaturePrinter.vector(from: pixelBuffer) else { return }
+              let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
         lastProcessed = now
-        let frame = Frame(vector: vector, thumbnail: wantsThumbnail ? FeaturePrinter.thumbnail(from: pixelBuffer) : nil)
+        let analysis = try? FeaturePrinter.analyze(pixelBuffer)
+        let thumbnail = (wantsThumbnail ? analysis?.region : nil).flatMap { FeaturePrinter.thumbnail(from: pixelBuffer, region: $0) }
+        let frame = Frame(vector: analysis?.vector, thumbnail: thumbnail, region: analysis?.region)
         Task { @MainActor in onFrame(frame) }
     }
 }
@@ -101,7 +105,30 @@ struct CameraPreview: UIViewRepresentable {
     func updateUIView(_ uiView: PreviewView, context: Context) {}
 }
 
-/// 특징값을 뽑는 가운데 정사각형을 보여주는 가이드. FeaturePrinter.regionFraction과 맞춘다.
+/// 검출한 물체 영역을 aspect-fill 미리보기 위에 노란 테두리로 그린다. 모델이 실제로 보는 곳을 사용자에게 보여준다.
+struct ObjectHighlight: View {
+    /// 이미지 정규화 좌표(좌하단 원점). nil이면 아무것도 그리지 않는다.
+    let region: CGRect?
+
+    var body: some View {
+        GeometryReader { geo in
+            if let region {
+                let shownWidth = max(geo.size.width, geo.size.height * CameraController.bufferAspect)
+                let shownHeight = shownWidth / CameraController.bufferAspect
+                let offsetX = (geo.size.width - shownWidth) / 2
+                let offsetY = (geo.size.height - shownHeight) / 2
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(.yellow, lineWidth: 2)
+                    .frame(width: region.width * shownWidth, height: region.height * shownHeight)
+                    .position(x: offsetX + region.midX * shownWidth, y: offsetY + (1 - region.midY) * shownHeight)
+                    .animation(.easeOut(duration: 0.15), value: region)
+            }
+        }
+        .allowsHitTesting(false)
+    }
+}
+
+/// 물체를 찾는 가운데 정사각형을 보여주는 가이드. FeaturePrinter.regionFraction과 맞춘다.
 /// 미리보기는 버퍼를 aspect-fill로 채우므로, 화면에 실제로 그려지는 버퍼의 짧은 변을 기준으로 변 길이를 구한다.
 struct ScanGuide: View {
     var body: some View {

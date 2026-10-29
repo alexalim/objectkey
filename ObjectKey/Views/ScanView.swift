@@ -21,6 +21,7 @@ struct ScanView: View {
     @State private var lastSeen = Date()
     /// 기준값 보정용 진단 표시. 실측이 끝나면 뺀다.
     @State private var diagnostics = ""
+    @State private var objectRegion: CGRect?
 
     private let matcher = ObjectMatcher()
 
@@ -35,6 +36,7 @@ struct ScanView: View {
             case .some(true):
                 CameraPreview(session: camera.session).ignoresSafeArea()
                 ScanGuide().ignoresSafeArea()
+                ObjectHighlight(region: objectRegion).ignoresSafeArea()
             }
             VStack {
                 HStack {
@@ -63,7 +65,7 @@ struct ScanView: View {
         .task {
             let allowed = await CameraController.requestAccess()
             cameraAllowed = allowed
-            if allowed { camera.start(includeThumbnail: false) { process($0.vector) } }
+            if allowed { camera.start(includeThumbnail: false) { process($0) } }
             else { showManual = true }
         }
         .onDisappear { camera.stop() }
@@ -79,8 +81,19 @@ struct ScanView: View {
         .sheet(isPresented: $showManual, onDismiss: { paused = false }) { manualPicker }
     }
 
-    private func process(_ vector: FeatureVector) {
+    private func process(_ frame: CameraController.Frame) {
         guard !paused, choices.isEmpty, pending == nil else { return }
+        objectRegion = frame.region
+        // 가이드 안에 물체가 없으면 비교조차 하지 않는다. 빈 책상에서 실행되는 일을 막는다.
+        guard let vector = frame.vector else {
+            diagnostics = "물체 없음"
+            _ = filter.feed(.noMatch)
+            if Date.now.timeIntervalSince(lastSeen) > 4 {
+                hint = "가이드 안에 물건이 안 보여요. 가까이 비춰 주세요"
+                mood = .question
+            }
+            return
+        }
         let registered = keys.map(\.registered)
         let outcome = matcher.evaluate(vector, against: registered)
         diagnostics = matcher.distances(vector, against: registered).prefix(2).map { c in

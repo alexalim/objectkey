@@ -10,7 +10,7 @@
 |---|---|
 | 물건 등록·이름·이모지·동작 지정 | `ObjectKey/Views/RegisterView.swift` |
 | 물건별 참조 사진 3~6장 | 같은 파일, `ReferenceShot` 모델 |
-| 카메라 특징값 비교 | `FeaturePrinter` (Vision feature print) + `ObjectMatcher` |
+| 카메라 특징값 비교 | `FeaturePrinter` (Vision 물체 saliency로 가이드 안 물체 상자를 찾아 그 영역만 feature print) + `ObjectMatcher` |
 | 인식 후보 확인·수동 선택 | `ScanView` 선택 창, "직접 선택", 홈 목록 탭 |
 | 시간 기록·휴식 타이머·횟수 카운터 | `ActivityEngine` + `ActivityStore` |
 | 로컬 저장·삭제 | SwiftData, `HistoryView`의 모든 데이터 삭제 |
