@@ -321,7 +321,7 @@ struct HabitGuide: View {
     var body: some View {
         let current = progress?.phase
         Section {
-            Text("새 행동이 저절로 나오기까지 평균 66일이 걸린다고 해요(런던대 연구). 사람과 행동에 따라 18~254일로 차이가 크니, 66일은 기준일 뿐이에요. 그 과정을 세 단계로 나눠 보여 드려요.")
+            Text("새 행동이 저절로 나오기까지 평균 66일이 걸린다고 해요. 사람과 행동에 따라 18~254일로 차이가 크니, 66일은 기준일 뿐이에요. 그 과정을 세 단계로 나눠 보여 드려요.")
                 .font(.subheadline)
             ForEach(HabitPhase.all, id: \.self) { phase in
                 HStack(alignment: .firstTextBaseline, spacing: 10) {
