@@ -40,8 +40,13 @@ struct ScanView: View {
             }
             VStack {
                 HStack {
-                    Button { dismiss() } label: { Image(systemName: "xmark").font(.title2.bold()) }
-                        .accessibilityLabel("닫기")
+                    // 카메라 위라 잘 안 보이고 작았다. 어두운 원 배경과 44pt 이상 누를 영역을 준다.
+                    Button { dismiss() } label: {
+                        Image(systemName: "xmark").font(.title3.bold())
+                            .frame(width: 48, height: 48)
+                            .background(.black.opacity(0.45), in: Circle())
+                    }
+                    .accessibilityLabel("닫기")
                     Spacer()
                 }
                 .foregroundStyle(.white)
@@ -57,9 +62,13 @@ struct ScanView: View {
                     .font(.headline)
                     .padding(.horizontal, 16).padding(.vertical, 10)
                     .background(.ultraThinMaterial, in: Capsule())
-                Button("직접 선택") { showManual = true }
-                    .buttonStyle(.bordered).tint(.white)
-                    .padding(.bottom, 24)
+                // 큰 화면에서는 위쪽 X에 손이 잘 닿지 않아 아래에도 닫기를 둔다.
+                HStack(spacing: 12) {
+                    Button("닫기") { dismiss() }
+                    Button("직접 선택") { showManual = true }
+                }
+                .buttonStyle(.bordered).tint(.white).controlSize(.large)
+                .padding(.bottom, 24)
             }
         }
         .task {
