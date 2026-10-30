@@ -18,6 +18,7 @@ struct RegisterView: View {
     @State private var goal = 0
     @State private var cue = ""
     @State private var reminderMinute = -1
+    @State private var schedule: HabitSchedule = .daily
     @State private var shots: [CameraController.Frame] = []
     @State private var latest: CameraController.Frame?
     @State private var cameraAllowed: Bool?
@@ -95,6 +96,7 @@ struct RegisterView: View {
                 }
                 if kind != "countdown" {
                     Section {
+                        ScheduleEditor(schedule: $schedule)
                         GoalStepper(actionKind: kind, goal: $goal)
                         TextField(HabitCopy.cuePlaceholder, text: $cue)
                             .focused($focus, equals: .cue)
@@ -260,6 +262,7 @@ struct RegisterView: View {
         if kind != "countdown" {
             key.cue = cue.trimmingCharacters(in: .whitespaces)
             key.reminderMinute = reminderMinute
+            key.schedule = schedule
         }
         context.insert(key)
         key.shots = shots.compactMap { shot in shot.vector.map { ReferenceShot(vector: $0, thumbnail: shot.thumbnail) } }

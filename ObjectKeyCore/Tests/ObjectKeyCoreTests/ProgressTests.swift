@@ -18,8 +18,8 @@ final class ProgressTests: XCTestCase {
     private func entry(_ daysAgo: Int, _ amount: Double, hour: Int = 10) -> ProgressEntry {
         ProgressEntry(date: self.daysAgo(daysAgo, hour: hour), amount: amount)
     }
-    private func eval(_ entries: [ProgressEntry], goal: Double? = nil) -> KeyProgress {
-        DailyProgress.evaluate(entries, goal: goal, now: now, calendar: calendar)
+    private func eval(_ entries: [ProgressEntry], goal: Double? = nil, schedule: HabitSchedule = .daily) -> KeyProgress {
+        DailyProgress.evaluate(entries, goal: goal, schedule: schedule, now: now, calendar: calendar)
     }
 
     func test_noEntries_isZero() {
@@ -141,5 +141,53 @@ final class ProgressTests: XCTestCase {
     func test_days_withoutGoal_anyRecordIsMet() {
         let days = DailyProgress.days([entry(1, 1)], goal: nil, calendar: calendar)
         XCTAssertEqual(days[calendar.startOfDay(for: daysAgo(1))], .met)
+    }
+
+    // MARK: 요일 지정 — now는 목요일. weekday 1=일 … 7=토. daysAgo 1=수, 2=화, 3=월, 6=금, 7=지난 목
+
+    private let monWedFri: HabitSchedule = .weekdays([2, 4, 6])
+
+    func test_weekdays_offDaysAreNotMisses() {
+        // 금·월·수 모두 채움, 오늘(목)은 정한 날이 아님 → 3일, 위험 아님.
+        let p = eval([entry(6, 1), entry(3, 1), entry(1, 1)], schedule: monWedFri)
+        XCTAssertEqual(p.streak, 3)
+        XCTAssertFalse(p.atRisk)
+    }
+
+    func test_weekdays_oneMissedDueDayKeepsChain_twoBreak() {
+        XCTAssertEqual(eval([entry(6, 1), entry(1, 1)], schedule: monWedFri).streak, 2)
+        XCTAssertEqual(eval([entry(6, 1)], schedule: monWedFri).streak, 0)
+    }
+
+    func test_weekdays_atRiskWhenLastDueDayMissed_andTodayIsDue() {
+        // 화·목: 지난 목 채움, 화 놓침, 오늘 목 아직.
+        let p = eval([entry(7, 1)], schedule: .weekdays([3, 5]))
+        XCTAssertEqual(p.streak, 1)
+        XCTAssertTrue(p.atRisk)
+    }
+
+    func test_weekdays_workOnOffDayStillCounts() {
+        XCTAssertEqual(eval([entry(1, 1)], schedule: .weekdays([3, 5])).streak, 1)
+    }
+
+    // MARK: 주 N회 — 이번 주는 일 10/25 ~ 토 10/31, 지난주는 daysAgo 5~11, 그 전 주는 12~18
+
+    func test_perWeek_metLastWeek_countsDaysAcrossWeeks() {
+        let p = eval([entry(7, 1), entry(6, 1), entry(5, 1), entry(1, 1)], schedule: .perWeek(3))
+        XCTAssertEqual(p.streak, 4)
+        XCTAssertEqual(p.weekDone, 1)
+        XCTAssertFalse(p.atRisk)
+    }
+
+    func test_perWeek_oneShortWeekKeepsChain_andThisWeekIsAtRisk() {
+        let p = eval([entry(14, 1), entry(13, 1), entry(12, 1), entry(5, 1)], schedule: .perWeek(3))
+        XCTAssertEqual(p.streak, 4)
+        XCTAssertTrue(p.atRisk)
+    }
+
+    func test_perWeek_twoShortWeeksBreakChain() {
+        // 3주 전 채움, 지난주 1일·그 전 주 0일로 두 주 연속 미달 → 이번 주 1일만 남는다.
+        let p = eval([entry(21, 1), entry(20, 1), entry(19, 1), entry(5, 1), entry(1, 1)], schedule: .perWeek(3))
+        XCTAssertEqual(p.streak, 1)
     }
 }

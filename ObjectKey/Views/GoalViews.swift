@@ -72,12 +72,102 @@ struct ReminderPicker: View {
     }
 }
 
+extension HabitSchedule {
+    /// "매일", "월·수·금", "주 3회".
+    var label: String {
+        switch self {
+        case .daily: return "매일"
+        case .weekdays(let days):
+            let calendar = Calendar.current
+            let ordered = (0..<7).map { (calendar.firstWeekday - 1 + $0) % 7 + 1 }.filter(days.contains)
+            return ordered.isEmpty ? "매일" : ordered.map { calendar.shortWeekdaySymbols[$0 - 1] }.joined(separator: "·")
+        case .perWeek(let n): return "주 \(n)회"
+        }
+    }
+}
+
+/// 매일 / 요일 지정 / 주 N회 고르기.
+struct ScheduleEditor: View {
+    @Binding var schedule: HabitSchedule
+    private let calendar = Calendar.current
+
+    private enum Kind: Hashable { case daily, weekdays, perWeek }
+
+    var body: some View {
+        Picker("일정", selection: Binding(get: { kind }, set: { new in
+            guard new != kind else { return }
+            switch new {
+            case .daily: schedule = .daily
+            case .weekdays: schedule = .weekdays([2, 4, 6])
+            case .perWeek: schedule = .perWeek(3)
+            }
+        })) {
+            Text("매일").tag(Kind.daily)
+            Text("요일 지정").tag(Kind.weekdays)
+            Text("주 N회").tag(Kind.perWeek)
+        }
+        .pickerStyle(.segmented)
+        switch schedule {
+        case .daily:
+            EmptyView()
+        case .weekdays(let days):
+            HStack(spacing: 6) {
+                ForEach((0..<7).map { (calendar.firstWeekday - 1 + $0) % 7 + 1 }, id: \.self) { weekday in
+                    let on = days.contains(weekday)
+                    Button {
+                        var next = days
+                        if on { next.remove(weekday) } else { next.insert(weekday) }
+                        if !next.isEmpty { schedule = .weekdays(next) } // 하나는 남긴다.
+                    } label: {
+                        Text(calendar.veryShortWeekdaySymbols[weekday - 1])
+                            .font(.subheadline.bold())
+                            .frame(maxWidth: .infinity, minHeight: 36)
+                            .foregroundStyle(on ? Color.white : Color.primary)
+                            .background(Circle().fill(on ? Color.orange : Color.secondary.opacity(0.15)))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(calendar.weekdaySymbols[weekday - 1])
+                    .accessibilityAddTraits(on ? .isSelected : [])
+                }
+            }
+        case .perWeek(let n):
+            Stepper("일주일에 \(n)번", value: Binding(get: { n }, set: { schedule = .perWeek($0) }), in: 1...6)
+        }
+    }
+
+    private var kind: Kind {
+        switch schedule {
+        case .daily: return .daily
+        case .weekdays: return .weekdays
+        case .perWeek: return .perWeek
+        }
+    }
+}
+
 /// 습관 설정 공통 안내. 등록 화면과 설정 시트가 같은 문구를 쓴다.
 enum HabitCopy {
-    static let goalFooter = "처음에는 실패할 수 없을 만큼 작게 시작하세요. 목표 없음이면 하루 한 번만 비춰도 이어집니다. 하루 빠지는 건 괜찮지만, 이틀 연속 빠지면 끊겨요."
+    static let goalFooter = "처음에는 실패할 수 없을 만큼 작게 시작하세요. 목표 없음이면 하루 한 번만 비춰도 이어집니다. 한 번 빠지는 건 괜찮지만, 두 번 연속 빠지면 끊겨요."
     static let cuePlaceholder = "이미 하는 행동 (예: 아침 커피 내린)"
     static let cueFooter = "이미 몸에 밴 행동 바로 뒤에 붙이면 잊지 않아요. \"…다음에\"로 표시됩니다."
-    static let reminderFooter = "그날 이미 비췄으면 알림은 오지 않아요."
+    static let reminderFooter = "그날 이미 비췄으면 알림은 오지 않아요. 요일 지정이면 정한 요일에만, 주 N회는 그 주를 채우면 오지 않아요."
+
+    /// 이틀 규칙을 일정에 맞게 풀어 쓴 문구.
+    static func rule(_ schedule: HabitSchedule) -> String {
+        switch schedule {
+        case .daily: return "하루 빠지는 건 괜찮아요. 이틀 연속만 피하면 일수가 이어집니다."
+        case .weekdays: return "정한 요일을 한 번 놓쳐도 괜찮아요. 두 번 연속만 피하면 이어지고, 다른 날에 해도 셉니다."
+        case .perWeek: return "한 주를 못 채워도 괜찮아요. 두 주 연속만 피하면 일수가 이어집니다."
+        }
+    }
+
+    /// 끊기기 직전 경고. 홈 상단과 알림이 같이 쓴다.
+    static func risk(_ schedule: HabitSchedule, streak: Int) -> String {
+        switch schedule {
+        case .daily: return "어제 쉬었어요. 오늘 비추지 않으면 \(streak)일이 끊겨요."
+        case .weekdays: return "지난번 정한 날을 놓쳤어요. 오늘 비추지 않으면 \(streak)일이 끊겨요."
+        case .perWeek(let n): return "지난주를 못 채웠어요. 이번 주 \(n)회를 채우지 않으면 \(streak)일이 끊겨요."
+        }
+    }
 }
 
 /// 등록한 뒤 목표와 신호를 바꾸는 시트. 홈 목록에서 길게 눌러 연다.
@@ -93,11 +183,18 @@ struct GoalEditor: View {
         NavigationStack {
             Form {
                 Section {
-                    HabitCalendar(days: days)
+                    HabitCalendar(days: days, schedule: key.schedule)
                 } header: {
                     Text("기록 달력")
                 }
-                HabitGuide(progress: progress, recordCount: recordCount)
+                HabitGuide(progress: progress, recordCount: recordCount, schedule: key.schedule)
+                Section {
+                    ScheduleEditor(schedule: $key.schedule)
+                } header: {
+                    Text("얼마나 자주")
+                } footer: {
+                    Text(HabitCopy.rule(key.schedule))
+                }
                 Section {
                     GoalStepper(actionKind: key.actionKind, goal: $key.dailyGoal)
                 } header: {
@@ -131,6 +228,7 @@ struct GoalEditor: View {
 /// 한 달 단위 기록 달력. 채운 날은 진하게, 기록은 있지만 목표에 못 미친 날은 옅게 칠한다.
 struct HabitCalendar: View {
     let days: [Date: DayStatus]
+    var schedule: HabitSchedule = .daily
     @State private var month = Calendar.current.dateInterval(of: .month, for: .now)?.start ?? .now
 
     private let calendar = Calendar.current
@@ -171,7 +269,7 @@ struct HabitCalendar: View {
         let isToday = calendar.isDateInToday(day)
         return Text("\(calendar.component(.day, from: day))")
             .font(.footnote.monospacedDigit())
-            .foregroundStyle(status == .met ? Color.white : (day > .now ? Color.secondary : Color.primary))
+            .foregroundStyle(status == .met ? Color.white : (day > .now || !isDue(day) ? Color.secondary : Color.primary))
             .frame(maxWidth: .infinity, minHeight: 32)
             .background {
                 switch status {
@@ -182,6 +280,12 @@ struct HabitCalendar: View {
             }
             .overlay { if isToday { Circle().stroke(Color.accentColor, lineWidth: 1.5) } }
             .accessibilityLabel(Text(day, format: .dateTime.month().day()) + Text(status == .met ? ", 채움" : status == .partial ? ", 목표 미달" : ""))
+    }
+
+    /// 요일 지정일 때 정한 요일이 아닌 날은 흐리게 보인다.
+    private func isDue(_ day: Date) -> Bool {
+        guard case .weekdays(let set) = schedule, !set.isEmpty else { return true }
+        return set.contains(calendar.component(.weekday, from: day))
     }
 
     private func legend(_ color: Color, _ label: String) -> some View {
@@ -212,6 +316,7 @@ struct HabitCalendar: View {
 struct HabitGuide: View {
     let progress: KeyProgress?
     let recordCount: Int
+    var schedule: HabitSchedule = .daily
 
     var body: some View {
         let current = progress?.phase
@@ -229,14 +334,14 @@ struct HabitGuide: View {
                     if phase == current { Text("지금").font(.caption.bold()).foregroundStyle(.orange) }
                 }
             }
-            Label("하루 빠지는 건 괜찮아요. 이틀 연속만 피하면 일수가 이어집니다.", systemImage: "flame")
+            Label(HabitCopy.rule(schedule), systemImage: "flame")
                 .font(.footnote)
         } header: {
             Text("습관이 되는 과정")
         } footer: {
             let total = recordCount > 0 ? " 지금까지 \(recordCount)회 기록했어요." : ""
             if let progress, progress.streak > 0 {
-                Text((progress.atRisk ? "지금 \(progress.streak)일째예요. 어제 쉬었으니 오늘은 꼭 비춰 주세요." : "지금 \(progress.streak)일째 이어가고 있어요.") + total)
+                Text((progress.atRisk ? HabitCopy.risk(schedule, streak: progress.streak) : "지금 \(progress.streak)일째 이어가고 있어요.") + total)
             } else {
                 Text("오늘 한 번 비추면 1일째가 시작돼요." + total)
             }
@@ -288,7 +393,7 @@ struct MoodHeader: View {
     private var reaction: (mood: Moki, message: String) {
         // 끊기기 직전인 습관이 가장 먼저다. 이틀 연속만은 막는다.
         if let risky = items.filter(\.progress.atRisk).max(by: { $0.progress.streak < $1.progress.streak }) {
-            return (.question, "\(risky.key.name), 어제 쉬었어요. 오늘 비추지 않으면 \(risky.progress.streak)일이 끊겨요.")
+            return (.question, "\(risky.key.name), " + HabitCopy.risk(risky.key.schedule, streak: risky.progress.streak))
         }
         let goals = items.filter { $0.progress.goal != nil }
         let metGoals = goals.filter { $0.progress.metToday }.count

@@ -27,7 +27,8 @@ enum HabitReminders {
         for key in targets {
             let progress = KeyProgress.of(key, logs: logs, state: state, now: now)
             let dates = ReminderPlan.fireDates(minuteOfDay: key.reminderMinute, metToday: progress.metToday,
-                                               days: days, now: now, calendar: calendar)
+                                               days: days, now: now, calendar: calendar,
+                                               isDue: isDue(key.schedule, progress: progress, now: now, calendar: calendar))
             for (i, date) in dates.enumerated() {
                 let content = UNMutableNotificationContent()
                 content.title = key.name
@@ -40,9 +41,22 @@ enum HabitReminders {
         }
     }
 
+    private static func isDue(_ schedule: HabitSchedule, progress: KeyProgress, now: Date, calendar: Calendar) -> (Date) -> Bool {
+        switch schedule {
+        case .daily:
+            return { _ in true }
+        case .weekdays(let days):
+            return { days.isEmpty || days.contains(calendar.component(.weekday, from: $0)) }
+        case .perWeek(let n):
+            // 이번 주를 이미 채웠으면 이번 주 남은 날은 조용히 둔다.
+            guard progress.weekDone >= n, let week = calendar.dateInterval(of: .weekOfYear, for: now) else { return { _ in true } }
+            return { !week.contains($0) }
+        }
+    }
+
     /// 오늘 알림만 현재 연속 일수를 안다. 이후 날짜는 그날 상태를 모르므로 일반 문구를 쓴다.
     private static func body(for key: KeyObject, progress: KeyProgress, today: Bool) -> String {
-        if today, progress.atRisk { return "어제 쉬었어요. 오늘 비추면 \(progress.streak)일이 이어져요." }
+        if today, progress.atRisk { return HabitCopy.risk(key.schedule, streak: progress.streak) }
         let cue = key.cue.trimmingCharacters(in: .whitespaces)
         return cue.isEmpty ? "비춰 볼 시간이에요. 작게라도 충분해요." : "\(cue) 다음에 비춰 볼 시간이에요."
     }

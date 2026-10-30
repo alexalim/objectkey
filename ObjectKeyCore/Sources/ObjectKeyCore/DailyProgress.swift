@@ -40,14 +40,18 @@ public struct KeyProgress: Equatable, Sendable {
     public var goal: Double?
     /// 이어가고 있는 습관에서 조건을 채운 날 수. 하루 빠진 날은 세지 않지만 끊지도 않는다.
     public var streak: Int
-    /// 어제를 빠졌고 오늘도 아직 못 채웠다. 오늘 안 하면 끊긴다.
+    /// 직전 기회를 놓쳤고 이번 기회도 아직 못 채웠다. 이번에 안 하면 끊긴다.
+    /// 매일·요일 지정은 오늘, 주 N회는 이번 주가 기회다.
     public var atRisk: Bool
+    /// 이번 주에 채운 날 수. 주 N회 표시에 쓴다.
+    public var weekDone: Int
 
-    public init(today: Double, goal: Double?, streak: Int, atRisk: Bool = false) {
+    public init(today: Double, goal: Double?, streak: Int, atRisk: Bool = false, weekDone: Int = 0) {
         self.today = today
         self.goal = goal
         self.streak = streak
         self.atRisk = atRisk
+        self.weekDone = weekDone
     }
 
     public var metToday: Bool { goal.map { today >= $0 } ?? (today > 0) }
@@ -55,6 +59,15 @@ public struct KeyProgress: Equatable, Sendable {
     public var fraction: Double? { goal.map { min(1, today / $0) } }
     /// 이어온 일수 기준 66일 단계. 아직 시작 전이면 nil.
     public var phase: HabitPhase? { HabitPhase(day: streak) }
+}
+
+/// 언제 해야 하는 습관인가.
+public enum HabitSchedule: Equatable, Sendable {
+    case daily
+    /// 정한 요일만. Calendar weekday 값(1=일요일 … 7=토요일).
+    case weekdays(Set<Int>)
+    /// 일주일에 N일. 어느 요일이든 상관없다.
+    case perWeek(Int)
 }
 
 /// 달력에 칠할 하루 상태.
@@ -85,9 +98,12 @@ public enum DailyProgress {
 
     /// 같은 날 기록을 합산하고, 조건을 채운 날이 얼마나 이어졌는지 센다.
     ///
-    /// 이틀 규칙: 하루 빠진 것은 습관 형성에 큰 지장이 없으므로 끊지 않고, 이틀 연속 빠지면 끊는다.
-    /// 오늘은 하루가 끝나기 전이라 빠진 날로 보지 않는다.
-    public static func evaluate(_ entries: [ProgressEntry], goal: Double?, now: Date, calendar: Calendar) -> KeyProgress {
+    /// 이틀 규칙: 한 번 빠진 것은 습관 형성에 큰 지장이 없으므로 끊지 않고, 두 번 연속 빠지면 끊는다.
+    /// - 매일: 하루가 한 번. 요일 지정: 정한 요일만 한 번으로 보고, 다른 날에 한 것은 세되 빠져도 탓하지 않는다.
+    /// - 주 N회: 한 주가 한 번. N일을 못 채운 주가 두 주 이어지면 끊는다.
+    /// 일수는 어느 경우든 채운 날 수다. 진행 중인 오늘(이번 주)은 빠진 것으로 보지 않는다.
+    public static func evaluate(_ entries: [ProgressEntry], goal: Double?, schedule: HabitSchedule = .daily,
+                                now: Date, calendar: Calendar) -> KeyProgress {
         let goal = goal.flatMap { $0 > 0 ? $0 : nil }
         let totals = dailyTotals(entries, calendar: calendar)
         func met(_ day: Date) -> Bool {
@@ -98,24 +114,74 @@ public enum DailyProgress {
 
         let today = calendar.startOfDay(for: now)
         let todayTotal = totals[today] ?? 0
-        guard let earliest = totals.keys.min(), let yesterday = previous(today) else {
+        let week = calendar.dateInterval(of: .weekOfYear, for: today)
+        let weekDone = week.map { w in totals.keys.filter { w.contains($0) && met($0) }.count } ?? 0
+        guard let earliest = totals.keys.min() else {
             return KeyProgress(today: todayTotal, goal: goal, streak: 0)
         }
 
-        var streak = 0
-        var misses = 0
-        var day: Date? = met(today) ? today : yesterday
-        while let d = day, d >= earliest {
-            if met(d) {
-                streak += 1
-                misses = 0
-            } else {
-                misses += 1
-                if misses >= 2 { break }
+        switch schedule {
+        case .perWeek(let times):
+            let target = max(1, times)
+            // 이번 주는 채운 만큼 세되 빠진 것으로 보지 않고, 지난주부터 한 주씩 거슬러 간다.
+            var streak = weekDone
+            var misses = 0
+            var missedDone = 0
+            var lastWeekMissed = false
+            var isLastWeek = true
+            var start = week.flatMap { calendar.date(byAdding: .weekOfYear, value: -1, to: $0.start) }
+            while let s = start, let w = calendar.dateInterval(of: .weekOfYear, for: s), w.end > earliest {
+                let done = totals.keys.filter { w.contains($0) && met($0) }.count
+                if done >= target {
+                    misses = 0
+                    missedDone = 0
+                } else {
+                    misses += 1
+                    if isLastWeek { lastWeekMissed = true }
+                    if misses >= 2 {
+                        // 끊긴 두 주에 조금씩 한 날은 사슬 밖이다.
+                        streak -= missedDone
+                        break
+                    }
+                    missedDone = done
+                }
+                streak += done
+                isLastWeek = false
+                start = calendar.date(byAdding: .weekOfYear, value: -1, to: w.start)
             }
-            day = previous(d)
+            let atRisk = streak > 0 && lastWeekMissed && weekDone < target
+            return KeyProgress(today: todayTotal, goal: goal, streak: streak, atRisk: atRisk, weekDone: weekDone)
+
+        case .daily, .weekdays:
+            let due: (Date) -> Bool
+            if case .weekdays(let days) = schedule, !days.isEmpty {
+                due = { days.contains(calendar.component(.weekday, from: $0)) }
+            } else {
+                due = { _ in true }
+            }
+            var streak = met(today) ? 1 : 0
+            var misses = 0
+            var day = previous(today)
+            while let d = day, d >= earliest {
+                if met(d) {
+                    streak += 1
+                    misses = 0
+                } else if due(d) {
+                    misses += 1
+                    if misses >= 2 { break }
+                }
+                day = previous(d)
+            }
+            // 오늘 해야 하는데 아직이고, 거슬러 올라가 처음 만나는 의미 있는 날이 놓친 날이면 오늘 안 하면 끊긴다.
+            var lastChanceMissed = false
+            day = previous(today)
+            while let d = day, d >= earliest {
+                if met(d) { break }
+                if due(d) { lastChanceMissed = true; break }
+                day = previous(d)
+            }
+            let atRisk = streak > 0 && due(today) && !met(today) && lastChanceMissed
+            return KeyProgress(today: todayTotal, goal: goal, streak: streak, atRisk: atRisk, weekDone: weekDone)
         }
-        let atRisk = streak > 0 && !met(today) && !met(yesterday)
-        return KeyProgress(today: todayTotal, goal: goal, streak: streak, atRisk: atRisk)
     }
 }

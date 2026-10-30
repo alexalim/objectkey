@@ -28,6 +28,13 @@ final class ReminderPlanTests: XCTestCase {
         XCTAssertEqual(hoursFromNow(plan(9 * 60)), [18, 42])
     }
 
+    func test_notDueDays_areSkipped() {
+        // 오늘(목) 다음 날인 금요일만 뺀다.
+        let dates = ReminderPlan.fireDates(minuteOfDay: 21 * 60, metToday: false, days: 3, now: now, calendar: calendar,
+                                           isDue: { self.calendar.component(.weekday, from: $0) != 6 })
+        XCTAssertEqual(hoursFromNow(dates), [6, 54])
+    }
+
     func test_invalidInput_isEmpty() {
         XCTAssertEqual(plan(-1), [])
         XCTAssertEqual(plan(24 * 60), [])

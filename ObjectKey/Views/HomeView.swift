@@ -145,10 +145,16 @@ struct KeyRow: View {
         return "오늘 " + progress.summary(forCounter: key.actionKind == "counter")
     }
 
-    /// "커피 내린 다음에 · 12일째 1단계 적응". 둘 다 없으면 nil.
+    /// "월·수·금 · 커피 내린 다음에 · 12일째 1단계 적응". 모두 없으면 nil.
     private var habitLine: String? {
         let cue = key.cue.trimmingCharacters(in: .whitespaces)
+        let schedule: String? = switch key.schedule {
+        case .daily: nil
+        case .weekdays: key.schedule.label
+        case .perWeek(let n): "이번 주 \(progress?.weekDone ?? 0)/\(n)회"
+        }
         let parts = [
+            schedule,
             cue.isEmpty ? nil : "\(cue) 다음에",
             progress.flatMap { p in p.phase.map { "\(p.streak)일째 \($0.label)" } },
         ].compactMap { $0 }

@@ -18,6 +18,12 @@ final class KeyObject {
     var cue: String = ""
     /// 습관 알림 시각. 자정부터 분, -1이면 끔. (v0.4)
     var reminderMinute: Int = -1
+    /// 습관 일정. "daily" / "weekdays" / "perWeek". (v0.4)
+    var scheduleKind: String = "daily"
+    /// 요일 지정일 때 정한 요일. 비트 (weekday - 1), 일요일이 0번 비트.
+    var scheduleWeekdays: Int = 0
+    /// 주 N회일 때 N.
+    var timesPerWeek: Int = 3
     @Relationship(deleteRule: .cascade, inverse: \ReferenceShot.key)
     var shots: [ReferenceShot] = []
 
@@ -35,6 +41,23 @@ final class KeyObject {
 
     /// 휴식 타이머는 기록이 남지 않으므로 목표·연속 일수를 두지 않는다.
     var supportsGoal: Bool { actionKind != "countdown" }
+
+    var schedule: HabitSchedule {
+        get {
+            switch scheduleKind {
+            case "weekdays": return .weekdays(Set((1...7).filter { scheduleWeekdays & (1 << ($0 - 1)) != 0 }))
+            case "perWeek": return .perWeek(timesPerWeek)
+            default: return .daily
+            }
+        }
+        set {
+            switch newValue {
+            case .daily: scheduleKind = "daily"
+            case .weekdays(let days): scheduleKind = "weekdays"; scheduleWeekdays = days.reduce(0) { $0 | (1 << ($1 - 1)) }
+            case .perWeek(let n): scheduleKind = "perWeek"; timesPerWeek = n
+            }
+        }
+    }
 
     /// Progress 계산에 넘길 목표량. 세션은 초, 카운터는 횟수.
     var goalAmount: Double? {

@@ -8,14 +8,16 @@ public enum ReminderPlan {
     /// - Parameters:
     ///   - minuteOfDay: 자정부터 분(0...1439).
     ///   - days: 오늘부터 며칠 치를 만들지.
-    public static func fireDates(minuteOfDay: Int, metToday: Bool, days: Int, now: Date, calendar: Calendar) -> [Date] {
+    ///   - isDue: 그날 해야 하는지. 요일 지정이면 정한 요일만, 주 N회를 이미 채웠으면 이번 주는 빼는 식으로 쓴다.
+    public static func fireDates(minuteOfDay: Int, metToday: Bool, days: Int, now: Date, calendar: Calendar,
+                                 isDue: (Date) -> Bool = { _ in true }) -> [Date] {
         guard (0..<24 * 60).contains(minuteOfDay), days > 0 else { return [] }
         let today = calendar.startOfDay(for: now)
         return (0..<days).compactMap { offset -> Date? in
             if offset == 0, metToday { return nil }
             guard let day = calendar.date(byAdding: .day, value: offset, to: today),
                   let fire = calendar.date(bySettingHour: minuteOfDay / 60, minute: minuteOfDay % 60, second: 0, of: day),
-                  fire > now else { return nil }
+                  fire > now, isDue(day) else { return nil }
             return fire
         }
     }
