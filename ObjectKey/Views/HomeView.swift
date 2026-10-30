@@ -31,7 +31,7 @@ struct HomeView: View {
                         }
                         .tint(.primary)
                         .contextMenu {
-                            if key.supportsGoal { Button("하루 목표…", systemImage: "target") { editingGoal = key } }
+                            if key.supportsGoal { Button("습관 설정…", systemImage: "target") { editingGoal = key } }
                         }
                     }
                     .onDelete(perform: delete)
@@ -110,6 +110,7 @@ struct KeyRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(key.name).font(.headline)
                 Text(subtitle).font(.subheadline).foregroundStyle(.secondary)
+                if let habitLine { Text(habitLine).font(.caption).foregroundStyle(.secondary) }
             }
             Spacer()
             if let progress { ProgressMark(progress: progress) }
@@ -122,6 +123,16 @@ struct KeyRow: View {
     private var subtitle: String {
         guard let progress, progress.today > 0 || progress.goal != nil else { return key.action.label }
         return "오늘 " + progress.summary(forCounter: key.actionKind == "counter")
+    }
+
+    /// "커피 내린 다음에 · 12일째 1단계 적응". 둘 다 없으면 nil.
+    private var habitLine: String? {
+        let cue = key.cue.trimmingCharacters(in: .whitespaces)
+        let parts = [
+            cue.isEmpty ? nil : "\(cue) 다음에",
+            progress.flatMap { p in p.phase.map { "\(p.streak)일째 \($0.label)" } },
+        ].compactMap { $0 }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 }
 

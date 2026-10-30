@@ -14,6 +14,8 @@ final class KeyObject {
     var createdAt: Date
     /// 하루 목표. 세션은 분, 카운터는 횟수. 0이면 목표 없음. (v0.2에 추가, 기본값으로 가벼운 마이그레이션)
     var dailyGoal: Int = 0
+    /// 습관 쌓기 신호. "커피 내린" 처럼 이미 하고 있는 행동을 적어 두면 "…다음에"로 보여준다. (v0.3)
+    var cue: String = ""
     @Relationship(deleteRule: .cascade, inverse: \ReferenceShot.key)
     var shots: [ReferenceShot] = []
 

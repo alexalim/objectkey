@@ -16,6 +16,7 @@ struct RegisterView: View {
     @State private var kind = "session"
     @State private var minutes = 5
     @State private var goal = 0
+    @State private var cue = ""
     @State private var shots: [CameraController.Frame] = []
     @State private var latest: CameraController.Frame?
     @State private var cameraAllowed: Bool?
@@ -23,7 +24,7 @@ struct RegisterView: View {
     @State private var duplicateOf: KeyObject?
     @FocusState private var focus: Field?
 
-    private enum Field { case name, emoji }
+    private enum Field { case name, emoji, cue }
 
     var body: some View {
         NavigationStack {
@@ -94,10 +95,13 @@ struct RegisterView: View {
                 if kind != "countdown" {
                     Section {
                         GoalStepper(actionKind: kind, goal: $goal)
+                        TextField(HabitCopy.cuePlaceholder, text: $cue)
+                            .focused($focus, equals: .cue)
+                            .submitLabel(.done)
                     } header: {
-                        Text("하루 목표 (선택)")
+                        Text("습관 (선택)")
                     } footer: {
-                        Text("목표를 채운 날이 이어지면 연속 일수가 올라갑니다. 나중에 목록에서 길게 눌러 바꿀 수 있어요.")
+                        Text(HabitCopy.goalFooter + " 나중에 목록에서 길게 눌러 바꿀 수 있어요.")
                     }
                 }
                 Section {
@@ -251,6 +255,7 @@ struct RegisterView: View {
         let key = KeyObject(name: name.trimmingCharacters(in: .whitespaces), emoji: emoji, action: action,
                             threshold: Calibration.suggestThreshold(for: vectors),
                             dailyGoal: kind == "countdown" ? 0 : goal)
+        if kind != "countdown" { key.cue = cue.trimmingCharacters(in: .whitespaces) }
         context.insert(key)
         key.shots = shots.compactMap { shot in shot.vector.map { ReferenceShot(vector: $0, thumbnail: shot.thumbnail) } }
         try? context.save()
