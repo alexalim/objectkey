@@ -57,17 +57,39 @@ public struct KeyProgress: Equatable, Sendable {
     public var phase: HabitPhase? { HabitPhase(day: streak) }
 }
 
+/// 달력에 칠할 하루 상태.
+public enum DayStatus: Equatable, Sendable {
+    /// 조건을 채운 날. 연속 일수에 들어간다.
+    case met
+    /// 기록은 있지만 목표에 못 미친 날.
+    case partial
+}
+
 public enum DailyProgress {
+    /// 날짜(그날 0시)별 상태. 기록이 없는 날은 빠진다.
+    public static func days(_ entries: [ProgressEntry], goal: Double?, calendar: Calendar) -> [Date: DayStatus] {
+        let goal = goal.flatMap { $0 > 0 ? $0 : nil }
+        return dailyTotals(entries, calendar: calendar).compactMapValues { total in
+            guard total > 0 else { return nil }
+            return goal.map { total >= $0 } ?? true ? .met : .partial
+        }
+    }
+
+    private static func dailyTotals(_ entries: [ProgressEntry], calendar: Calendar) -> [Date: Double] {
+        var totals: [Date: Double] = [:]
+        for entry in entries {
+            totals[calendar.startOfDay(for: entry.date), default: 0] += entry.amount
+        }
+        return totals
+    }
+
     /// 같은 날 기록을 합산하고, 조건을 채운 날이 얼마나 이어졌는지 센다.
     ///
     /// 이틀 규칙: 하루 빠진 것은 습관 형성에 큰 지장이 없으므로 끊지 않고, 이틀 연속 빠지면 끊는다.
     /// 오늘은 하루가 끝나기 전이라 빠진 날로 보지 않는다.
     public static func evaluate(_ entries: [ProgressEntry], goal: Double?, now: Date, calendar: Calendar) -> KeyProgress {
         let goal = goal.flatMap { $0 > 0 ? $0 : nil }
-        var totals: [Date: Double] = [:]
-        for entry in entries {
-            totals[calendar.startOfDay(for: entry.date), default: 0] += entry.amount
-        }
+        let totals = dailyTotals(entries, calendar: calendar)
         func met(_ day: Date) -> Bool {
             let total = totals[day] ?? 0
             return goal.map { total >= $0 } ?? (total > 0)

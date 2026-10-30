@@ -12,6 +12,17 @@ extension HabitPhase {
         }
     }
 
+    static let all: [HabitPhase] = [.adapting, .wiring, .automating, .formed]
+
+    var days: String {
+        switch self {
+        case .adapting: return "1~22일"
+        case .wiring: return "23~44일"
+        case .automating: return "45~66일"
+        case .formed: return "67일~"
+        }
+    }
+
     /// 단계별 한 줄 조언.
     var tip: String {
         switch self {
@@ -72,11 +83,21 @@ enum HabitCopy {
 /// 등록한 뒤 목표와 신호를 바꾸는 시트. 홈 목록에서 길게 눌러 연다.
 struct GoalEditor: View {
     @Bindable var key: KeyObject
+    var progress: KeyProgress?
+    /// 지금까지 남은 기록 수(세션·카운터 모두 1회로 센다).
+    var recordCount = 0
+    var days: [Date: DayStatus] = [:]
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    HabitCalendar(days: days)
+                } header: {
+                    Text("기록 달력")
+                }
+                HabitGuide(progress: progress, recordCount: recordCount)
                 Section {
                     GoalStepper(actionKind: key.actionKind, goal: $key.dailyGoal)
                 } header: {
@@ -103,7 +124,123 @@ struct GoalEditor: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("완료") { dismiss() } } }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.large])
+    }
+}
+
+/// 한 달 단위 기록 달력. 채운 날은 진하게, 기록은 있지만 목표에 못 미친 날은 옅게 칠한다.
+struct HabitCalendar: View {
+    let days: [Date: DayStatus]
+    @State private var month = Calendar.current.dateInterval(of: .month, for: .now)?.start ?? .now
+
+    private let calendar = Calendar.current
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 7)
+
+    var body: some View {
+        let thisMonth = calendar.dateInterval(of: .month, for: .now)?.start ?? .now
+        VStack(spacing: 8) {
+            HStack {
+                Button { shift(-1) } label: { Image(systemName: "chevron.left") }
+                    .accessibilityLabel("이전 달")
+                Spacer()
+                Text(month, format: .dateTime.year().month(.wide)).font(.headline)
+                Spacer()
+                Button { shift(1) } label: { Image(systemName: "chevron.right") }
+                    .disabled(month >= thisMonth)
+                    .accessibilityLabel("다음 달")
+            }
+            .buttonStyle(.borderless)
+            LazyVGrid(columns: columns, spacing: 4) {
+                // 영어 기호는 S·T가 겹치므로 위치로 구분한다.
+                ForEach(Array(weekdaySymbols.enumerated()), id: \.offset) { Text($0.element).font(.caption2).foregroundStyle(.secondary) }
+                ForEach(cells.indices, id: \.self) { i in
+                    if let day = cells[i] { cell(day) } else { Color.clear.frame(height: 32) }
+                }
+            }
+            HStack(spacing: 12) {
+                legend(Color.orange, "채운 날")
+                legend(Color.orange.opacity(0.25), "목표 미달")
+            }
+            .font(.caption2).foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func cell(_ day: Date) -> some View {
+        let status = days[day]
+        let isToday = calendar.isDateInToday(day)
+        return Text("\(calendar.component(.day, from: day))")
+            .font(.footnote.monospacedDigit())
+            .foregroundStyle(status == .met ? Color.white : (day > .now ? Color.secondary : Color.primary))
+            .frame(maxWidth: .infinity, minHeight: 32)
+            .background {
+                switch status {
+                case .met: Circle().fill(Color.orange)
+                case .partial: Circle().fill(Color.orange.opacity(0.25))
+                case nil: Color.clear
+                }
+            }
+            .overlay { if isToday { Circle().stroke(Color.accentColor, lineWidth: 1.5) } }
+            .accessibilityLabel(Text(day, format: .dateTime.month().day()) + Text(status == .met ? ", 채움" : status == .partial ? ", 목표 미달" : ""))
+    }
+
+    private func legend(_ color: Color, _ label: String) -> some View {
+        HStack(spacing: 4) { Circle().fill(color).frame(width: 8, height: 8); Text(label) }
+    }
+
+    /// 달력 첫 요일(지역 설정)에 맞춘 요일 머리글.
+    private var weekdaySymbols: [String] {
+        let symbols = calendar.veryShortWeekdaySymbols
+        let first = calendar.firstWeekday - 1
+        return Array(symbols[first...] + symbols[..<first])
+    }
+
+    /// 앞쪽 빈칸(nil)과 그달의 날짜들(0시).
+    private var cells: [Date?] {
+        guard let range = calendar.range(of: .day, in: .month, for: month) else { return [] }
+        let leading = (calendar.component(.weekday, from: month) - calendar.firstWeekday + 7) % 7
+        return Array(repeating: nil, count: leading)
+            + range.compactMap { calendar.date(byAdding: .day, value: $0 - 1, to: month) }
+    }
+
+    private func shift(_ months: Int) {
+        if let next = calendar.date(byAdding: .month, value: months, to: month) { month = next }
+    }
+}
+
+/// 습관 설정 맨 위 설명. 66일 단계와 이틀 규칙을 보여주고, 지금 단계를 강조한다.
+struct HabitGuide: View {
+    let progress: KeyProgress?
+    let recordCount: Int
+
+    var body: some View {
+        let current = progress?.phase
+        Section {
+            Text("새 행동이 저절로 나오기까지 평균 66일이 걸린다고 해요(런던대 연구). 그 과정을 세 단계로 나눠 보여 드려요.")
+                .font(.subheadline)
+            ForEach(HabitPhase.all, id: \.self) { phase in
+                HStack(alignment: .firstTextBaseline, spacing: 10) {
+                    Text(phase.days).font(.caption.monospacedDigit()).foregroundStyle(.secondary).frame(width: 64, alignment: .leading)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(phase.label).font(.subheadline.bold())
+                        Text(phase.tip).font(.caption).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    if phase == current { Text("지금").font(.caption.bold()).foregroundStyle(.orange) }
+                }
+            }
+            Label("하루 빠지는 건 괜찮아요. 이틀 연속만 피하면 일수가 이어집니다.", systemImage: "flame")
+                .font(.footnote)
+        } header: {
+            Text("습관이 되는 과정")
+        } footer: {
+            let total = recordCount > 0 ? " 지금까지 \(recordCount)회 기록했어요." : ""
+            if let progress, progress.streak > 0 {
+                Text((progress.atRisk ? "지금 \(progress.streak)일째예요. 어제 쉬었으니 오늘은 꼭 비춰 주세요." : "지금 \(progress.streak)일째 이어가고 있어요.") + total)
+            } else {
+                Text("오늘 한 번 비추면 1일째가 시작돼요." + total)
+            }
+        }
     }
 }
 

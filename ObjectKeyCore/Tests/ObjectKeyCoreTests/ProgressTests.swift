@@ -127,4 +127,19 @@ final class ProgressTests: XCTestCase {
         XCTAssertNil(p.fraction)
         XCTAssertTrue(p.metToday)
     }
+
+    // MARK: 달력
+
+    func test_days_marksMetAndPartial_andSkipsEmptyDays() {
+        let days = DailyProgress.days([entry(2, 1800), entry(1, 600), entry(1, 600), entry(0, 0)], goal: 1800, calendar: calendar)
+        XCTAssertEqual(days, [
+            calendar.startOfDay(for: daysAgo(2)): .met,
+            calendar.startOfDay(for: daysAgo(1)): .partial,
+        ])
+    }
+
+    func test_days_withoutGoal_anyRecordIsMet() {
+        let days = DailyProgress.days([entry(1, 1)], goal: nil, calendar: calendar)
+        XCTAssertEqual(days[calendar.startOfDay(for: daysAgo(1))], .met)
+    }
 }

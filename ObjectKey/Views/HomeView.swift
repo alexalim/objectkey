@@ -81,7 +81,11 @@ struct HomeView: View {
                 }
             }
             .sheet(isPresented: $showRegister, onDismiss: rescheduleReminders) { RegisterView() }
-            .sheet(item: $editingGoal, onDismiss: rescheduleReminders) { GoalEditor(key: $0) }
+            .sheet(item: $editingGoal, onDismiss: rescheduleReminders) { key in
+                GoalEditor(key: key, progress: progressByID[key.id], recordCount: logs.filter { $0.keyID == key.id }.count,
+                           days: DailyProgress.days(KeyProgress.entries(key, logs: logs, state: store.state),
+                                                    goal: key.goalAmount, calendar: .current))
+            }
             .fullScreenCover(isPresented: $showScan) { ScanView() }
             .switchConfirmation($pending, keys: keys)
             .resultToast(message: Binding(get: { store.lastMessage }, set: { store.lastMessage = $0 }))
