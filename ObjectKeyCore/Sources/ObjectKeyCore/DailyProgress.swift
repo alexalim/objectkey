@@ -88,6 +88,21 @@ public enum DailyProgress {
         }
     }
 
+    /// 지금까지 가장 길었던 연속 일수. 지금 이어가는 것보다 짧을 수 없다.
+    ///
+    /// 기록이 있는 날마다 "그날이 오늘이었다면" 계산해 가장 큰 값을 고른다. evaluate와 같은 규칙을 그대로 쓰기 위해서다.
+    public static func bestStreak(_ entries: [ProgressEntry], goal: Double?, schedule: HabitSchedule = .daily,
+                                  now: Date, calendar: Calendar) -> Int {
+        let days = dailyTotals(entries, calendar: calendar).keys
+        let current = evaluate(entries, goal: goal, schedule: schedule, now: now, calendar: calendar).streak
+        return days.reduce(current) { best, day in
+            guard day < calendar.startOfDay(for: now),
+                  let endOfDay = calendar.date(byAdding: DateComponents(day: 1, second: -1), to: day) else { return best }
+            let past = entries.filter { $0.date <= endOfDay }
+            return max(best, evaluate(past, goal: goal, schedule: schedule, now: endOfDay, calendar: calendar).streak)
+        }
+    }
+
     private static func dailyTotals(_ entries: [ProgressEntry], calendar: Calendar) -> [Date: Double] {
         var totals: [Date: Double] = [:]
         for entry in entries {

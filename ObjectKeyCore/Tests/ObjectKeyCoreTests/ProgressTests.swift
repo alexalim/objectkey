@@ -190,4 +190,18 @@ final class ProgressTests: XCTestCase {
         let p = eval([entry(21, 1), entry(20, 1), entry(19, 1), entry(5, 1), entry(1, 1)], schedule: .perWeek(3))
         XCTAssertEqual(p.streak, 1)
     }
+
+    // MARK: 최고 기록
+
+    func test_bestStreak_remembersLongerChainThatBroke() {
+        // 10·9·8·7일 전 4일 이어짐 → 이틀 넘게 끊김 → 어제·오늘 2일.
+        let entries = [entry(10, 1), entry(9, 1), entry(8, 1), entry(7, 1), entry(1, 1), entry(0, 1)]
+        XCTAssertEqual(eval(entries).streak, 2)
+        XCTAssertEqual(DailyProgress.bestStreak(entries, goal: nil, now: now, calendar: calendar), 4)
+    }
+
+    func test_bestStreak_isAtLeastCurrent_andZeroWithoutEntries() {
+        XCTAssertEqual(DailyProgress.bestStreak([entry(1, 1), entry(0, 1)], goal: nil, now: now, calendar: calendar), 2)
+        XCTAssertEqual(DailyProgress.bestStreak([], goal: nil, now: now, calendar: calendar), 0)
+    }
 }

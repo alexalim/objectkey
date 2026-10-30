@@ -170,24 +170,14 @@ enum HabitCopy {
     }
 }
 
-/// 등록한 뒤 목표와 신호를 바꾸는 시트. 홈 목록에서 길게 눌러 연다.
+/// 등록한 뒤 일정·목표·신호·알림을 바꾸는 시트. 물건 상세 화면이나 목록 행 밀기로 연다.
 struct GoalEditor: View {
     @Bindable var key: KeyObject
-    var progress: KeyProgress?
-    /// 지금까지 남은 기록 수(세션·카운터 모두 1회로 센다).
-    var recordCount = 0
-    var days: [Date: DayStatus] = [:]
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
             Form {
-                Section {
-                    HabitCalendar(days: days, schedule: key.schedule)
-                } header: {
-                    Text("기록 달력")
-                }
-                HabitGuide(progress: progress, recordCount: recordCount, schedule: key.schedule)
                 Section {
                     ScheduleEditor(schedule: $key.schedule)
                 } header: {
@@ -221,7 +211,7 @@ struct GoalEditor: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("완료") { dismiss() } } }
         }
-        .presentationDetents([.large])
+        .presentationDetents([.medium, .large])
     }
 }
 
@@ -229,6 +219,8 @@ struct GoalEditor: View {
 struct HabitCalendar: View {
     let days: [Date: DayStatus]
     var schedule: HabitSchedule = .daily
+    /// 날짜를 누르면 부른다. nil이면 보기만 한다. 오늘 이후 날짜는 누를 수 없다.
+    var onSelect: ((Date) -> Void)? = nil
     @State private var month = Calendar.current.dateInterval(of: .month, for: .now)?.start ?? .now
 
     private let calendar = Calendar.current
@@ -252,7 +244,15 @@ struct HabitCalendar: View {
                 // 영어 기호는 S·T가 겹치므로 위치로 구분한다.
                 ForEach(Array(weekdaySymbols.enumerated()), id: \.offset) { Text($0.element).font(.caption2).foregroundStyle(.secondary) }
                 ForEach(cells.indices, id: \.self) { i in
-                    if let day = cells[i] { cell(day) } else { Color.clear.frame(height: 32) }
+                    if let day = cells[i] {
+                        if let onSelect, day <= .now {
+                            Button { onSelect(day) } label: { cell(day) }.buttonStyle(.plain)
+                        } else {
+                            cell(day)
+                        }
+                    } else {
+                        Color.clear.frame(height: 32)
+                    }
                 }
             }
             HStack(spacing: 12) {
