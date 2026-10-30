@@ -16,6 +16,8 @@ final class KeyObject {
     var dailyGoal: Int = 0
     /// 습관 쌓기 신호. "커피 내린" 처럼 이미 하고 있는 행동을 적어 두면 "…다음에"로 보여준다. (v0.3)
     var cue: String = ""
+    /// 습관 알림 시각. 자정부터 분, -1이면 끔. (v0.4)
+    var reminderMinute: Int = -1
     @Relationship(deleteRule: .cascade, inverse: \ReferenceShot.key)
     var shots: [ReferenceShot] = []
 

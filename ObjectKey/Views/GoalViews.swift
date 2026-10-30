@@ -35,11 +35,38 @@ struct GoalStepper: View {
     }
 }
 
+/// 습관 알림 켜기와 시각. 켤 때 알림 권한을 묻고, 거절되면 다시 끈다. -1이면 끔.
+struct ReminderPicker: View {
+    @Binding var minute: Int
+    @State private var denied = false
+
+    var body: some View {
+        Toggle("매일 알림", isOn: Binding(get: { minute >= 0 }, set: { on in
+            guard on else { minute = -1; return }
+            minute = 9 * 60
+            Task {
+                denied = !(await HabitReminders.requestPermission())
+                if denied { minute = -1 }
+            }
+        }))
+        if minute >= 0 {
+            DatePicker("시각", selection: Binding(
+                get: { Calendar.current.date(bySettingHour: minute / 60, minute: minute % 60, second: 0, of: .now) ?? .now },
+                set: { let c = Calendar.current.dateComponents([.hour, .minute], from: $0); minute = (c.hour ?? 0) * 60 + (c.minute ?? 0) }),
+                displayedComponents: .hourAndMinute)
+        }
+        if denied {
+            Text("알림이 꺼져 있어요. 설정 앱에서 MOKI 알림을 허용해 주세요.").font(.footnote).foregroundStyle(.orange)
+        }
+    }
+}
+
 /// 습관 설정 공통 안내. 등록 화면과 설정 시트가 같은 문구를 쓴다.
 enum HabitCopy {
     static let goalFooter = "처음에는 실패할 수 없을 만큼 작게 시작하세요. 목표 없음이면 하루 한 번만 비춰도 이어집니다. 하루 빠지는 건 괜찮지만, 이틀 연속 빠지면 끊겨요."
     static let cuePlaceholder = "이미 하는 행동 (예: 아침 커피 내린)"
     static let cueFooter = "이미 몸에 밴 행동 바로 뒤에 붙이면 잊지 않아요. \"…다음에\"로 표시됩니다."
+    static let reminderFooter = "그날 이미 비췄으면 알림은 오지 않아요."
 }
 
 /// 등록한 뒤 목표와 신호를 바꾸는 시트. 홈 목록에서 길게 눌러 연다.
@@ -64,6 +91,11 @@ struct GoalEditor: View {
                     Text("언제 할까요? (선택)")
                 } footer: {
                     Text(HabitCopy.cueFooter)
+                }
+                Section {
+                    ReminderPicker(minute: $key.reminderMinute)
+                } footer: {
+                    Text(HabitCopy.reminderFooter)
                 }
             }
             .scrollDismissesKeyboard(.immediately)

@@ -33,12 +33,18 @@ struct HomeView: View {
                         .contextMenu {
                             if key.supportsGoal { Button("습관 설정…", systemImage: "target") { editingGoal = key } }
                         }
+                        // 오른쪽 밀기는 onDelete가 쓰므로 습관은 왼쪽에서 민다.
+                        .swipeActions(edge: .leading) {
+                            if key.supportsGoal {
+                                Button("습관", systemImage: "target") { editingGoal = key }.tint(.orange)
+                            }
+                        }
                     }
                     .onDelete(perform: delete)
                 } header: {
                     Text("내 물건")
                 } footer: {
-                    if !keys.isEmpty { Text("행을 누르면 카메라 없이 바로 실행됩니다.") }
+                    if !keys.isEmpty { Text("행을 누르면 카메라 없이 바로 실행됩니다. 오른쪽으로 밀면 습관 설정이 열립니다.") }
                 }
             }
             .overlay {
@@ -74,16 +80,26 @@ struct HomeView: View {
                     .padding()
                 }
             }
-            .sheet(isPresented: $showRegister) { RegisterView() }
-            .sheet(item: $editingGoal) { GoalEditor(key: $0) }
+            .sheet(isPresented: $showRegister, onDismiss: rescheduleReminders) { RegisterView() }
+            .sheet(item: $editingGoal, onDismiss: rescheduleReminders) { GoalEditor(key: $0) }
             .fullScreenCover(isPresented: $showScan) { ScanView() }
             .switchConfirmation($pending, keys: keys)
             .resultToast(message: Binding(get: { store.lastMessage }, set: { store.lastMessage = $0 }))
             .onReceive(ticker) { _ in store.tick(keys: keys, context: context) }
             .onChange(of: scenePhase) { _, phase in
-                if phase == .active { store.tick(keys: keys, context: context) }
+                if phase == .active {
+                    store.tick(keys: keys, context: context)
+                    rescheduleReminders()
+                }
             }
+            // 기록이 생기면 오늘 알림을 뺄 수 있다. 스캔 화면에서 기록해도 여기서 반영된다.
+            .onChange(of: logs.count) { rescheduleReminders() }
+            .onChange(of: keys.count) { rescheduleReminders() }
         }
+    }
+
+    private func rescheduleReminders() {
+        Task { await HabitReminders.reschedule(keys: keys, logs: logs, state: store.state) }
     }
 
     private func activateManually(_ key: KeyObject) {

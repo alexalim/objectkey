@@ -17,6 +17,7 @@ struct RegisterView: View {
     @State private var minutes = 5
     @State private var goal = 0
     @State private var cue = ""
+    @State private var reminderMinute = -1
     @State private var shots: [CameraController.Frame] = []
     @State private var latest: CameraController.Frame?
     @State private var cameraAllowed: Bool?
@@ -98,10 +99,11 @@ struct RegisterView: View {
                         TextField(HabitCopy.cuePlaceholder, text: $cue)
                             .focused($focus, equals: .cue)
                             .submitLabel(.done)
+                        ReminderPicker(minute: $reminderMinute)
                     } header: {
                         Text("습관 (선택)")
                     } footer: {
-                        Text(HabitCopy.goalFooter + " 나중에 목록에서 길게 눌러 바꿀 수 있어요.")
+                        Text(HabitCopy.goalFooter + " 나중에 목록에서 행을 오른쪽으로 밀어 바꿀 수 있어요.")
                     }
                 }
                 Section {
@@ -255,7 +257,10 @@ struct RegisterView: View {
         let key = KeyObject(name: name.trimmingCharacters(in: .whitespaces), emoji: emoji, action: action,
                             threshold: Calibration.suggestThreshold(for: vectors),
                             dailyGoal: kind == "countdown" ? 0 : goal)
-        if kind != "countdown" { key.cue = cue.trimmingCharacters(in: .whitespaces) }
+        if kind != "countdown" {
+            key.cue = cue.trimmingCharacters(in: .whitespaces)
+            key.reminderMinute = reminderMinute
+        }
         context.insert(key)
         key.shots = shots.compactMap { shot in shot.vector.map { ReferenceShot(vector: $0, thumbnail: shot.thumbnail) } }
         try? context.save()
