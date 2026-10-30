@@ -83,6 +83,14 @@ final class MatchingTests: XCTestCase {
         XCTAssertEqual(filter.feed(amb), amb)
     }
 
+    func test_storedThresholdAboveCap_isClampedWhenMatching() {
+        // 예전 상한 0.9로 저장된 물건: 0.77 떨어진 다른 물건(키보드↔영양제 실측)을 받아들이면 안 된다.
+        let old = RegisteredKey(id: book, references: [v([1, 0])], threshold: 0.9)
+        XCTAssertEqual(old.threshold, Calibration.maximumThreshold)
+        let keyboard = v([1, 0.77])
+        XCTAssertEqual(ObjectMatcher().evaluate(keyboard, against: [old]), .noMatch)
+    }
+
     func test_calibration_isClampedAndScalesWithSpread() {
         XCTAssertEqual(Calibration.suggestThreshold(for: [v([1, 0, 0])]), Calibration.minimumThreshold)
         XCTAssertEqual(Calibration.suggestThreshold(for: [v([1, 0, 0]), v([0, 1, 0])]), Calibration.maximumThreshold)

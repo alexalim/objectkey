@@ -32,7 +32,7 @@ public struct RegisteredKey: Equatable, Sendable {
     public init(id: UUID, references: [FeatureVector], threshold: Float) {
         self.id = id
         self.references = references
-        self.threshold = threshold
+        self.threshold = Calibration.effectiveThreshold(threshold)
     }
 }
 
@@ -152,6 +152,11 @@ public enum Calibration {
     /// 상한 0.72는 0.78 아래, 여유 1.2는 참조 사진 분산이 크면 상한에서 잘리도록 둔 값이다.
     public static func suggestThreshold(for references: [FeatureVector]) -> Float {
         min(max(maxIntraDistance(of: references) * marginFactor, minimumThreshold), maximumThreshold)
+    }
+
+    /// 저장된 임계값에 현재 상한을 적용한다. 예전 상한(0.9)으로 등록된 물건도 다시 등록하지 않고 새 상한을 따르게 한다.
+    public static func effectiveThreshold(_ stored: Float) -> Float {
+        min(stored, maximumThreshold)
     }
 
     /// 같은 물건 참조끼리의 최대 거리. 등록 화면의 진단 표시에도 쓴다.

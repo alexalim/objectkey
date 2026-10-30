@@ -244,7 +244,7 @@ struct RegisterView: View {
         return existing.compactMap { key -> (KeyObject, Float)? in
             let references = key.shots.compactMap(\.vector)
             let nearest = vectors.flatMap { v in references.compactMap { v.distance(to: $0) } }.min()
-            guard let nearest, nearest <= key.threshold else { return nil }
+            guard let nearest, nearest <= Calibration.effectiveThreshold(key.threshold) else { return nil }
             return (key, nearest)
         }
         .min { $0.1 < $1.1 }?.0

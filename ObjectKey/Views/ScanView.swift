@@ -98,7 +98,7 @@ struct ScanView: View {
         let outcome = matcher.evaluate(vector, against: registered)
         diagnostics = matcher.distances(vector, against: registered).prefix(2).map { c in
             let key = keys.first { $0.id == c.keyID }
-            return "\(key?.name ?? "?") \(String(format: "%.2f", c.distance))/기준 \(String(format: "%.2f", key?.threshold ?? 0))"
+            return "\(key?.name ?? "?") \(String(format: "%.2f", c.distance))/기준 \(String(format: "%.2f", key.map { Calibration.effectiveThreshold($0.threshold) } ?? 0))"
         }.joined(separator: "  ·  ")
         if case .match(let candidate) = outcome, let key = keys.first(where: { $0.id == candidate.keyID }) {
             hint = "\(key.name) 확인 중…"
