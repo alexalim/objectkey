@@ -29,7 +29,7 @@ extension HabitPhase {
         case .adapting: return "작게라도 시작하는 것만 생각해요."
         case .wiring: return "쉬는 날에도 한 번은 비춰 주세요."
         case .automating: return "이제 몸이 먼저 기억하기 시작해요."
-        case .formed: return "66일을 넘겼어요. 이제 내 습관이에요."
+        case .formed: return "66일을 넘겼어요. 아직 어색해도 괜찮아요, 계속 이어가면 돼요."
         }
     }
 }
@@ -321,7 +321,7 @@ struct HabitGuide: View {
     var body: some View {
         let current = progress?.phase
         Section {
-            Text("새 행동이 저절로 나오기까지 평균 66일이 걸린다고 해요(런던대 연구). 그 과정을 세 단계로 나눠 보여 드려요.")
+            Text("새 행동이 저절로 나오기까지 평균 66일이 걸린다고 해요(런던대 연구). 사람과 행동에 따라 18~254일로 차이가 크니, 66일은 기준일 뿐이에요. 그 과정을 세 단계로 나눠 보여 드려요.")
                 .font(.subheadline)
             ForEach(HabitPhase.all, id: \.self) { phase in
                 HStack(alignment: .firstTextBaseline, spacing: 10) {
