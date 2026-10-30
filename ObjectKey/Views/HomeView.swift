@@ -13,6 +13,8 @@ struct HomeView: View {
     @State private var showRegister = false
     @State private var pending: PendingSwitch?
     @State private var editingGoal: KeyObject?
+    /// 목록에서 누른 물건. 실수로 기록되지 않도록 한 번 더 확인한다.
+    @State private var confirming: KeyObject?
 
     private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -26,7 +28,7 @@ struct HomeView: View {
 
                 Section {
                     ForEach(keys) { key in
-                        Button { activateManually(key) } label: {
+                        Button { confirming = key } label: {
                             KeyRow(key: key, active: store.state.activeKeyID == key.id, progress: progressByID[key.id])
                         }
                         .tint(.primary)
@@ -44,7 +46,7 @@ struct HomeView: View {
                 } header: {
                     Text("내 물건")
                 } footer: {
-                    if !keys.isEmpty { Text("행을 누르면 카메라 없이 바로 실행됩니다. 오른쪽으로 밀면 습관 설정이 열립니다.") }
+                    if !keys.isEmpty { Text("행을 누르면 확인 후 카메라 없이 실행됩니다. 오른쪽으로 밀면 습관 설정이 열립니다.") }
                 }
             }
             .overlay {
@@ -87,6 +89,11 @@ struct HomeView: View {
                                                     goal: key.goalAmount, calendar: .current))
             }
             .fullScreenCover(isPresented: $showScan) { ScanView() }
+            .confirmationDialog(confirming?.name ?? "", isPresented: Binding(get: { confirming != nil }, set: { if !$0 { confirming = nil } }),
+                                titleVisibility: .visible, presenting: confirming) { key in
+                Button(manualActionLabel(key)) { activateManually(key) }
+                Button("취소", role: .cancel) {}
+            }
             .switchConfirmation($pending, keys: keys)
             .resultToast(message: Binding(get: { store.lastMessage }, set: { store.lastMessage = $0 }))
             .onReceive(ticker) { _ in store.tick(keys: keys, context: context) }
@@ -104,6 +111,17 @@ struct HomeView: View {
 
     private func rescheduleReminders() {
         Task { await HabitReminders.reschedule(keys: keys, logs: logs, state: store.state) }
+    }
+
+    /// 지금 누르면 일어날 일. 진행 중인 세션의 물건이면 종료다.
+    private func manualActionLabel(_ key: KeyObject) -> String {
+        if case .session(let id, _, _, _) = store.state, id == key.id { return "종료하고 기록" }
+        if case .countdown(_, _, let paused?) = store.state, paused.keyID == key.id { return "휴식 끝내고 이어가기" }
+        switch key.action {
+        case .session: return "시간 기록 시작"
+        case .countdown(let minutes): return "\(minutes)분 휴식 시작"
+        case .counter: return "+1 기록"
+        }
     }
 
     private func activateManually(_ key: KeyObject) {
