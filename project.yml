@@ -56,11 +56,30 @@ targets:
           CODE_SIGN_IDENTITY: "Apple Distribution"
           PROVISIONING_PROFILE_SPECIFIER: "${PROFILE_NAME}"
 
+  # 화면 점검용 UI 테스트. 데모 데이터로 앱을 띄워 주요 화면 스크린샷을 남긴다 (.github/workflows/ui-screens.yml).
+  ObjectKeyUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: ObjectKeyUITests
+    dependencies:
+      - target: ObjectKey
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.aspynlim.moki.uitests
+        TEST_TARGET_NAME: ObjectKey
+        TARGETED_DEVICE_FAMILY: "1"
+
 schemes:
   ObjectKey:
     build:
       targets:
         ObjectKey: all
+    test:
+      config: Debug
+      targets:
+        - ObjectKeyUITests
     run:
       config: Debug
     archive:

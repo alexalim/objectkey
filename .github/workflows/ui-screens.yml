@@ -1,0 +1,60 @@
+# 화면 점검: 시뮬레이터에서 데모 데이터로 앱을 띄워 주요 화면을 돌며 스크린샷을 남깁니다.
+# 맥이 없어도 화면을 확인하려고 만든 수동 워크플로입니다. 결과는 아티팩트 "screens"로 받습니다.
+name: UI screens
+
+on:
+  workflow_dispatch:
+
+jobs:
+  screens:
+    runs-on: macos-26
+    timeout-minutes: 45
+    env:
+      TEAM_ID: ""
+      PROFILE_NAME: ""
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Xcode 프로젝트 생성
+        run: |
+          brew install xcodegen
+          xcodegen
+
+      - name: 시뮬레이터 고르기
+        id: sim
+        run: |
+          udid=$(xcrun simctl list devices available -j | python3 -c "
+          import json,sys
+          d=json.load(sys.stdin)['devices']
+          ios=[(k,v) for k,v in d.items() if 'iOS' in k]
+          ios.sort(key=lambda kv: kv[0])
+          phones=[x for x in ios[-1][1] if x['name'].startswith('iPhone') and 'Pro Max' not in x['name']]
+          print(phones[-1]['udid'])")
+          echo "udid=$udid" >> "$GITHUB_OUTPUT"
+          xcrun simctl list devices | grep "$udid"
+
+      - name: 화면 둘러보기 테스트
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project ObjectKey.xcodeproj \
+            -scheme ObjectKey \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -resultBundlePath "$RUNNER_TEMP/screens.xcresult" \
+            CODE_SIGNING_ALLOWED=NO \
+            | tee test.log | grep -E "error:|Test Case|failed|TEST (SUCCEEDED|FAILED)" || true
+
+      - name: 스크린샷 꺼내기
+        if: always()
+        run: |
+          mkdir -p screens
+          xcrun xcresulttool export attachments --path "$RUNNER_TEMP/screens.xcresult" --output-path screens || true
+          ls -la screens
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: screens
+          path: |
+            screens
+            test.log
