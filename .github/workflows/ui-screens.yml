@@ -43,6 +43,8 @@ jobs:
             -resultBundlePath "$RUNNER_TEMP/screens.xcresult" \
             CODE_SIGNING_ALLOWED=NO \
             | tee test.log | grep -E "error:|Test Case|failed|TEST (SUCCEEDED|FAILED)" || true
+          # 스크린샷은 다음 단계에서 꺼내되, 화면 확인이 실패했으면 실행 결과도 실패로 남긴다.
+          grep -q "TEST SUCCEEDED" test.log
 
       - name: 스크린샷 꺼내기
         if: always()

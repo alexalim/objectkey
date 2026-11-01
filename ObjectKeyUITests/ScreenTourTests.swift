@@ -37,7 +37,9 @@ final class ScreenTourTests: XCTestCase {
         snap("04-detail-scrolled")
 
         // 3. 달력 날짜 → 고치기 창
+        // 데모 기록은 지난 2주다. 달 초에 돌리면 이번 달에 채운 날이 없으니 지난달로 넘긴다.
         let day = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "채움")).firstMatch
+        if !day.waitForExistence(timeout: 3) { tapIfExists(app.buttons["이전 달"]) }
         if day.waitForExistence(timeout: 3) {
             day.tap()
             snap("05-day-dialog")
