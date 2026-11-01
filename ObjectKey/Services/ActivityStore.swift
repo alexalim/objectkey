@@ -9,6 +9,9 @@ import ObjectKeyCore
 @MainActor
 @Observable
 final class ActivityStore {
+    /// 앱 화면과 단축어가 같은 진행 상태를 보도록 하나만 둔다.
+    static let shared = ActivityStore()
+
     private(set) var engine: ActivityEngine
     /// 화면에 잠깐 보여줄 마지막 실행 결과.
     var lastMessage: String?

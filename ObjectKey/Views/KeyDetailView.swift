@@ -10,9 +10,13 @@ struct KeyDetailView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @Query private var allLogs: [ActivityLog]
+    @Query(sort: \DayNote.day, order: .reverse) private var allNotes: [DayNote]
     @State private var pending: PendingSwitch?
     @State private var selectedDay: Date?
     @State private var editingGoal = false
+    /// 메모를 쓰는 날과 입력 중인 내용.
+    @State private var noteDay: Date?
+    @State private var noteText = ""
 
     private let calendar = Calendar.current
 
@@ -21,6 +25,7 @@ struct KeyDetailView: View {
         let entries = KeyProgress.entries(key, logs: logs, state: store.state)
         let progress = DailyProgress.evaluate(entries, goal: key.goalAmount, schedule: key.schedule, now: .now, calendar: calendar)
         let days = DailyProgress.days(entries, goal: key.goalAmount, calendar: calendar)
+        let notes = allNotes.filter { $0.keyID == key.id }
         NavigationStack {
             List {
                 Section {
@@ -42,16 +47,26 @@ struct KeyDetailView: View {
                         HStack {
                             stat("\(progress.streak)일", "지금", tint: progress.atRisk ? .red : .orange)
                             stat("\(DailyProgress.bestStreak(entries, goal: key.goalAmount, schedule: key.schedule, now: .now, calendar: calendar))일", "최고 기록")
-                            stat("\(days.filter { $0.value == .met && calendar.isDate($0.key, equalTo: .now, toGranularity: .month) }.count)일", "이번 달")
+                            stat(monthRate(entries, logs: logs).map { "\(Int(($0 * 100).rounded()))%" } ?? "–", "이번 달 완료율")
                             stat("\(logs.count)회", "전체 기록")
                         }
                     }
                     Section {
-                        HabitCalendar(days: days, schedule: key.schedule) { selectedDay = $0 }
+                        HabitCalendar(days: days, schedule: key.schedule, noted: Set(notes.map(\.day))) { selectedDay = $0 }
                     } header: {
                         Text("기록 달력")
                     } footer: {
-                        Text("날짜를 누르면 깜빡한 기록을 더하거나 잘못된 기록을 지울 수 있어요.")
+                        Text("날짜를 누르면 깜빡한 기록을 더하거나 지우고, 그날 메모를 남길 수 있어요.")
+                    }
+                    if !notes.isEmpty {
+                        Section("메모") {
+                            ForEach(notes.prefix(10)) { note in
+                                Button { openNote(note.day) } label: {
+                                    LabeledContent(note.day.formatted(.dateTime.month().day().weekday()), value: note.text)
+                                }
+                                .tint(.primary)
+                            }
+                        }
                     }
                     HabitGuide(progress: progress, recordCount: logs.count, schedule: key.schedule)
                 }
@@ -71,6 +86,7 @@ struct KeyDetailView: View {
                                 isPresented: Binding(get: { selectedDay != nil }, set: { if !$0 { selectedDay = nil } }),
                                 titleVisibility: .visible, presenting: selectedDay) { day in
                 Button(addLabel) { addRecord(on: day) }
+                Button(note(on: day) == nil ? "메모 남기기" : "메모 고치기") { openNote(day) }
                 let count = records(on: day).count
                 if count > 0 {
                     Button("이 날 기록 \(count)건 지우기", role: .destructive) { removeRecords(on: day) }
@@ -78,7 +94,17 @@ struct KeyDetailView: View {
                 Button("취소", role: .cancel) {}
             } message: { day in
                 let count = records(on: day).count
-                Text(count == 0 ? "이 날은 기록이 없어요." : "이 날 기록 \(count)건이 있어요.")
+                let memo = note(on: day).map { "\n메모: \($0.text)" } ?? ""
+                Text((count == 0 ? "이 날은 기록이 없어요." : "이 날 기록 \(count)건이 있어요.") + memo)
+            }
+            .alert(noteDay.map { "\($0.formatted(.dateTime.month().day())) 메모" } ?? "",
+                   isPresented: Binding(get: { noteDay != nil }, set: { if !$0 { noteDay = nil } }),
+                   presenting: noteDay) { day in
+                TextField("예: 출장이라 못 함", text: $noteText)
+                Button("저장") { saveNote(on: day) }
+                Button("취소", role: .cancel) {}
+            } message: { _ in
+                Text("비우고 저장하면 메모가 지워져요.")
             }
             .switchConfirmation($pending, keys: keys)
             .resultToast(message: Binding(get: { store.lastMessage }, set: { store.lastMessage = $0 }))
@@ -134,6 +160,36 @@ struct KeyDetailView: View {
         let counter = key.actionKind == "counter"
         context.insert(ActivityLog(keyID: key.id, keyName: key.name, kind: counter ? "counter" : "session",
                                    startedAt: at, duration: counter ? 0 : Double(addedMinutes * 60)))
+        try? context.save()
+    }
+
+    /// 이번 달 1일과 처음 시작한 날(등록일·가장 이른 기록) 중 늦은 날부터 센다. 시작 전 날을 놓친 것으로 치지 않기 위해서다.
+    private func monthRate(_ entries: [ProgressEntry], logs: [ActivityLog]) -> Double? {
+        guard let monthStart = calendar.dateInterval(of: .month, for: .now)?.start else { return nil }
+        let began = min(key.createdAt, logs.map(\.startedAt).min() ?? key.createdAt)
+        return DailyProgress.completionRate(entries, goal: key.goalAmount, schedule: key.schedule,
+                                            since: max(monthStart, began), now: .now, calendar: calendar)
+    }
+
+    // MARK: - 메모
+
+    private func note(on day: Date) -> DayNote? {
+        let start = calendar.startOfDay(for: day)
+        return allNotes.first { $0.keyID == key.id && $0.day == start }
+    }
+
+    private func openNote(_ day: Date) {
+        noteText = note(on: day)?.text ?? ""
+        noteDay = calendar.startOfDay(for: day)
+    }
+
+    private func saveNote(on day: Date) {
+        let text = noteText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let existing = note(on: day) {
+            if text.isEmpty { context.delete(existing) } else { existing.text = text }
+        } else if !text.isEmpty {
+            context.insert(DayNote(keyID: key.id, day: calendar.startOfDay(for: day), text: text))
+        }
         try? context.save()
     }
 

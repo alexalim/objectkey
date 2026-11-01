@@ -3,7 +3,7 @@ import SwiftUI
 
 @main
 struct ObjectKeyApp: App {
-    @State private var store = ActivityStore()
+    @State private var store = ActivityStore.shared
     @State private var showSplash = true
     @Environment(\.scenePhase) private var scenePhase
 
@@ -18,7 +18,7 @@ struct ObjectKeyApp: App {
                 if phase == .background { showSplash = true }
             }
         }
-        .modelContainer(for: [KeyObject.self, ReferenceShot.self, ActivityLog.self])
+        .modelContainer(AppModel.container)
     }
 
     @ViewBuilder

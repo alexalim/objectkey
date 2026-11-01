@@ -125,6 +125,35 @@ final class ActivityLog {
     }
 }
 
+/// 물건별 하루 메모. "출장이라 못 함"처럼 달력 날짜에 붙인다. (v0.4)
+@Model
+final class DayNote {
+    var keyID: UUID
+    /// 그날 0시.
+    var day: Date
+    var text: String
+
+    init(keyID: UUID, day: Date, text: String) {
+        self.keyID = keyID
+        self.day = day
+        self.text = text
+    }
+}
+
+/// 앱과 단축어가 같이 쓰는 저장소. 단축어는 앱 화면 없이도 실행되므로 한곳에서 만든다.
+enum AppModel {
+    static let types: [any PersistentModel.Type] = [KeyObject.self, ReferenceShot.self, ActivityLog.self, DayNote.self]
+
+    @MainActor
+    static let container: ModelContainer = {
+        do {
+            return try ModelContainer(for: Schema(types))
+        } catch {
+            fatalError("저장소를 열 수 없습니다: \(error)")
+        }
+    }()
+}
+
 extension KeyAction {
     var label: String {
         switch self {

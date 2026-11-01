@@ -204,4 +204,30 @@ final class ProgressTests: XCTestCase {
         XCTAssertEqual(DailyProgress.bestStreak([entry(1, 1), entry(0, 1)], goal: nil, now: now, calendar: calendar), 2)
         XCTAssertEqual(DailyProgress.bestStreak([], goal: nil, now: now, calendar: calendar), 0)
     }
+
+    // MARK: 완료율
+
+    private func rate(_ entries: [ProgressEntry], since: Int, schedule: HabitSchedule = .daily) -> Double? {
+        DailyProgress.completionRate(entries, goal: nil, schedule: schedule, since: daysAgo(since, hour: 0), now: now, calendar: calendar)
+    }
+
+    func test_completionRate_daily_countsTodayOnlyWhenMet() {
+        // 3·2일 전 채움, 어제 놓침 → 2/3. 오늘 채우면 3/4.
+        XCTAssertEqual(rate([entry(3, 1), entry(2, 1)], since: 3)!, 2.0 / 3.0, accuracy: 1e-9)
+        XCTAssertEqual(rate([entry(3, 1), entry(2, 1), entry(0, 1)], since: 3)!, 0.75, accuracy: 1e-9)
+    }
+
+    func test_completionRate_weekdays_onlyDueDaysAreChances() {
+        // 지난 금(6)~오늘(목): 월·수·금 중 금·월·수가 기회. 금·수 채움, 일요일에 한 것은 기회 밖.
+        XCTAssertEqual(rate([entry(6, 1), entry(4, 1), entry(1, 1)], since: 6, schedule: monWedFri)!, 2.0 / 3.0, accuracy: 1e-9)
+    }
+
+    func test_completionRate_perWeek_currentWeekCountsOnlyWhenMet() {
+        // 지난주 3일 채움, 이번 주 1일(아직 진행 중) → 지난주만 따져 100%.
+        XCTAssertEqual(rate([entry(7, 1), entry(6, 1), entry(5, 1), entry(1, 1)], since: 11, schedule: .perWeek(3)), 1)
+    }
+
+    func test_completionRate_noChancesYet_isNil() {
+        XCTAssertNil(rate([], since: 0))
+    }
 }

@@ -72,6 +72,7 @@ struct HistoryView: View {
 
     private func wipe() {
         try? context.delete(model: ActivityLog.self)
+        try? context.delete(model: DayNote.self)
         try? context.delete(model: ReferenceShot.self)
         try? context.delete(model: KeyObject.self)
         try? context.save()

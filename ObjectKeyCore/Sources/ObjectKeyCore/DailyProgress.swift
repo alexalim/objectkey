@@ -103,6 +103,57 @@ public enum DailyProgress {
         }
     }
 
+    /// 기간 동안 해야 했던 기회 중 채운 비율(0...1). 따질 기회가 없으면 nil.
+    ///
+    /// 매일·요일 지정은 해야 하는 날, 주 N회는 한 주가 한 번의 기회다. 진행 중인 오늘(이번 주)은
+    /// 채웠을 때만 넣는다. 아직 하루가 남았는데 못 한 것으로 치면 비율이 아침마다 떨어지기 때문이다.
+    /// - Parameter since: 이 날부터 센다. 보통 이번 달 1일과 물건을 등록한 날 중 늦은 날.
+    public static func completionRate(_ entries: [ProgressEntry], goal: Double?, schedule: HabitSchedule = .daily,
+                                      since: Date, now: Date, calendar: Calendar) -> Double? {
+        let goal = goal.flatMap { $0 > 0 ? $0 : nil }
+        let totals = dailyTotals(entries, calendar: calendar)
+        func met(_ day: Date) -> Bool {
+            let total = totals[day] ?? 0
+            return goal.map { total >= $0 } ?? (total > 0)
+        }
+        let today = calendar.startOfDay(for: now)
+        var day = calendar.startOfDay(for: since)
+        var chances = 0
+        var hits = 0
+
+        if case .perWeek(let times) = schedule {
+            let target = max(1, times)
+            var start = calendar.dateInterval(of: .weekOfYear, for: day)?.start
+            while let s = start, s <= today, let week = calendar.dateInterval(of: .weekOfYear, for: s) {
+                let done = totals.keys.filter { week.contains($0) && $0 >= day && met($0) }.count
+                if week.end <= today || done >= target {
+                    chances += 1
+                    if done >= target { hits += 1 }
+                }
+                start = week.end
+            }
+        } else {
+            let due = dueCheck(schedule, calendar: calendar)
+            while day <= today {
+                if due(day), day < today || met(day) {
+                    chances += 1
+                    if met(day) { hits += 1 }
+                }
+                guard let next = calendar.date(byAdding: .day, value: 1, to: day) else { break }
+                day = next
+            }
+        }
+        return chances == 0 ? nil : Double(hits) / Double(chances)
+    }
+
+    /// 그날이 해야 하는 날인지. 요일 지정이 아니면 매일이다.
+    private static func dueCheck(_ schedule: HabitSchedule, calendar: Calendar) -> (Date) -> Bool {
+        if case .weekdays(let days) = schedule, !days.isEmpty {
+            return { days.contains(calendar.component(.weekday, from: $0)) }
+        }
+        return { _ in true }
+    }
+
     private static func dailyTotals(_ entries: [ProgressEntry], calendar: Calendar) -> [Date: Double] {
         var totals: [Date: Double] = [:]
         for entry in entries {
@@ -168,12 +219,7 @@ public enum DailyProgress {
             return KeyProgress(today: todayTotal, goal: goal, streak: streak, atRisk: atRisk, weekDone: weekDone)
 
         case .daily, .weekdays:
-            let due: (Date) -> Bool
-            if case .weekdays(let days) = schedule, !days.isEmpty {
-                due = { days.contains(calendar.component(.weekday, from: $0)) }
-            } else {
-                due = { _ in true }
-            }
+            let due = dueCheck(schedule, calendar: calendar)
             var streak = met(today) ? 1 : 0
             var misses = 0
             var day = previous(today)

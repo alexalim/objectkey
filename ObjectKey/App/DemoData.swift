@@ -11,7 +11,7 @@ enum DemoData {
     @MainActor
     static let container: ModelContainer = {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        let container = try! ModelContainer(for: KeyObject.self, ReferenceShot.self, ActivityLog.self, configurations: config)
+        let container = try! ModelContainer(for: Schema(AppModel.types), configurations: config)
         seed(container.mainContext)
         return container
     }()
@@ -44,6 +44,7 @@ enum DemoData {
         for ago in [2, 4, 9, 11, 13] {
             context.insert(ActivityLog(keyID: workout.id, keyName: workout.name, kind: "session", startedAt: day(ago, hour: 7), duration: 1800))
         }
+        context.insert(DayNote(keyID: supplement.id, day: calendar.startOfDay(for: day(6)), text: "출장이라 깜빡함"))
         try? context.save()
     }
 }

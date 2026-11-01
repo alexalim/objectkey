@@ -219,6 +219,8 @@ struct GoalEditor: View {
 struct HabitCalendar: View {
     let days: [Date: DayStatus]
     var schedule: HabitSchedule = .daily
+    /// 메모가 있는 날(0시). 숫자 아래 작은 점으로 표시한다.
+    var noted: Set<Date> = []
     /// 날짜를 누르면 부른다. nil이면 보기만 한다. 오늘 이후 날짜는 누를 수 없다.
     var onSelect: ((Date) -> Void)? = nil
     @State private var month = Calendar.current.dateInterval(of: .month, for: .now)?.start ?? .now
@@ -258,6 +260,7 @@ struct HabitCalendar: View {
             HStack(spacing: 12) {
                 legend(Color.orange, "채운 날")
                 legend(Color.orange.opacity(0.25), "목표 미달")
+                if !noted.isEmpty { legend(Color.accentColor, "메모") }
             }
             .font(.caption2).foregroundStyle(.secondary)
         }
@@ -279,7 +282,10 @@ struct HabitCalendar: View {
                 }
             }
             .overlay { if isToday { Circle().stroke(Color.accentColor, lineWidth: 1.5) } }
-            .accessibilityLabel(Text(day, format: .dateTime.month().day()) + Text(status == .met ? ", 채움" : status == .partial ? ", 목표 미달" : ""))
+            .overlay(alignment: .bottom) {
+                if noted.contains(day) { Circle().fill(Color.accentColor).frame(width: 4, height: 4).offset(y: 3) }
+            }
+            .accessibilityLabel(Text(day, format: .dateTime.month().day()) + Text(status == .met ? ", 채움" : status == .partial ? ", 목표 미달" : "") + Text(noted.contains(day) ? ", 메모 있음" : ""))
     }
 
     /// 요일 지정일 때 정한 요일이 아닌 날은 흐리게 보인다.

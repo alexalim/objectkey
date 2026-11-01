@@ -95,7 +95,11 @@ struct HomeView: View {
             }
             // 기록이 생기면 오늘 알림을 뺄 수 있다. 스캔 화면에서 기록해도 여기서 반영된다.
             .onChange(of: logs.count) { rescheduleReminders() }
-            .onChange(of: keys.count) { rescheduleReminders() }
+            .onChange(of: keys.count) {
+                rescheduleReminders()
+                // Siri 문구("MOKI에서 영양제 기록")에 들어갈 물건 목록을 갱신한다.
+                MokiShortcuts.updateAppShortcutParameters()
+            }
         }
     }
 
@@ -106,6 +110,8 @@ struct HomeView: View {
     private func delete(at offsets: IndexSet) {
         for index in offsets {
             store.finishIfInvolved(keys[index], keys: keys, context: context)
+            let id = keys[index].id
+            try? context.delete(model: DayNote.self, where: #Predicate { $0.keyID == id })
             context.delete(keys[index])
         }
         try? context.save()
