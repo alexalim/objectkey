@@ -28,7 +28,8 @@ enum HabitFacts {
                 : "이번 달 \(Int(monthLogs.reduce(0) { $0 + $1.duration } / 60))분(\(monthLogs.count)회)"
             let recent = (0..<7).compactMap { calendar.date(byAdding: .day, value: -$0, to: calendar.startOfDay(for: now)) }
                 .map { "\($0.formatted(dayFormat)) \(days[$0] == .met ? "함" : "안 함")" }
-            var line = "- \(key.name)(\(key.action.label), \(key.schedule.label)): 오늘 \(p.metToday ? "함" : "아직"), "
+            let tagText = key.tags.isEmpty ? "" : ", 태그 " + key.tags.map { "#\($0)" }.joined(separator: " ")
+            var line = "- \(key.name)(\(key.action.label), \(key.schedule.label)\(tagText)): 오늘 \(p.metToday ? "함" : "아직"), "
                 + "지금 \(p.streak)일째, 최고 \(best)일, 이번 달 완료율 \(rate.map { "\(Int(($0 * 100).rounded()))%" } ?? "없음"), "
                 + "\(amount), 전체 \(mine.count)회, 이번 주 \(p.weekDone)일. 최근 7일: \(recent.joined(separator: ", "))"
             let memo = notes.filter { $0.keyID == key.id }.sorted { $0.day > $1.day }.prefix(3)

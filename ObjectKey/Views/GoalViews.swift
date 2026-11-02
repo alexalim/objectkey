@@ -206,6 +206,11 @@ struct GoalEditor: View {
         NavigationStack {
             Form {
                 Section {
+                    TagPicker(tags: $key.tags)
+                } header: {
+                    Text("태그")
+                }
+                Section {
                     ScheduleEditor(schedule: $key.schedule)
                 } header: {
                     Text("얼마나 자주")

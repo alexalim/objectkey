@@ -34,6 +34,10 @@ enum DemoData {
         let hockey = KeyObject(name: "아이스하키 수업", emoji: "🏒", action: .attend(startMinute: 21 * 60, minutes: 90), threshold: 0.6)
         hockey.schedule = .weekdays([3])
         hockey.reminderMinute = 20 * 60 + 30
+        supplement.tags = ["건강"]
+        book.tags = ["공부"]
+        workout.tags = ["운동", "건강"]
+        hockey.tags = ["운동"]
         [supplement, book, workout, nap, hockey].forEach { context.insert($0) }
         // 최근 화요일 세 번 중 두 번 참석.
         let lastTuesday = (0..<7).first { calendar.component(.weekday, from: day($0)) == 3 } ?? 0

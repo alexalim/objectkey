@@ -45,6 +45,16 @@ final class ScreenTourTests: XCTestCase {
         }
         snap("02-home")
 
+        // 태그 필터: 운동만 보기 → 전체로 돌아오기
+        let tagChip = app.buttons["#운동"]
+        if tagChip.waitForExistence(timeout: 3) {
+            tagChip.tap()
+            snap("02b-home-tag")
+            app.buttons["전체"].tap()
+        } else {
+            XCTFail("태그 필터가 보여야 한다")
+        }
+
         // 2. 물건 상세: 행을 누르면 기록하지 않고 상세가 열린다
         row("영양제").tap()
         XCTAssertTrue(app.navigationBars["영양제"].waitForExistence(timeout: 5), "상세 화면이 열려야 한다")

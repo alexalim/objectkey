@@ -27,6 +27,8 @@ final class KeyObject {
     /// 정해진 시간 참석: 시작 시각(자정부터 분)과 길이(분). (v0.4)
     var attendStartMinute: Int = 21 * 60
     var attendMinutes: Int = 90
+    /// 태그. "운동", "건강" 같은 이름 목록. (v0.4)
+    var tags: [String] = []
     @Relationship(deleteRule: .cascade, inverse: \ReferenceShot.key)
     var shots: [ReferenceShot] = []
 

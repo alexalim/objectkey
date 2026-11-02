@@ -129,7 +129,7 @@ struct KeyDetailView: View {
     private var habitSummary: String? {
         guard key.supportsGoal else { return nil }
         let cue = key.cue.trimmingCharacters(in: .whitespaces)
-        return ([key.schedule.label] + (cue.isEmpty ? [] : ["\(cue) 다음에"])).joined(separator: " · ")
+        return ([key.schedule.label] + (cue.isEmpty ? [] : ["\(cue) 다음에"]) + key.tags.map { "#\($0)" }).joined(separator: " · ")
     }
 
     /// 지금 누르면 일어날 일. 진행 중인 세션의 물건이면 종료다.

@@ -30,6 +30,16 @@ struct EmojiPreset: Identifiable {
     let suggestedKind: String
     var id: String { emoji }
 
+    /// 고르면 제안하는 태그. 없으면 nil.
+    var suggestedTag: String? {
+        switch emoji {
+        case "💊", "🍽️", "💧", "🦷", "🧴", "🧘", "💤": return "건강"
+        case "📚", "💻", "✍️", "🎸": return "공부"
+        case "🐶": return "운동"
+        default: return nil
+        }
+    }
+
     static let all: [EmojiPreset] = [
         .init(emoji: "💊", label: "영양제", suggestedKind: "counter"),
         .init(emoji: "🍽️", label: "식사", suggestedKind: "counter"),

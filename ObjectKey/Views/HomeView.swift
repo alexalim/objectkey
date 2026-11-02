@@ -16,12 +16,19 @@ struct HomeView: View {
     @State private var detailKey: KeyObject?
     @State private var showAsk = false
     @State private var showHelp = false
+    @State private var showTags = false
+    /// 홈에서 고른 태그. 빈 문자열이면 전체.
+    @AppStorage("homeTagFilter") private var tagFilter = ""
 
     private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     var body: some View {
         NavigationStack {
-            let tracked = keys.filter(\.supportsGoal).map { (key: $0, progress: KeyProgress.of($0, logs: logs, state: store.state)) }
+            let allTags = TagRules.all(used: keys.map(\.tags), includeDefaults: false)
+            // 고른 태그가 사라졌으면 전체로 본다.
+            let filter = allTags.contains(tagFilter) ? tagFilter : ""
+            let visible = filter.isEmpty ? keys : keys.filter { $0.tags.contains(filter) }
+            let tracked = visible.filter(\.supportsGoal).map { (key: $0, progress: KeyProgress.of($0, logs: logs, state: store.state)) }
             let progressByID = Dictionary(uniqueKeysWithValues: tracked.map { ($0.key.id, $0.progress) })
             // 오늘 할 일: 일정상 오늘 해야 하거나 오늘 이미 한 습관. 시간이 정해진 것부터 시간순.
             let todo = tracked.filter { $0.key.schedule.isDue(on: .now, metToday: $0.progress.metToday,
@@ -29,9 +36,14 @@ struct HomeView: View {
                 .map(\.key)
                 .sorted { ($0.todoMinute ?? Int.max, $0.createdAt) < ($1.todoMinute ?? Int.max, $1.createdAt) }
             let resting = tracked.map(\.key).filter { key in !todo.contains { $0.id == key.id } }
-            let tools = keys.filter { !$0.supportsGoal }
+            let tools = visible.filter { !$0.supportsGoal }
             let doneCount = todo.filter { progressByID[$0.id]?.metToday == true }.count
             List {
+                if !allTags.isEmpty {
+                    TagFilterBar(tags: allTags, selection: $tagFilter) { showTags = true }
+                        .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                        .listRowBackground(Color.clear)
+                }
                 if !tracked.isEmpty { MoodHeader(items: tracked) { detailKey = $0 } }
                 ActiveBanner(state: store.state, keys: keys)
 
@@ -44,7 +56,7 @@ struct HomeView: View {
                     } header: {
                         // 작은 회색 머리글은 눈에 잘 띄지 않아 홈의 주 제목처럼 키운다.
                         HStack(alignment: .firstTextBaseline) {
-                            Text("오늘 할 일").font(.title3.bold()).foregroundStyle(.primary)
+                            Text(filter.isEmpty ? "오늘 할 일" : "#\(filter) 오늘 할 일").font(.title3.bold()).foregroundStyle(.primary)
                             Spacer()
                             Text("\(doneCount)/\(todo.count)").font(.title3.bold().monospacedDigit())
                                 .foregroundStyle(doneCount == todo.count && !todo.isEmpty ? Color.green : Color.secondary)
@@ -107,6 +119,7 @@ struct HomeView: View {
             .sheet(item: $editingGoal, onDismiss: rescheduleReminders) { GoalEditor(key: $0) }
             .sheet(item: $detailKey, onDismiss: rescheduleReminders) { KeyDetailView(key: $0, keys: keys) }
             .sheet(isPresented: $showHelp) { HelpView() }
+            .sheet(isPresented: $showTags) { TagManagerView() }
             .sheet(isPresented: $showAsk, onDismiss: rescheduleReminders) {
                 if #available(iOS 26.0, *) {
                     AskMokiView()

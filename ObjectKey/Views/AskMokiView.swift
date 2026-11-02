@@ -15,6 +15,7 @@ struct RegisterDraft: Identifiable {
     var schedule: HabitSchedule = .daily
     var attendStart = 21 * 60
     var attendMinutes = 90
+    var tags: [String] = []
 }
 
 /// 자연어로 확인을 받은 뒤 남길 기록.
@@ -184,6 +185,7 @@ struct AskMokiView: View {
                                                           reminder: CommandResolver.minuteOfDay(c.reminderTime),
                                                           before: before)
         d.cue = (c.cue ?? "").trimmingCharacters(in: .whitespaces)
+        d.tags = TagRules.mentioned(in: text, known: TagRules.all(used: keys.map(\.tags)))
         return d
     }
 

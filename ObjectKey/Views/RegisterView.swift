@@ -21,6 +21,7 @@ struct RegisterView: View {
     @State private var schedule: HabitSchedule = .daily
     @State private var attendStart = 21 * 60
     @State private var attendMinutes = 90
+    @State private var tags: [String] = []
     @State private var shots: [CameraController.Frame] = []
     @State private var latest: CameraController.Frame?
     @State private var cameraAllowed: Bool?
@@ -45,6 +46,7 @@ struct RegisterView: View {
         _schedule = State(initialValue: d.schedule)
         _attendStart = State(initialValue: d.attendStart)
         _attendMinutes = State(initialValue: d.attendMinutes)
+        _tags = State(initialValue: d.tags)
     }
 
     var body: some View {
@@ -76,6 +78,8 @@ struct RegisterView: View {
                             Button {
                                 emoji = preset.emoji
                                 kind = preset.suggestedKind
+                                // 태그를 아직 안 골랐으면 아이콘에 어울리는 태그를 하나 제안한다.
+                                if tags.isEmpty, let tag = preset.suggestedTag { tags = [tag] }
                                 focus = nil
                             } label: {
                                 VStack(spacing: 2) {
@@ -121,6 +125,7 @@ struct RegisterView: View {
                 if kind != "countdown" {
                     Section {
                         ScheduleEditor(schedule: $schedule)
+                        TagPicker(tags: $tags)
                         if kind != "attend" { GoalStepper(actionKind: kind, goal: $goal) }
                         TextField(HabitCopy.cuePlaceholder, text: $cue)
                             .focused($focus, equals: .cue)
@@ -316,6 +321,7 @@ struct RegisterView: View {
             key.cue = cue.trimmingCharacters(in: .whitespaces)
             key.reminderMinute = reminderMinute
             key.schedule = schedule
+            key.tags = tags
         }
         context.insert(key)
         // 미리 채운 알림은 권한 창을 거치지 않았을 수 있다. 저장할 때 한 번 묻는다.
