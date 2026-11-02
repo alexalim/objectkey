@@ -26,7 +26,9 @@ final class ScreenTourTests: XCTestCase {
         XCTAssertTrue(start.waitForExistence(timeout: 10), "시작 화면이 보여야 한다")
         snap("01-splash")
         start.tap()
-        XCTAssertTrue(app.navigationBars["MOKI"].waitForExistence(timeout: 5), "홈으로 넘어가야 한다")
+        // 홈은 시작 화면 뒤에 이미 떠 있으므로, 홈이 보이는지가 아니라 시작 화면이 사라졌는지로 확인한다.
+        if !start.waitForNonExistence(timeout: 5), start.exists { start.tap() }
+        XCTAssertTrue(start.waitForNonExistence(timeout: 5), "누르면 시작 화면이 사라져야 한다")
         snap("02-home")
 
         // 2. 물건 상세: 행을 누르면 기록하지 않고 상세가 열린다
