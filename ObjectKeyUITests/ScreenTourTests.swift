@@ -49,7 +49,7 @@ final class ScreenTourTests: XCTestCase {
         }
 
         // 4. 습관 설정
-        app.swipeDown()
+        // 습관 설정 버튼은 내비게이션 바에 늘 있다. 아래로 쓸면 시트가 닫힐 수 있어 스크롤하지 않는다.
         tapIfExists(app.buttons["습관 설정"])
         if app.navigationBars["영양제 습관 설정"].waitForExistence(timeout: 5) {
             snap("06-goal-editor")
