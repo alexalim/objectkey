@@ -54,12 +54,12 @@ struct KeyStatsView: View {
 
             Section("주별 완료율") {
                 if weekly.contains(where: { $0.rate != nil }) {
-                    Chart(weekly.compactMap { w in w.rate.map { (w.weekStart, $0 * 100) } }, id: \.0) { point in
-                        AreaMark(x: .value("주", point.0), y: .value("완료율", point.1))
+                    Chart(weekPoints(weekly)) { point in
+                        AreaMark(x: .value("주", point.week), y: .value("완료율", point.percent))
                             .foregroundStyle(Color.orange.opacity(0.15))
-                        LineMark(x: .value("주", point.0), y: .value("완료율", point.1))
+                        LineMark(x: .value("주", point.week), y: .value("완료율", point.percent))
                             .foregroundStyle(Color.orange)
-                        PointMark(x: .value("주", point.0), y: .value("완료율", point.1))
+                        PointMark(x: .value("주", point.week), y: .value("완료율", point.percent))
                             .foregroundStyle(Color.orange).symbolSize(20)
                     }
                     .chartYScale(domain: 0...100)
@@ -73,11 +73,9 @@ struct KeyStatsView: View {
 
             Section("요일별 채운 날") {
                 if !byWeekday.isEmpty {
-                    let order = (0..<7).map { (calendar.firstWeekday - 1 + $0) % 7 + 1 }
-                    Chart(order, id: \.self) { weekday in
-                        BarMark(x: .value("요일", calendar.veryShortWeekdaySymbols[weekday - 1]),
-                                y: .value("채운 날", byWeekday[weekday] ?? 0))
-                            .foregroundStyle(isDue(weekday) ? Color.orange : Color.orange.opacity(0.35))
+                    Chart(weekdayBars(byWeekday)) { bar in
+                        BarMark(x: .value("요일", bar.label), y: .value("채운 날", bar.count))
+                            .foregroundStyle(bar.color)
                             .cornerRadius(4)
                     }
                     .frame(height: 140)
@@ -108,6 +106,32 @@ struct KeyStatsView: View {
         }
         .navigationTitle("\(key.name) 통계")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    // 차트 입력을 작은 구조체로 미리 만든다. 식을 차트 안에 직접 쓰면 컴파일러가 타입 추론을 못 끝낸다.
+    private struct WeekPoint: Identifiable {
+        let week: Date
+        let percent: Double
+        var id: Date { week }
+    }
+
+    private struct WeekdayBar: Identifiable {
+        let id: Int
+        let label: String
+        let count: Int
+        let color: Color
+    }
+
+    private func weekPoints(_ weekly: [(weekStart: Date, rate: Double?)]) -> [WeekPoint] {
+        weekly.compactMap { w in w.rate.map { WeekPoint(week: w.weekStart, percent: $0 * 100) } }
+    }
+
+    private func weekdayBars(_ counts: [Int: Int]) -> [WeekdayBar] {
+        (0..<7).map { offset in
+            let weekday = (calendar.firstWeekday - 1 + offset) % 7 + 1
+            return WeekdayBar(id: weekday, label: calendar.veryShortWeekdaySymbols[weekday - 1], count: counts[weekday] ?? 0,
+                              color: isDue(weekday) ? Color.orange : Color.orange.opacity(0.35))
+        }
     }
 
     private var empty: some View {
