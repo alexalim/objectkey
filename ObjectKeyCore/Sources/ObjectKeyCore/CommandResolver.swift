@@ -65,8 +65,46 @@ public enum CommandResolver {
         let containing = keys.filter { let n = normalize($0.name); return n.contains(s) || s.contains(n) }
         if containing.count == 1 { return containing[0].id }
         let scored = keys.map { ($0.id, similarity(s, normalize($0.name))) }.max { $0.1 < $1.1 }
-        guard let scored, scored.1 >= 0.3 else { return containing.first?.id }
-        return scored.0
+        if let scored, scored.1 >= 0.3 { return scored.0 }
+        if let first = containing.first { return first.id }
+        return keyMentioned(in: spoken, among: keys)
+    }
+
+    /// 문장 속에 물건 이름의 일부가 나오는지. "어제 책 30분 읽었어" → "읽는 책", "하키 다녀왔어" → "아이스하키 수업".
+    /// 이름의 낱말이 두 글자 이상 겹치거나, 한 글자 낱말("책", "물")이 문장에 따로 쓰였으면 그 물건이다. 여럿이면 길게 겹친 쪽.
+    private static func keyMentioned(in text: String, among keys: [(id: UUID, name: String)]) -> UUID? {
+        let words = text.split(whereSeparator: { $0.isWhitespace || $0.isPunctuation }).map(String.init)
+        let flat = normalize(text)
+        var best: (id: UUID, length: Int)?
+        for key in keys {
+            for token in key.name.split(separator: " ").map(String.init) {
+                let length: Int
+                if token.count == 1 {
+                    // "책", "책을", "물" 처럼 그 글자로 시작하는 짧은 낱말
+                    length = words.contains { $0.hasPrefix(token) && $0.count <= 2 } ? 1 : 0
+                } else {
+                    let common = longestCommonSubstring(token, flat)
+                    length = common >= 2 ? common : 0
+                }
+                if length > (best?.length ?? 0) { best = (key.id, length) }
+            }
+        }
+        return best?.id
+    }
+
+    private static func longestCommonSubstring(_ a: String, _ b: String) -> Int {
+        let x = Array(a), y = Array(b)
+        guard !x.isEmpty, !y.isEmpty else { return 0 }
+        var prev = [Int](repeating: 0, count: y.count + 1), best = 0
+        for i in 1...x.count {
+            var cur = [Int](repeating: 0, count: y.count + 1)
+            for j in 1...y.count where x[i - 1] == y[j - 1] {
+                cur[j] = prev[j - 1] + 1
+                best = max(best, cur[j])
+            }
+            prev = cur
+        }
+        return best
     }
 
     private static func normalize(_ s: String) -> String {
@@ -116,7 +154,8 @@ public enum CommandResolver {
 
     /// 시작 시각. "밤 9시", "21시 30분", "9시 반", "21:00". 알림을 뜻하는 "N분 전"은 무시한다.
     public static func extractStart(_ text: String) -> Int? {
-        let pattern = "((?:오전|오후|아침|저녁|밤|새벽)\\s*)?(\\d{1,2})\\s*(?:시\\s*(?:(\\d{1,2})\\s*분|반)?|:(\\d{2}))"
+        // "1시간"의 '1시'는 시각이 아니다.
+        let pattern = "((?:오전|오후|아침|저녁|밤|새벽)\\s*)?(\\d{1,2})\\s*(?:시(?!간)\\s*(?:(\\d{1,2})\\s*분|반)?|:(\\d{2}))"
         guard let m = matches(pattern, in: text).first else { return nil }
         return minuteOfDay(m[0])
     }
@@ -126,18 +165,28 @@ public enum CommandResolver {
         if let m = matches("(\\d+)\\s*시간(?:\\s*(\\d+)\\s*분)?(?!\\s*전)", in: text).first, let h = Int(m[1]) {
             return h * 60 + (Int(m[2]) ?? 0)
         }
-        for m in matches("(\\d+)\\s*분(?!\\s*전)", in: text) {
-            // "9시 30분"의 30분은 시각이지 길이가 아니다.
-            let before = text.range(of: m[0]).map { String(text[..<$0.lowerBound]) } ?? ""
-            if before.hasSuffix("시 ") || before.hasSuffix("시") { continue }
-            if let n = Int(m[1]) { return n }
+        // "9시 30분"의 30분은 시각이지 길이가 아니다. 위치로 앞말을 확인한다.
+        guard let regex = try? NSRegularExpression(pattern: "(\\d+)\\s*분(?!\\s*전)") else { return nil }
+        let ns = text as NSString
+        for m in regex.matches(in: text, range: NSRange(location: 0, length: ns.length)) {
+            let before = ns.substring(to: m.range.location).trimmingCharacters(in: .whitespaces)
+            if before.hasSuffix("시") { continue }
+            if let n = Int(ns.substring(with: m.range(at: 1))) { return n }
         }
         return nil
     }
 
+    /// "주 3회", "일주일에 두 번" → 3, 2. 없으면 nil.
+    public static func extractTimesPerWeek(_ text: String) -> Int? {
+        guard let m = matches("(?:주|일주일에?)\\s*(\\d+|한|두|세|네|다섯|여섯)\\s*(?:번|회)", in: text).first else { return nil }
+        let words = ["한": 1, "두": 2, "세": 3, "네": 4, "다섯": 5, "여섯": 6]
+        return Int(m[1]) ?? words[m[1]]
+    }
+
     /// "30분 전에 알려줘" → 30.
     public static func extractRemindBefore(_ text: String) -> Int? {
-        matches("(\\d+)\\s*분\\s*전", in: text).first.flatMap { Int($0[1]) }
+        if let m = matches("(\\d+)\\s*시간\\s*전", in: text).first, let h = Int(m[1]) { return h * 60 }
+        return matches("(\\d+)\\s*분\\s*전", in: text).first.flatMap { Int($0[1]) }
     }
 
     /// "어제" 1, "그저께·그제" 2, "3일 전" 3, "오늘" 0. 말이 없으면 nil.
@@ -170,15 +219,19 @@ public enum CommandResolver {
     /// 이름만 남긴다. 요일·시각·길이·알림·부탁하는 말을 뺀다. 모델이 문장 전체를 이름에 넣어도 정리된다.
     public static func cleanName(_ text: String) -> String {
         var s = text
+        // 순서가 중요하다: "1시간"을 시각 "1시"보다 먼저 지운다.
         let patterns = [
-            "(?:매주|매일|평일|주말)",
+            "\\d+\\s*(?:시간|분)\\s*전(?:에)?",
+            "\\d+\\s*시간(?:\\s*\\d+\\s*분)?(?:씩|동안)?",
+            "(?:주|일주일에?)\\s*(?:\\d+|한|두|세|네|다섯|여섯)\\s*(?:번|회)(?:씩)?",
+            "(?:하루에?\\s*)?\\d+\\s*(?:잔|번|회|알|개)(?:씩)?",
+            "(?:매주|매일|평일|주말|하루에?)",
             "([월화수목금토일][·,/ ]?)+요일(?:마다|에)?",
+            "(?<![가-힣])[월화수목금토일]{2,}(?![가-힣])",
             "(?:오전|오후|아침|저녁|밤|새벽)?\\s*\\d{1,2}\\s*시(?:\\s*\\d{1,2}\\s*분|\\s*반)?(?:에|부터|까지)?",
             "\\d{1,2}:\\d{2}",
-            "\\d+\\s*분\\s*전(?:에)?",
-            "\\d+\\s*(?:시간|분)(?:\\s*\\d+\\s*분)?(?:씩|동안)?",
-            "(?:주|일주일에?)\\s*\\d+\\s*(?:번|회)",
-            "(?:알려\\s*줘|알림|알려\\s*주세요|등록해?\\s*줘?|추가해?\\s*줘?|만들어\\s*줘|해\\s*줘|할래|하고\\s*싶어)",
+            "\\d+\\s*분(?:씩|동안|에)?",
+            "(?:알려\\s*줘|알림|알려\\s*주세요|등록해?\\s*줘?|추가해?\\s*줘?|만들어\\s*줘|해\\s*줘|할래|하고\\s*싶어|타이머)",
             "[,.!?·]",
         ]
         for p in patterns {
