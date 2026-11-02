@@ -1,5 +1,6 @@
 *.xcodeproj/
 ObjectKey/Info.plist
+ObjectKeyWidgets/Info.plist
 .build/
 DerivedData/
 xcuserdata/
