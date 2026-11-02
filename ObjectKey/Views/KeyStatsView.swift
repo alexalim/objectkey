@@ -54,18 +54,7 @@ struct KeyStatsView: View {
 
             Section("주별 완료율") {
                 if weekly.contains(where: { $0.rate != nil }) {
-                    Chart(weekPoints(weekly)) { point in
-                        AreaMark(x: .value("주", point.week), y: .value("완료율", point.percent))
-                            .foregroundStyle(Color.orange.opacity(0.15))
-                        LineMark(x: .value("주", point.week), y: .value("완료율", point.percent))
-                            .foregroundStyle(Color.orange)
-                        PointMark(x: .value("주", point.week), y: .value("완료율", point.percent))
-                            .foregroundStyle(Color.orange).symbolSize(20)
-                    }
-                    .chartYScale(domain: 0...100)
-                    .chartYAxis { AxisMarks(values: [0, 50, 100]) { AxisGridLine(); AxisValueLabel { Text("\($0.as(Int.self) ?? 0)%") } } }
-                    .frame(height: 160)
-                    .accessibilityLabel("주별 완료율 그래프")
+                    WeeklyRateChart(points: weekPoints(weekly))
                 } else {
                     empty
                 }
@@ -73,12 +62,7 @@ struct KeyStatsView: View {
 
             Section("요일별 채운 날") {
                 if !byWeekday.isEmpty {
-                    Chart(weekdayBars(byWeekday)) { bar in
-                        BarMark(x: .value("요일", bar.label), y: .value("채운 날", bar.count))
-                            .foregroundStyle(bar.color)
-                            .cornerRadius(4)
-                    }
-                    .frame(height: 140)
+                    WeekdayChart(bars: weekdayBars(byWeekday))
                 } else {
                     empty
                 }
@@ -86,13 +70,7 @@ struct KeyStatsView: View {
 
             Section {
                 if !byHour.isEmpty {
-                    Chart(0..<24, id: \.self) { hour in
-                        BarMark(x: .value("시", hour), y: .value("기록", byHour[hour] ?? 0))
-                            .foregroundStyle(Color.accentColor)
-                    }
-                    .chartXScale(domain: 0...23)
-                    .chartXAxis { AxisMarks(values: [0, 6, 12, 18, 23]) { AxisValueLabel { Text("\($0.as(Int.self) ?? 0)시") } } }
-                    .frame(height: 120)
+                    HourChart(counts: byHour)
                 } else {
                     empty
                 }
@@ -109,13 +87,13 @@ struct KeyStatsView: View {
     }
 
     // 차트 입력을 작은 구조체로 미리 만든다. 식을 차트 안에 직접 쓰면 컴파일러가 타입 추론을 못 끝낸다.
-    private struct WeekPoint: Identifiable {
+    fileprivate struct WeekPoint: Identifiable {
         let week: Date
         let percent: Double
         var id: Date { week }
     }
 
-    private struct WeekdayBar: Identifiable {
+    fileprivate struct WeekdayBar: Identifiable {
         let id: Int
         let label: String
         let count: Int
@@ -158,5 +136,75 @@ struct KeyStatsView: View {
             Text(label).font(.caption2).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
+    }
+}
+
+// 차트마다 따로 뷰로 나눈다. 한 body에 모두 두면 타입 추론이 제한 시간을 넘긴다.
+private struct WeeklyRateChart: View {
+    let points: [KeyStatsView.WeekPoint]
+
+    var body: some View {
+        Chart(points) { point in
+            AreaMark(x: .value("주", point.week), y: .value("완료율", point.percent))
+                .foregroundStyle(Color.orange.opacity(0.15))
+            LineMark(x: .value("주", point.week), y: .value("완료율", point.percent))
+                .foregroundStyle(Color.orange)
+            PointMark(x: .value("주", point.week), y: .value("완료율", point.percent))
+                .foregroundStyle(Color.orange)
+        }
+        .chartYScale(domain: 0.0...100.0)
+        .chartYAxis {
+            AxisMarks(values: [0.0, 50.0, 100.0]) { (value: AxisValue) in
+                AxisGridLine()
+                AxisValueLabel { Text(percentLabel(value)) }
+            }
+        }
+        .frame(height: 160)
+        .accessibilityLabel("주별 완료율 그래프")
+    }
+
+    private func percentLabel(_ value: AxisValue) -> String {
+        "\(Int(value.as(Double.self) ?? 0))%"
+    }
+}
+
+private struct WeekdayChart: View {
+    let bars: [KeyStatsView.WeekdayBar]
+
+    var body: some View {
+        Chart(bars) { bar in
+            BarMark(x: .value("요일", bar.label), y: .value("채운 날", bar.count))
+                .foregroundStyle(bar.color)
+                .cornerRadius(4)
+        }
+        .frame(height: 140)
+    }
+}
+
+private struct HourChart: View {
+    let counts: [Int: Int]
+
+    private struct HourBar: Identifiable {
+        let id: Int
+        let count: Int
+    }
+
+    var body: some View {
+        let bars = (0..<24).map { HourBar(id: $0, count: counts[$0] ?? 0) }
+        Chart(bars) { bar in
+            BarMark(x: .value("시", bar.id), y: .value("기록", bar.count))
+                .foregroundStyle(Color.accentColor)
+        }
+        .chartXScale(domain: 0...23)
+        .chartXAxis {
+            AxisMarks(values: [0, 6, 12, 18, 23]) { (value: AxisValue) in
+                AxisValueLabel { Text(hourLabel(value)) }
+            }
+        }
+        .frame(height: 120)
+    }
+
+    private func hourLabel(_ value: AxisValue) -> String {
+        "\(value.as(Int.self) ?? 0)시"
     }
 }
