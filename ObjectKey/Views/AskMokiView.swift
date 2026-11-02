@@ -131,9 +131,9 @@ struct AskMokiView: View {
             let command = try await MokiAssistant.interpret(text, keyNames: keys.map(\.name), today: today)
             switch command.kind {
             case .register:
-                draft = makeDraft(command)
+                draft = makeDraft(command, text: text)
             case .record:
-                makePlan(command)
+                makePlan(command, text: text)
             case .question:
                 let facts = HabitFacts.text(keys: keys, logs: logs, notes: notes, state: store.state)
                 answer = try await MokiAssistant.answer(text, facts: facts)
@@ -145,56 +145,68 @@ struct AskMokiView: View {
 
     // MARK: - 등록
 
-    private func makeDraft(_ c: MokiCommand) -> RegisterDraft {
+    /// 원문에서 규칙으로 읽히는 값(요일·시각·길이·알림)을 먼저 쓰고, 모델 값은 빈칸을 채울 때만 쓴다.
+    /// TestFlight에서 모델이 문장 전체를 이름에 넣고 휴식 5분으로 등록한 일이 있었다.
+    private func makeDraft(_ c: MokiCommand, text: String) -> RegisterDraft {
         var d = RegisterDraft()
-        d.name = (c.name ?? "").trimmingCharacters(in: .whitespaces)
+        let modelName = CommandResolver.cleanName(c.name ?? "")
+        let textName = CommandResolver.cleanName(text)
+        // 모델 이름이 비었거나 원문을 거의 그대로 옮겼으면 원문에서 정리한 이름을 쓴다.
+        d.name = modelName.isEmpty || modelName.count > 20 || (c.name ?? "").count >= text.count - 2 ? textName : modelName
         if let e = c.emoji?.first, e.unicodeScalars.contains(where: { $0.properties.isEmojiPresentation }) { d.emoji = String(e) }
-        let start = CommandResolver.minuteOfDay(c.startTime)
-        switch c.action {
-        case .counter?: d.kind = "counter"
-        case .attend?: d.kind = "attend"
-        case .countdown?: d.kind = "countdown"
-        case .session?: d.kind = "session"
-        case nil: d.kind = start != nil && c.minutes != nil ? "attend" : "session"
+        let start = CommandResolver.extractStart(text) ?? CommandResolver.minuteOfDay(c.startTime)
+        let duration = CommandResolver.extractDuration(text) ?? c.minutes
+        let before = CommandResolver.extractRemindBefore(text) ?? c.remindBeforeMinutes
+        let modelAction: String? = c.action.map {
+            switch $0 {
+            case .counter: return "counter"
+            case .attend: return "attend"
+            case .countdown: return "countdown"
+            case .session: return "session"
+            }
         }
+        d.kind = CommandResolver.inferAction(text: text, model: modelAction, hasStart: start != nil, hasDuration: duration != nil)
         switch d.kind {
         case "attend":
             d.attendStart = start ?? d.attendStart
-            if let m = c.minutes { d.attendMinutes = min(max((m + 7) / 15 * 15, 15), 300) }
+            d.attendMinutes = duration.map { min(max(($0 + 7) / 15 * 15, 15), 300) } ?? 60
         case "countdown":
-            if let m = c.minutes { d.countdownMinutes = min(max(m, 1), 60) }
+            if let m = duration { d.countdownMinutes = min(max(m, 1), 60) }
         case "counter":
-            d.goal = min(max(c.count ?? 0, 0), 100)
+            d.goal = min(max(CommandResolver.extractCount(text) ?? c.count ?? 0, 0), 100)
         default:
-            if let m = c.minutes { d.goal = min(max((m + 2) / 5 * 5, 0), 600) }
+            if let m = duration { d.goal = min(max((m + 2) / 5 * 5, 0), 600) }
         }
-        d.schedule = CommandResolver.schedule(weekdays: CommandResolver.weekdays(c.weekdays), timesPerWeek: c.timesPerWeek)
+        let days = CommandResolver.extractWeekdays(text)
+        d.schedule = CommandResolver.schedule(weekdays: days.isEmpty ? CommandResolver.weekdays(c.weekdays) : days,
+                                              timesPerWeek: c.timesPerWeek)
         d.reminderMinute = CommandResolver.reminderMinute(start: d.kind == "attend" ? d.attendStart : start,
                                                           reminder: CommandResolver.minuteOfDay(c.reminderTime),
-                                                          before: c.remindBeforeMinutes)
+                                                          before: before)
         d.cue = (c.cue ?? "").trimmingCharacters(in: .whitespaces)
         return d
     }
 
     // MARK: - 기록
 
-    private func makePlan(_ c: MokiCommand) {
-        guard let name = c.name,
-              let id = CommandResolver.matchKey(name, among: keys.map { (id: $0.id, name: $0.name) }),
+    private func makePlan(_ c: MokiCommand, text: String) {
+        let pairs = keys.map { (id: $0.id, name: $0.name) }
+        // 모델이 고른 이름이 안 맞으면 원문 전체로 다시 찾는다.
+        guard let id = c.name.flatMap({ CommandResolver.matchKey($0, among: pairs) }) ?? CommandResolver.matchKey(text, among: pairs),
               let key = keys.first(where: { $0.id == id }) else {
             problem = "어떤 물건인지 찾지 못했어요. 등록한 이름으로 말해 주세요."
             return
         }
         let amount: Int
         switch key.actionKind {
-        case "counter": amount = min(max(c.count ?? 1, 1), 20)
+        case "counter": amount = min(max(CommandResolver.extractCount(text) ?? c.count ?? 1, 1), 20)
         case "attend": amount = key.attendMinutes
         case "countdown":
             problem = "휴식 타이머는 기록이 남지 않아요."
             return
-        default: amount = min(max(c.minutes ?? (key.dailyGoal > 0 ? key.dailyGoal : 10), 1), 600)
+        default: amount = min(max(CommandResolver.extractDuration(text) ?? c.minutes ?? (key.dailyGoal > 0 ? key.dailyGoal : 10), 1), 600)
         }
-        plan = RecordPlan(key: key, daysAgo: CommandResolver.recordDaysAgo(c.daysAgo), amount: amount)
+        plan = RecordPlan(key: key, daysAgo: CommandResolver.extractDaysAgo(text) ?? CommandResolver.recordDaysAgo(c.daysAgo), amount: amount)
     }
 
     /// 상세 화면의 "기록 추가"와 같은 규칙: 지난 날은 정오, 참석은 하루 한 번.

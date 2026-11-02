@@ -84,4 +84,107 @@ public enum CommandResolver {
         let union = x.union(y).count
         return union == 0 ? 0 : Double(x.intersection(y).count) / Double(union)
     }
+
+    // MARK: - 문장에서 직접 읽기
+    // 기기 안 모델은 작아서 칸을 잘못 채울 때가 있다(문장 전체를 이름에 넣거나, "30분 전"을 휴식 30분으로 읽는 등).
+    // 요일·시각·길이·알림·날짜처럼 규칙으로 확실히 읽히는 값은 원문에서 직접 읽고, 모델 값보다 우선한다.
+
+    private static func matches(_ pattern: String, in text: String) -> [[String]] {
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
+        let ns = text as NSString
+        return regex.matches(in: text, range: NSRange(location: 0, length: ns.length)).map { m in
+            (0..<m.numberOfRanges).map { i in
+                let r = m.range(at: i)
+                return r.location == NSNotFound ? "" : ns.substring(with: r)
+            }
+        }
+    }
+
+    /// 문장 속 요일. "화요일", "월수금", "평일", "주말". 없으면 빈 배열.
+    public static func extractWeekdays(_ text: String) -> [Int] {
+        var names: [String] = []
+        if text.contains("평일") { names.append("평일") }
+        if text.contains("주말") { names.append("주말") }
+        // "화요일", "월·수·금요일", "월수금" 처럼 요일 글자가 붙어 나오는 묶음
+        for m in matches("([월화수목금토일][·,/ ]?)+요일|([월화수목금토일]){2,}(?=[ ,]|$|에|마다)", in: text) {
+            // "요일"의 '일'을 일요일로 세지 않도록 꼬리를 떼고 센다.
+            let days = m[0].hasSuffix("요일") ? String(m[0].dropLast(2)) : m[0]
+            names += days.compactMap { "월화수목금토일".contains($0) ? String($0) : nil }
+        }
+        return weekdays(names)
+    }
+
+    /// 시작 시각. "밤 9시", "21시 30분", "9시 반", "21:00". 알림을 뜻하는 "N분 전"은 무시한다.
+    public static func extractStart(_ text: String) -> Int? {
+        let pattern = "((?:오전|오후|아침|저녁|밤|새벽)\\s*)?(\\d{1,2})\\s*(?:시\\s*(?:(\\d{1,2})\\s*분|반)?|:(\\d{2}))"
+        guard let m = matches(pattern, in: text).first else { return nil }
+        return minuteOfDay(m[0])
+    }
+
+    /// 한 번의 길이(분). "90분", "1시간 30분", "2시간". "30분 전"(알림)은 빼고 본다.
+    public static func extractDuration(_ text: String) -> Int? {
+        if let m = matches("(\\d+)\\s*시간(?:\\s*(\\d+)\\s*분)?(?!\\s*전)", in: text).first, let h = Int(m[1]) {
+            return h * 60 + (Int(m[2]) ?? 0)
+        }
+        for m in matches("(\\d+)\\s*분(?!\\s*전)", in: text) {
+            // "9시 30분"의 30분은 시각이지 길이가 아니다.
+            let before = text.range(of: m[0]).map { String(text[..<$0.lowerBound]) } ?? ""
+            if before.hasSuffix("시 ") || before.hasSuffix("시") { continue }
+            if let n = Int(m[1]) { return n }
+        }
+        return nil
+    }
+
+    /// "30분 전에 알려줘" → 30.
+    public static func extractRemindBefore(_ text: String) -> Int? {
+        matches("(\\d+)\\s*분\\s*전", in: text).first.flatMap { Int($0[1]) }
+    }
+
+    /// "어제" 1, "그저께·그제" 2, "3일 전" 3, "오늘" 0. 말이 없으면 nil.
+    public static func extractDaysAgo(_ text: String) -> Int? {
+        if text.contains("그저께") || text.contains("그제") { return 2 }
+        if text.contains("어제") { return 1 }
+        if let m = matches("(\\d+)\\s*일\\s*전", in: text).first, let n = Int(m[1]) { return recordDaysAgo(n) }
+        if text.contains("오늘") { return 0 }
+        return nil
+    }
+
+    /// 기록할 횟수. "2번", "3회", "두 번". 없으면 nil.
+    public static func extractCount(_ text: String) -> Int? {
+        if let m = matches("(\\d+)\\s*(?:번|회|알|잔|개)", in: text).first { return Int(m[1]) }
+        let words: [(String, Int)] = [("한 번", 1), ("두 번", 2), ("세 번", 3), ("네 번", 4), ("다섯 번", 5), ("한번", 1), ("두번", 2), ("세번", 3)]
+        return words.first { text.contains($0.0) }?.1
+    }
+
+    /// 할 일 종류. 휴식은 말에 휴식·낮잠·타이머가 있을 때만. 수업·레슨이거나 시각과 길이가 다 있으면 참석.
+    /// - Returns: "session" / "counter" / "attend" / "countdown"
+    public static func inferAction(text: String, model: String?, hasStart: Bool, hasDuration: Bool) -> String {
+        let has = { (words: [String]) in words.contains { text.contains($0) } }
+        if has(["휴식", "낮잠", "타이머", "쉬는 시간"]) { return "countdown" }
+        if has(["수업", "레슨", "강의", "학원", "클래스", "과외", "PT", "모임", "예배", "미사"]) || (hasStart && hasDuration) { return "attend" }
+        if has(["먹기", "먹어", "마시", "복용", "번씩", "회씩"]) { return "counter" }
+        if let model, model != "countdown" { return model }
+        return "session"
+    }
+
+    /// 이름만 남긴다. 요일·시각·길이·알림·부탁하는 말을 뺀다. 모델이 문장 전체를 이름에 넣어도 정리된다.
+    public static func cleanName(_ text: String) -> String {
+        var s = text
+        let patterns = [
+            "(?:매주|매일|평일|주말)",
+            "([월화수목금토일][·,/ ]?)+요일(?:마다|에)?",
+            "(?:오전|오후|아침|저녁|밤|새벽)?\\s*\\d{1,2}\\s*시(?:\\s*\\d{1,2}\\s*분|\\s*반)?(?:에|부터|까지)?",
+            "\\d{1,2}:\\d{2}",
+            "\\d+\\s*분\\s*전(?:에)?",
+            "\\d+\\s*(?:시간|분)(?:\\s*\\d+\\s*분)?(?:씩|동안)?",
+            "(?:주|일주일에?)\\s*\\d+\\s*(?:번|회)",
+            "(?:알려\\s*줘|알림|알려\\s*주세요|등록해?\\s*줘?|추가해?\\s*줘?|만들어\\s*줘|해\\s*줘|할래|하고\\s*싶어)",
+            "[,.!?·]",
+        ]
+        for p in patterns {
+            s = (try? NSRegularExpression(pattern: p))?.stringByReplacingMatches(
+                in: s, range: NSRange(location: 0, length: (s as NSString).length), withTemplate: " ") ?? s
+        }
+        return s.split(separator: " ").joined(separator: " ").trimmingCharacters(in: .whitespaces)
+    }
 }

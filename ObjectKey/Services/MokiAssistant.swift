@@ -15,7 +15,7 @@ struct MokiCommand {
         case register, record, question
     }
 
-    @Guide(description: "습관이나 물건 이름. 예: 아이스하키 수업, 영양제, 읽는 책")
+    @Guide(description: "습관이나 물건의 짧은 이름(2~10자). 요일·시각·길이·알림 같은 말은 빼고 이름만. 예: 아이스하키 수업, 영양제, 읽는 책")
     var name: String?
 
     @Guide(description: "어울리는 이모지 한 글자")
@@ -84,7 +84,11 @@ enum MokiAssistant {
         너는 습관 앱 MOKI의 입력 도우미다. 사용자의 한 문장을 정해진 양식으로만 옮긴다.
         오늘은 \(today)이다. 이미 등록된 물건: \(keyNames.isEmpty ? "없음" : keyNames.joined(separator: ", ")).
         등록된 물건 이름이 나오고 이미 한 일을 말하면 record, 새로 시작하거나 만들겠다고 하면 register, 묻는 말이면 question이다.
-        사용자가 말하지 않은 값은 채우지 말고 비워 둔다.
+        사용자가 말하지 않은 값은 채우지 말고 비워 둔다. "N분 전에 알려줘"는 알림이지 휴식 시간이 아니다.
+        예) "화요일 밤 9시 아이스하키 수업 90분, 30분 전에 알려줘" → kind register, name 아이스하키 수업, action attend,
+           weekdays ["화"], startTime 밤 9시, minutes 90, remindBeforeMinutes 30
+        예) "어제 책 30분 읽었어" → kind record, name 책, minutes 30, daysAgo 1
+        예) "이번 달 영양제 몇 번 먹었어?" → kind question
         """)
         return try await session.respond(to: text, generating: MokiCommand.self).content
     }
