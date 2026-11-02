@@ -46,25 +46,48 @@ struct GoalStepper: View {
     }
 }
 
+/// 자정부터 분으로 저장하는 시각 고르기.
+struct TimeOfDayPicker: View {
+    let title: String
+    @Binding var minute: Int
+
+    var body: some View {
+        DatePicker(title, selection: Binding(
+            get: { Calendar.current.date(bySettingHour: minute / 60, minute: minute % 60, second: 0, of: .now) ?? .now },
+            set: { let c = Calendar.current.dateComponents([.hour, .minute], from: $0); minute = (c.hour ?? 0) * 60 + (c.minute ?? 0) }),
+            displayedComponents: .hourAndMinute)
+    }
+}
+
+/// 정해진 시간 참석의 시작 시각과 길이.
+struct AttendEditor: View {
+    @Binding var startMinute: Int
+    @Binding var minutes: Int
+
+    var body: some View {
+        TimeOfDayPicker(title: "시작", minute: $startMinute)
+        Stepper("\(minutes)분 (\(KeyAction.clock(startMinute + minutes))에 끝)", value: $minutes, in: 15...300, step: 15)
+    }
+}
+
 /// 습관 알림 켜기와 시각. 켤 때 알림 권한을 묻고, 거절되면 다시 끈다. -1이면 끔.
 struct ReminderPicker: View {
     @Binding var minute: Int
+    /// 켤 때 처음 잡히는 시각. 참석이면 시작 30분 전.
+    var defaultMinute = 9 * 60
     @State private var denied = false
 
     var body: some View {
         Toggle("매일 알림", isOn: Binding(get: { minute >= 0 }, set: { on in
             guard on else { minute = -1; return }
-            minute = 9 * 60
+            minute = defaultMinute
             Task {
                 denied = !(await HabitReminders.requestPermission())
                 if denied { minute = -1 }
             }
         }))
         if minute >= 0 {
-            DatePicker("시각", selection: Binding(
-                get: { Calendar.current.date(bySettingHour: minute / 60, minute: minute % 60, second: 0, of: .now) ?? .now },
-                set: { let c = Calendar.current.dateComponents([.hour, .minute], from: $0); minute = (c.hour ?? 0) * 60 + (c.minute ?? 0) }),
-                displayedComponents: .hourAndMinute)
+            TimeOfDayPicker(title: "시각", minute: $minute)
         }
         if denied {
             Text("알림이 꺼져 있어요. 설정 앱에서 MOKI 알림을 허용해 주세요.").font(.footnote).foregroundStyle(.orange)
@@ -149,6 +172,7 @@ enum HabitCopy {
     static let goalFooter = "처음에는 실패할 수 없을 만큼 작게 시작하세요. 목표 없음이면 하루 한 번만 비춰도 이어집니다. 한 번 빠지는 건 괜찮지만, 두 번 연속 빠지면 끊겨요."
     static let cuePlaceholder = "이미 하는 행동 (예: 아침 커피 내린)"
     static let cueFooter = "이미 몸에 밴 행동 바로 뒤에 붙이면 잊지 않아요. \"…다음에\"로 표시됩니다."
+    static let attendFooter = "비추거나 알림의 '참석'을 누르면 정한 시간만큼 바로 기록돼요. 시작·종료를 따로 하지 않아도 되고, 진행 중인 다른 기록도 멈추지 않아요."
     static let reminderFooter = "그날 이미 비췄으면 알림은 오지 않아요. 요일 지정이면 정한 요일에만, 주 N회는 그 주를 채우면 오지 않아요."
 
     /// 이틀 규칙을 일정에 맞게 풀어 쓴 문구.
@@ -185,12 +209,22 @@ struct GoalEditor: View {
                 } footer: {
                     Text(HabitCopy.rule(key.schedule))
                 }
-                Section {
-                    GoalStepper(actionKind: key.actionKind, goal: $key.dailyGoal)
-                } header: {
-                    Text("하루 목표")
-                } footer: {
-                    Text(HabitCopy.goalFooter)
+                if key.actionKind == "attend" {
+                    Section {
+                        AttendEditor(startMinute: $key.attendStartMinute, minutes: $key.attendMinutes)
+                    } header: {
+                        Text("정해진 시간")
+                    } footer: {
+                        Text(HabitCopy.attendFooter)
+                    }
+                } else {
+                    Section {
+                        GoalStepper(actionKind: key.actionKind, goal: $key.dailyGoal)
+                    } header: {
+                        Text("하루 목표")
+                    } footer: {
+                        Text(HabitCopy.goalFooter)
+                    }
                 }
                 Section {
                     TextField(HabitCopy.cuePlaceholder, text: $key.cue)
@@ -201,7 +235,8 @@ struct GoalEditor: View {
                     Text(HabitCopy.cueFooter)
                 }
                 Section {
-                    ReminderPicker(minute: $key.reminderMinute)
+                    ReminderPicker(minute: $key.reminderMinute,
+                                   defaultMinute: key.actionKind == "attend" ? max(0, key.attendStartMinute - 30) : 9 * 60)
                 } footer: {
                     Text(HabitCopy.reminderFooter)
                 }

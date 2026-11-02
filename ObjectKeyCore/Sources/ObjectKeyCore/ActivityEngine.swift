@@ -8,6 +8,9 @@ public enum KeyAction: Codable, Equatable, Sendable {
     case countdown(minutes: Int)
     /// 스캔할 때마다 +1.
     case counter
+    /// 수업처럼 시간이 정해진 활동. 한 번 비추면 정해진 시간만큼 바로 기록한다(시작·종료를 따로 하지 않는다).
+    /// - startMinute: 시작 시각(자정부터 분). 알림·표시용.
+    case attend(startMinute: Int, minutes: Int)
 }
 
 /// 일시정지된 세션. 일시정지 시간은 기록 시간에서 빠진다.
@@ -92,6 +95,11 @@ public struct ActivityEngine: Sendable {
         if case .counter = action {
             return .executed(expired + [.incrementCounter(keyID: keyID, at: now), .feedback(.counted)])
         }
+        // 참석은 진행 중인 활동과 상관없이 그 자리에서 기록만 남긴다. 전환 확인도 필요 없다.
+        if case .attend(_, let minutes) = action {
+            return .executed(expired + [.recordSession(keyID: keyID, startedAt: now, duration: TimeInterval(max(1, minutes) * 60)),
+                                        .feedback(.stopped)])
+        }
         // 휴식 중에 멈춰 둔 세션의 물건을 다시 비추면 휴식을 끝내고 그 세션을 이어간다. 기록을 둘로 쪼개지 않는다.
         if case .session = action, case .countdown(_, _, let paused?) = state, paused.keyID == keyID {
             state = resumed(paused, now: now)
@@ -150,6 +158,8 @@ public struct ActivityEngine: Sendable {
             return startCountdown(keyID, minutes: minutes, paused: nil, now: now)
         case (.counter, _):
             return [.incrementCounter(keyID: keyID, at: now), .feedback(.counted)]
+        case (.attend(_, let minutes), _):
+            return [.recordSession(keyID: keyID, startedAt: now, duration: TimeInterval(max(1, minutes) * 60)), .feedback(.stopped)]
         }
     }
 

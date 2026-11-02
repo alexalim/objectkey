@@ -73,6 +73,18 @@ final class ScreenTourTests: XCTestCase {
         row("운동 매트").tap()
         if app.navigationBars["운동 매트"].waitForExistence(timeout: 5) { snap("08-detail-perweek") }
         tapIfExists(app.buttons["닫기"])
+        row("아이스하키").tap()
+        if app.navigationBars["아이스하키 수업"].waitForExistence(timeout: 5) {
+            snap("08b-detail-attend")
+            tapIfExists(app.buttons["습관 설정"])
+            if app.navigationBars["아이스하키 수업 습관 설정"].waitForExistence(timeout: 5) {
+                snap("08c-attend-settings")
+                app.buttons["완료"].tap()
+            }
+        } else {
+            XCTFail("참석 물건 상세가 열려야 한다")
+        }
+        tapIfExists(app.buttons["닫기"])
 
         // 6. 행 밀기 → 습관 버튼
         row("영양제").swipeRight()

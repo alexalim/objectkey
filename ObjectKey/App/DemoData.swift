@@ -31,7 +31,15 @@ enum DemoData {
         let workout = KeyObject(name: "운동 매트", emoji: "moki-exercise", action: .session, threshold: 0.6)
         workout.schedule = .perWeek(3)
         let nap = KeyObject(name: "낮잠 베개", emoji: "💤", action: .countdown(minutes: 20), threshold: 0.6)
-        [supplement, book, workout, nap].forEach { context.insert($0) }
+        let hockey = KeyObject(name: "아이스하키 수업", emoji: "🏒", action: .attend(startMinute: 21 * 60, minutes: 90), threshold: 0.6)
+        hockey.schedule = .weekdays([3])
+        hockey.reminderMinute = 20 * 60 + 30
+        [supplement, book, workout, nap, hockey].forEach { context.insert($0) }
+        // 최근 화요일 세 번 중 두 번 참석.
+        let lastTuesday = (0..<7).first { calendar.component(.weekday, from: day($0)) == 3 } ?? 0
+        for ago in [lastTuesday + 7, lastTuesday + 14] where ago > 0 {
+            context.insert(ActivityLog(keyID: hockey.id, keyName: hockey.name, kind: "session", startedAt: day(ago, hour: 21), duration: 5400))
+        }
 
         // 영양제: 하루 빠진 날이 있지만 이어지는 14일, 오늘은 아직.
         for ago in 1...14 where ago != 6 {

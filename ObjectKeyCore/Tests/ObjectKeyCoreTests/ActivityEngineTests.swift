@@ -186,4 +186,23 @@ final class ActivityEngineTests: XCTestCase {
         let data = try JSONEncoder().encode(state)
         XCTAssertEqual(try JSONDecoder().decode(ActivityState.self, from: data), state)
     }
+
+    // MARK: 정해진 시간 참석
+
+    func test_attend_recordsFixedDurationAtOnce_withoutStateChange() {
+        var engine = ActivityEngine()
+        let hockey = UUID()
+        let r = engine.activate(hockey, action: .attend(startMinute: 21 * 60, minutes: 90), now: t0)
+        XCTAssertEqual(r, .executed([.recordSession(keyID: hockey, startedAt: t0, duration: 5400), .feedback(.stopped)]))
+        XCTAssertEqual(engine.state, .idle)
+    }
+
+    func test_attend_duringSession_doesNotAskOrInterrupt() {
+        var engine = ActivityEngine()
+        _ = engine.handle(match(book), actions: actions, now: t0)
+        let hockey = UUID()
+        let r = engine.activate(hockey, action: .attend(startMinute: 21 * 60, minutes: 90), now: at(60))
+        XCTAssertEqual(r, .executed([.recordSession(keyID: hockey, startedAt: at(60), duration: 5400), .feedback(.stopped)]))
+        XCTAssertEqual(engine.state.activeKeyID, book)
+    }
 }

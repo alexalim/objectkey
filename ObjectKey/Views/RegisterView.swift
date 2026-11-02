@@ -19,6 +19,8 @@ struct RegisterView: View {
     @State private var cue = ""
     @State private var reminderMinute = -1
     @State private var schedule: HabitSchedule = .daily
+    @State private var attendStart = 21 * 60
+    @State private var attendMinutes = 90
     @State private var shots: [CameraController.Frame] = []
     @State private var latest: CameraController.Frame?
     @State private var cameraAllowed: Bool?
@@ -83,25 +85,30 @@ struct RegisterView: View {
                         Text("시간 기록 시작·종료").tag("session")
                         Text("휴식 타이머").tag("countdown")
                         Text("횟수 +1").tag("counter")
+                        Text("정해진 시간 참석 (수업·레슨)").tag("attend")
                     }
                     .pickerStyle(.inline)
                     .labelsHidden()
                     if kind == "countdown" {
                         Stepper("\(minutes)분", value: $minutes, in: 1...60)
                     }
+                    if kind == "attend" {
+                        AttendEditor(startMinute: $attendStart, minutes: $attendMinutes)
+                    }
                 } header: {
                     Text("비추면 실행할 동작")
                 } footer: {
-                    Text("아이콘은 보기 위한 것이고, 실제로 무엇을 할지는 여기서 정합니다. 프리셋을 고르면 어울리는 동작이 자동으로 선택되며 바꿔도 됩니다.")
+                    Text(kind == "attend" ? HabitCopy.attendFooter
+                         : "아이콘은 보기 위한 것이고, 실제로 무엇을 할지는 여기서 정합니다. 프리셋을 고르면 어울리는 동작이 자동으로 선택되며 바꿔도 됩니다.")
                 }
                 if kind != "countdown" {
                     Section {
                         ScheduleEditor(schedule: $schedule)
-                        GoalStepper(actionKind: kind, goal: $goal)
+                        if kind != "attend" { GoalStepper(actionKind: kind, goal: $goal) }
                         TextField(HabitCopy.cuePlaceholder, text: $cue)
                             .focused($focus, equals: .cue)
                             .submitLabel(.done)
-                        ReminderPicker(minute: $reminderMinute)
+                        ReminderPicker(minute: $reminderMinute, defaultMinute: kind == "attend" ? max(0, attendStart - 30) : 9 * 60)
                     } header: {
                         Text("습관 (선택)")
                     } footer: {
@@ -233,6 +240,7 @@ struct RegisterView: View {
         switch kind {
         case "countdown": return .countdown(minutes: minutes)
         case "counter": return .counter
+        case "attend": return .attend(startMinute: attendStart, minutes: attendMinutes)
         default: return .session
         }
     }
@@ -258,7 +266,7 @@ struct RegisterView: View {
         let vectors = shots.compactMap(\.vector)
         let key = KeyObject(name: name.trimmingCharacters(in: .whitespaces), emoji: emoji, action: action,
                             threshold: Calibration.suggestThreshold(for: vectors),
-                            dailyGoal: kind == "countdown" ? 0 : goal)
+                            dailyGoal: kind == "countdown" || kind == "attend" ? 0 : goal)
         if kind != "countdown" {
             key.cue = cue.trimmingCharacters(in: .whitespaces)
             key.reminderMinute = reminderMinute

@@ -1,11 +1,17 @@
 import SwiftData
 import SwiftUI
+import UserNotifications
 
 @main
 struct ObjectKeyApp: App {
     @State private var store = ActivityStore.shared
     @State private var showSplash = true
     @Environment(\.scenePhase) private var scenePhase
+
+    init() {
+        // 알림의 "참석" 버튼은 앱이 꺼져 있어도 이 처리기로 들어온다. 실행 직후에 연결해야 놓치지 않는다.
+        UNUserNotificationCenter.current().delegate = NotificationHandler.shared
+    }
 
     var body: some Scene {
         WindowGroup {

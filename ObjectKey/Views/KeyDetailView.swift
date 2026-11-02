@@ -40,6 +40,7 @@ struct KeyDetailView: View {
                         Text(actionLabel).font(.headline).frame(maxWidth: .infinity).padding(.vertical, 4)
                     }
                     .buttonStyle(.borderedProminent)
+                    .disabled(attendedToday)
                     .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 12, trailing: 16))
                 }
                 if key.supportsGoal {
@@ -134,7 +135,13 @@ struct KeyDetailView: View {
         case .session: return "시간 기록 시작"
         case .countdown(let minutes): return "\(minutes)분 휴식 시작"
         case .counter: return "+1 기록"
+        case .attend(_, let minutes): return attendedToday ? "오늘 참석 완료" : "참석 기록 (\(minutes)분)"
         }
+    }
+
+    /// 참석은 하루 한 번만 기록한다.
+    private var attendedToday: Bool {
+        key.actionKind == "attend" && !records(on: .now).isEmpty
     }
 
     private func run() {
@@ -144,7 +151,10 @@ struct KeyDetailView: View {
     // MARK: - 지난 날 고치기
 
     /// 세션은 목표 시간만큼(목표가 없으면 10분) 넣어 그날이 채워지게 한다.
-    private var addedMinutes: Int { key.dailyGoal > 0 ? key.dailyGoal : 10 }
+    private var addedMinutes: Int {
+        if key.actionKind == "attend" { return key.attendMinutes }
+        return key.dailyGoal > 0 ? key.dailyGoal : 10
+    }
 
     private var addLabel: String {
         key.actionKind == "counter" ? "+1 기록 추가" : "\(addedMinutes)분 기록 추가"

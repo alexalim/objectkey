@@ -65,9 +65,15 @@ final class ActivityStore {
     private func perform(_ effects: [Effect], keys: [KeyObject], context: ModelContext) {
         guard !effects.isEmpty else { return }
         let names = Dictionary(uniqueKeysWithValues: keys.map { ($0.id, $0.name) })
+        let attendIDs = Set(keys.filter { $0.actionKind == "attend" }.map(\.id))
         for effect in effects {
             switch effect {
             case .recordSession(let id, let startedAt, let duration):
+                // 참석은 하루 한 번. 두 번 비추거나 알림 버튼을 또 눌러도 겹쳐 기록하지 않는다.
+                if attendIDs.contains(id), Self.hasRecord(id, on: startedAt, context: context) {
+                    lastMessage = "\(names[id] ?? "참석") 오늘은 이미 기록했어요"
+                    continue
+                }
                 context.insert(ActivityLog(keyID: id, keyName: names[id] ?? "삭제된 물건", kind: "session",
                                            startedAt: startedAt, duration: duration))
                 lastMessage = "\(names[id] ?? "세션") \(Self.format(duration)) 기록"
@@ -85,6 +91,14 @@ final class ActivityStore {
         }
         try? context.save()
         persist()
+    }
+
+    private static func hasRecord(_ id: UUID, on day: Date, context: ModelContext) -> Bool {
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: day)
+        guard let end = calendar.date(byAdding: .day, value: 1, to: start) else { return false }
+        let descriptor = FetchDescriptor<ActivityLog>(predicate: #Predicate { $0.keyID == id && $0.startedAt >= start && $0.startedAt < end })
+        return ((try? context.fetchCount(descriptor)) ?? 0) > 0
     }
 
     private func play(_ feedback: Feedback) {

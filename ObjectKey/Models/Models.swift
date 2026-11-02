@@ -24,6 +24,9 @@ final class KeyObject {
     var scheduleWeekdays: Int = 0
     /// 주 N회일 때 N.
     var timesPerWeek: Int = 3
+    /// 정해진 시간 참석: 시작 시각(자정부터 분)과 길이(분). (v0.4)
+    var attendStartMinute: Int = 21 * 60
+    var attendMinutes: Int = 90
     @Relationship(deleteRule: .cascade, inverse: \ReferenceShot.key)
     var shots: [ReferenceShot] = []
 
@@ -61,7 +64,8 @@ final class KeyObject {
 
     /// Progress 계산에 넘길 목표량. 세션은 초, 카운터는 횟수.
     var goalAmount: Double? {
-        guard supportsGoal, dailyGoal > 0 else { return nil }
+        // 참석은 다녀오면 그날을 채운 것이다. 분 단위 목표를 따로 두지 않는다.
+        guard supportsGoal, actionKind != "attend", dailyGoal > 0 else { return nil }
         return actionKind == "counter" ? Double(dailyGoal) : Double(dailyGoal * 60)
     }
 
@@ -70,6 +74,7 @@ final class KeyObject {
             switch actionKind {
             case "countdown": return .countdown(minutes: countdownMinutes)
             case "counter": return .counter
+            case "attend": return .attend(startMinute: attendStartMinute, minutes: attendMinutes)
             default: return .session
             }
         }
@@ -78,6 +83,7 @@ final class KeyObject {
             case .session: actionKind = "session"
             case .countdown(let minutes): actionKind = "countdown"; countdownMinutes = minutes
             case .counter: actionKind = "counter"
+            case .attend(let start, let minutes): actionKind = "attend"; attendStartMinute = start; attendMinutes = minutes
             }
         }
     }
@@ -160,6 +166,13 @@ extension KeyAction {
         case .session: return "시간 기록 시작·종료"
         case .countdown(let minutes): return "\(minutes)분 휴식 타이머"
         case .counter: return "횟수 +1"
+        case .attend(let start, let minutes): return "\(Self.clock(start))–\(Self.clock(start + minutes)) 참석"
         }
+    }
+
+    /// 자정부터 분 → "21:00". 자정을 넘기면 다음 날 시각으로 돌린다.
+    static func clock(_ minuteOfDay: Int) -> String {
+        let m = ((minuteOfDay % 1440) + 1440) % 1440
+        return String(format: "%02d:%02d", m / 60, m % 60)
     }
 }
