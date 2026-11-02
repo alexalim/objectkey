@@ -217,7 +217,7 @@ struct AskMokiView: View {
         let key = plan.key
         if key.actionKind == "attend",
            logs.contains(where: { $0.keyID == key.id && calendar.isDate($0.startedAt, inSameDayAs: day) }) {
-            problem = "\(key.name)은 그날 이미 참석으로 기록돼 있어요."
+            problem = "\(key.name): 그날은 이미 참석으로 기록돼 있어요."
             return
         }
         if key.actionKind == "counter" {

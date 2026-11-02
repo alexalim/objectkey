@@ -50,7 +50,7 @@ struct KeyDetailView: View {
                 if key.supportsGoal {
                     Section {
                         HStack {
-                            stat("\(progress.streak)일", "지금", tint: progress.atRisk ? .red : .orange)
+                            stat("\(progress.streak)일", "연속", tint: progress.atRisk ? .red : .orange)
                             stat("\(DailyProgress.bestStreak(entries, goal: key.goalAmount, schedule: key.schedule, now: .now, calendar: calendar))일", "최고 기록")
                             stat(monthRate(entries, logs: logs).map { "\(Int(($0 * 100).rounded()))%" } ?? "–", "이번 달 완료율")
                             stat("\(logs.count)회", "전체 기록")
@@ -95,13 +95,13 @@ struct KeyDetailView: View {
                 Button(note(on: day) == nil ? "메모 남기기" : "메모 고치기") { openNote(day) }
                 let count = records(on: day).count
                 if count > 0 {
-                    Button("이 날 기록 \(count)건 지우기", role: .destructive) { removeRecords(on: day) }
+                    Button("이날 기록 \(count)회 지우기", role: .destructive) { removeRecords(on: day) }
                 }
                 Button("취소", role: .cancel) {}
             } message: { day in
                 let count = records(on: day).count
                 let memo = note(on: day).map { "\n메모: \($0.text)" } ?? ""
-                Text((count == 0 ? "이 날은 기록이 없어요." : "이 날 기록 \(count)건이 있어요.") + memo)
+                Text((count == 0 ? "이날은 기록이 없어요." : "이날 기록이 \(count)회 있어요.") + memo)
             }
             .alert(noteDay.map { "\($0.formatted(.dateTime.month().day())) 메모" } ?? "",
                    isPresented: Binding(get: { noteDay != nil }, set: { if !$0 { noteDay = nil } }),

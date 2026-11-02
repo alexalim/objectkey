@@ -33,7 +33,7 @@ struct TodayWidget: Widget {
                 .containerBackground(for: .widget) { Color(.systemBackground) }
         }
         .configurationDisplayName("오늘 할 일")
-        .description("오늘 해야 할 습관과 연속 일수를 보여 줘요. 중간 크기에서는 바로 체크할 수 있어요.")
+        .description("오늘 할 일과 연속 일수를 보여 줘요. 중간 크기에서는 ○를 눌러 바로 기록할 수 있어요.")
         .supportedFamilies([.systemSmall, .systemMedium, .accessoryCircular, .accessoryRectangular])
     }
 }

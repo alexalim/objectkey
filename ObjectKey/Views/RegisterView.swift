@@ -51,7 +51,7 @@ struct RegisterView: View {
         NavigationStack {
             Form {
                 Section("물건") {
-                    TextField("이름 (예: 내가 읽는 책)", text: $name)
+                    TextField("이름 (예: 읽는 책)", text: $name)
                         .focused($focus, equals: .name)
                         .submitLabel(.done)
                     ScrollView(.horizontal, showsIndicators: false) {
@@ -116,7 +116,7 @@ struct RegisterView: View {
                     Text("비추면 실행할 동작")
                 } footer: {
                     Text(kind == "attend" ? HabitCopy.attendFooter
-                         : "아이콘은 보기 위한 것이고, 실제로 무엇을 할지는 여기서 정합니다. 프리셋을 고르면 어울리는 동작이 자동으로 선택되며 바꿔도 됩니다.")
+                         : "아이콘을 고르면 어울리는 동작이 먼저 골라져요. 원하는 동작으로 바꿔도 돼요.")
                 }
                 if kind != "countdown" {
                     Section {
@@ -129,7 +129,7 @@ struct RegisterView: View {
                     } header: {
                         Text("습관 (선택)")
                     } footer: {
-                        Text(HabitCopy.goalFooter + " 나중에 목록에서 행을 오른쪽으로 밀어 바꿀 수 있어요.")
+                        Text(HabitCopy.goalFooter + " 나중에 홈에서 오른쪽으로 밀어 바꿀 수 있어요.")
                     }
                 }
                 Section {
@@ -139,7 +139,7 @@ struct RegisterView: View {
                 } footer: {
                     VStack(alignment: .leading, spacing: 4) {
                         if wantsPhotos {
-                            Text("노란 상자가 물건을 감싼 상태에서, 각도와 거리를 조금씩 바꿔 \(Self.requiredShots)장 이상 찍어 주세요. 사진은 기기 안에만 저장됩니다.")
+                            Text("노란 상자가 물건을 감싸면 각도와 거리를 조금씩 바꿔 \(Self.requiredShots)장 이상 찍어 주세요. 사진은 이 기기에만 저장돼요.")
                         }
                         Text(photoNote).foregroundStyle(shots.isEmpty || shots.count >= Self.requiredShots ? Color.secondary : Color.orange)
                         if let saveHint { Text(saveHint).foregroundStyle(.orange) }
@@ -174,7 +174,7 @@ struct RegisterView: View {
                 Button("그래도 등록", action: commit)
                 Button("취소", role: .cancel) {}
             } message: { key in
-                Text("'\(key.name)'과 비슷해 보여요. 둘 다 두면 비출 때마다 어느 쪽인지 골라야 합니다.")
+                Text("'\(key.name)'하고 비슷해 보여요. 둘 다 두면 비출 때마다 어느 쪽인지 골라야 해요.")
             }
         }
     }
@@ -191,7 +191,7 @@ struct RegisterView: View {
     private var photoNote: String {
         switch shots.count {
         case 0: return "사진 없이도 저장할 수 있어요. 대신 비추기로는 알아보지 못하니 상세 화면 버튼·위젯·Siri·✨로 기록해요."
-        case 1..<Self.requiredShots: return "비추기로 알아보게 하려면 \(Self.requiredShots - shots.count)장 더 찍는 걸 권해요. 지금 저장해도 돼요."
+        case 1..<Self.requiredShots: return "\(Self.requiredShots - shots.count)장 더 찍으면 비추기로 알아봐요. 지금 저장해도 돼요."
         default: return "비추면 알아볼 수 있어요."
         }
     }
@@ -240,7 +240,7 @@ struct RegisterView: View {
                 }
 
                 if latest?.vector == nil {
-                    Text("가이드 안에서 물건을 찾는 중… 노란 상자가 물건을 감싸면 촬영할 수 있어요.")
+                    Text("네모 칸 안에서 물건을 찾는 중… 노란 상자가 물건을 감싸면 촬영할 수 있어요.")
                         .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
                 }
                 Button {
@@ -331,7 +331,7 @@ struct CameraDeniedView: View {
         VStack(spacing: 8) {
             Image(.question).resizable().scaledToFit().frame(height: 96)
             Text("카메라 권한이 꺼져 있어요").font(.headline)
-            Text("물건을 등록하고 알아보려면 카메라가 필요합니다. 등록한 물건은 목록에서 눌러 바로 실행할 수도 있어요.")
+            Text("비추기로 기록하려면 카메라가 필요해요. 카메라 없이도 물건을 눌러 상세 화면에서 기록할 수 있어요.")
                 .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
             if let url = URL(string: UIApplication.openSettingsURLString) {
                 Link("설정에서 허용하기", destination: url)

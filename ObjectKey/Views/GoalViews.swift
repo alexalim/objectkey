@@ -26,8 +26,8 @@ extension HabitPhase {
     /// 단계별 한 줄 조언.
     var tip: String {
         switch self {
-        case .adapting: return "작게라도 시작하는 것만 생각해요."
-        case .wiring: return "쉬는 날에도 한 번은 비춰 주세요."
+        case .adapting: return "작게라도 시작만 하면 돼요."
+        case .wiring: return "고비인 시기예요. 두 번 연속만 피하면 돼요."
         case .automating: return "이제 몸이 먼저 기억하기 시작해요."
         case .formed: return "66일을 넘겼어요. 아직 어색해도 괜찮아요, 계속 이어가면 돼요."
         }
@@ -41,7 +41,7 @@ struct GoalStepper: View {
 
     var body: some View {
         let counter = actionKind == "counter"
-        Stepper(goal == 0 ? "목표 없음 (하루 1번 비추기)" : "하루 \(goal)\(counter ? "회" : "분")",
+        Stepper(goal == 0 ? "목표 없음 (한 번만 해도 채움)" : "하루 \(goal)\(counter ? "회" : "분")",
                 value: $goal, in: 0...(counter ? 100 : 600), step: counter ? 1 : 5)
     }
 }
@@ -169,18 +169,18 @@ struct ScheduleEditor: View {
 
 /// 습관 설정 공통 안내. 등록 화면과 설정 시트가 같은 문구를 쓴다.
 enum HabitCopy {
-    static let goalFooter = "처음에는 실패할 수 없을 만큼 작게 시작하세요. 목표 없음이면 하루 한 번만 비춰도 이어집니다. 한 번 빠지는 건 괜찮지만, 두 번 연속 빠지면 끊겨요."
-    static let cuePlaceholder = "이미 하는 행동 (예: 아침 커피 내린)"
-    static let cueFooter = "이미 몸에 밴 행동 바로 뒤에 붙이면 잊지 않아요. \"…다음에\"로 표시됩니다."
+    static let goalFooter = "실패할 수 없을 만큼 작게 시작해요. 목표가 없으면 한 번만 기록해도 채워져요."
+    static let cuePlaceholder = "예: 아침 커피 내린 (→ 아침 커피 내린 다음에)"
+    static let cueFooter = "매일 하는 행동 바로 뒤에 붙이면 덜 잊어요. 입력한 말 뒤에 '다음에'가 붙어 보여요."
     static let attendFooter = "비추거나 알림의 '참석'을 누르면 정한 시간만큼 바로 기록돼요. 시작·종료를 따로 하지 않아도 되고, 진행 중인 다른 기록도 멈추지 않아요."
-    static let reminderFooter = "그날 이미 비췄으면 알림은 오지 않아요. 요일 지정이면 정한 요일에만, 주 N회는 그 주를 채우면 오지 않아요."
+    static let reminderFooter = "그날 이미 기록했으면 알림이 오지 않아요. 요일 지정은 정한 요일에만 오고, 주 N회는 그 주를 채우면 멈춰요."
 
     /// 이틀 규칙을 일정에 맞게 풀어 쓴 문구.
     static func rule(_ schedule: HabitSchedule) -> String {
         switch schedule {
-        case .daily: return "하루 빠지는 건 괜찮아요. 이틀 연속만 피하면 일수가 이어집니다."
-        case .weekdays: return "정한 요일을 한 번 놓쳐도 괜찮아요. 두 번 연속만 피하면 이어지고, 다른 날에 해도 셉니다."
-        case .perWeek: return "한 주를 못 채워도 괜찮아요. 두 주 연속만 피하면 일수가 이어집니다."
+        case .daily: return "하루 빠져도 괜찮아요. 이틀 연속만 피하면 이어져요."
+        case .weekdays: return "정한 요일을 한 번 놓쳐도 괜찮아요. 두 번 연속만 피하면 이어지고, 다른 요일에 해도 쳐 줘요."
+        case .perWeek: return "한 주를 못 채워도 괜찮아요. 두 주 연속만 피하면 이어져요."
         }
     }
 
@@ -188,8 +188,8 @@ enum HabitCopy {
     /// 무엇이 잘못됐는지보다 "무엇을 하면 이어지는지"를 먼저 말한다.
     static func risk(_ schedule: HabitSchedule, streak: Int, weekDone: Int = 0) -> String {
         switch schedule {
-        case .daily: return "오늘 한 번 하면 \(streak)일이 이어져요. 어제 쉬었으니 오늘은 꼭!"
-        case .weekdays: return "오늘 하면 \(streak)일이 이어져요. 지난번 정한 날을 쉬었어요."
+        case .daily: return "오늘 한 번 하면 \(streak)일이 이어져요. 어제 빠졌으니 오늘은 꼭!"
+        case .weekdays: return "오늘 하면 \(streak)일이 이어져요. 지난번 정한 날을 놓쳤어요."
         case .perWeek(let n):
             let remaining = max(1, n - weekDone)
             return "이번 주 \(remaining)회 더 하면 \(streak)일이 이어져요. (이번 주 \(weekDone)/\(n)회)"
@@ -387,7 +387,7 @@ struct HabitGuide: View {
             if let progress, progress.streak > 0 {
                 Text((progress.atRisk ? HabitCopy.risk(schedule, streak: progress.streak, weekDone: progress.weekDone) : "지금 \(progress.streak)일째 이어가고 있어요.") + total)
             } else {
-                Text("오늘 한 번 비추면 1일째가 시작돼요." + total)
+                Text("오늘 목표를 채우면 1일째가 시작돼요." + total)
             }
         }
     }
@@ -462,7 +462,7 @@ struct MoodHeader: View {
             return (.key, "오늘 목표 \(metGoals)/\(goals.count) 달성. 계속 가 볼까요?", nil)
         }
         if activeToday > 0 {
-            return (.reading, "오늘도 비추고 있어요. 좋아요!", nil)
+            return (.reading, "오늘도 기록하고 있네요. 좋아요!", nil)
         }
         if let best = items.max(by: { $0.progress.streak < $1.progress.streak }),
            let phase = best.progress.phase {

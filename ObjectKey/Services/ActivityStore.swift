@@ -122,7 +122,7 @@ final class ActivityStore {
             guard granted else { return }
             let content = UNMutableNotificationContent()
             content.title = "\(name) 끝"
-            content.body = "멈춰 둔 세션이 있으면 다시 이어집니다."
+            content.body = "멈춰 둔 시간 기록이 있으면 다시 이어져요."
             content.sound = .default
             let interval = max(1, date.timeIntervalSinceNow)
             let trigger = UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: false)

@@ -12,7 +12,7 @@ struct ScanView: View {
     @State private var camera = CameraController()
     @State private var cameraAllowed: Bool?
     @State private var filter = StabilityFilter(requiredStreak: 3)
-    @State private var hint = "가이드 안에 물건을 비춰 주세요"
+    @State private var hint = "네모 칸 안에 물건을 비춰 주세요"
     @State private var paused = false
     @State private var choices: [KeyObject] = []
     @State private var pending: PendingSwitch?
@@ -84,7 +84,7 @@ struct ScanView: View {
                 Button(key.name) { run(store.activate(key, keys: keys, context: context)) }
             }
         } message: {
-            Text("비슷한 물건이 여러 개 보여요. 실행하지 않고 기다리는 중입니다.")
+            Text("비슷한 물건이 여러 개예요. 고를 때까지 기다릴게요.")
         }
         .switchConfirmation($pending, keys: keys) { dismiss() }
         .sheet(isPresented: $showManual, onDismiss: { paused = false }) { manualPicker }
@@ -98,7 +98,7 @@ struct ScanView: View {
             diagnostics = "물체 없음"
             _ = filter.feed(.noMatch)
             if Date.now.timeIntervalSince(lastSeen) > 4 {
-                hint = "가이드 안에 물건이 안 보여요. 가까이 비춰 주세요"
+                hint = "네모 칸 안에 물건이 안 보여요. 가까이 비춰 주세요"
                 mood = .question
             }
             return
@@ -117,7 +117,7 @@ struct ScanView: View {
             hint = "등록한 물건이 안 보여요. 가까이 비추거나 직접 선택해 주세요"
             mood = .question
         } else {
-            hint = "가이드 안에 물건을 비춰 주세요"
+            hint = "네모 칸 안에 물건을 비춰 주세요"
             mood = .scan
         }
         guard let confirmed = filter.feed(outcome) else { return }

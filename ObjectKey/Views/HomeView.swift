@@ -51,14 +51,14 @@ struct HomeView: View {
                         }
                         .textCase(nil)
                     } footer: {
-                        Text("행을 누르면 달력과 기록이 열리고, 거기서 카메라 없이 기록할 수 있어요. 오른쪽으로 밀면 습관 설정이 열립니다.")
+                        Text("누르면 상세 화면에서 기록할 수 있어요. 오른쪽으로 밀면 습관 설정, 왼쪽은 삭제예요.")
                     }
                 }
                 if !resting.isEmpty {
                     Section("오늘은 쉬는 날") { rows(resting, progress: progressByID, asTodo: false) }
                 }
                 if !tools.isEmpty {
-                    Section("기타") { rows(tools, progress: progressByID, asTodo: false) }
+                    Section("휴식 타이머") { rows(tools, progress: progressByID, asTodo: false) }
                 }
             }
             .overlay {
@@ -67,7 +67,7 @@ struct HomeView: View {
                         Image(.peek).resizable().scaledToFit().frame(height: 140)
                         Text("아직 등록한 물건이 없어요")
                     } description: {
-                        Text("책, 컵, 붓처럼 책상 위 물건에 능력을 부여해 보세요.")
+                        Text("책, 컵, 영양제처럼 늘 쓰는 물건을 등록해 보세요.")
                     } actions: {
                         Button("첫 물건 등록하기") { showRegister = true }.buttonStyle(.borderedProminent)
                     }
@@ -244,14 +244,14 @@ struct ActiveBanner: View {
                 TimelineView(.periodic(from: .now, by: 1)) { context in
                     banner(id, title: "진행 중", value: ActivityStore.format(accumulated + context.date.timeIntervalSince(segmentStart)))
                 }
-            } footer: { Text("같은 물건을 다시 비추면 종료하고 기록합니다.") }
+            } footer: { Text("다시 비추거나 상세 화면에서 끝내면 기록돼요.") }
         case .countdown(let id, let endsAt, let paused):
             Section {
                 TimelineView(.periodic(from: .now, by: 1)) { context in
                     banner(id, title: "휴식", value: ActivityStore.format(max(0, endsAt.timeIntervalSince(context.date))))
                 }
             } footer: {
-                if paused != nil { Text("휴식이 끝나면 멈춰 둔 세션이 이어집니다.") }
+                if paused != nil { Text("휴식이 끝나면 멈춰 둔 시간 기록이 이어져요.") }
             }
         }
     }
@@ -317,7 +317,7 @@ private struct SwitchConfirmation: ViewModifier {
             }
             Button("취소", role: .cancel) { onDone() }
         } message: { _ in
-            Text("진행 중인 활동을 끝내고 기록한 뒤 새 활동을 시작합니다.")
+            Text("하던 기록을 저장하고 새로 시작해요.")
         }
     }
 

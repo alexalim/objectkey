@@ -73,10 +73,10 @@ enum HabitReminders {
         if case .attend(let start, _) = key.action {
             let ahead = start - key.reminderMinute
             let when = ahead > 0 ? "\(ahead)분 뒤 \(KeyAction.clock(start))에 시작해요." : "\(KeyAction.clock(start))에 시작해요."
-            return when + " 다녀오면 길게 눌러 '참석'을 눌러 주세요."
+            return when + " 다녀와서 알림을 길게 누르고 '참석'을 눌러 주세요."
         }
         let cue = key.cue.trimmingCharacters(in: .whitespaces)
-        return cue.isEmpty ? "비춰 볼 시간이에요. 작게라도 충분해요." : "\(cue) 다음에 비춰 볼 시간이에요."
+        return cue.isEmpty ? "할 시간이에요. 작게라도 충분해요." : "\(cue) 다음에 할 시간이에요."
     }
 
     /// 알림의 "참석" 버튼. 앱 화면 없이 실행되므로 공용 저장소와 진행 상태를 쓴다.

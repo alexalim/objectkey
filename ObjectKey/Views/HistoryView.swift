@@ -36,7 +36,7 @@ struct HistoryView: View {
                     Image(.reading).resizable().scaledToFit().frame(height: 120)
                     Text("기록이 없어요")
                 } description: {
-                    Text("물건을 비춰 세션을 끝내면 여기에 쌓여요.")
+                    Text("기록하면 여기에 쌓여요.")
                 }
             }
         }
@@ -46,7 +46,7 @@ struct HistoryView: View {
                 Button("모든 데이터 삭제", role: .destructive) { confirmWipe = true }
             } label: { Image(systemName: "ellipsis.circle") }
         }
-        .confirmationDialog("등록한 물건, 사진, 기록을 모두 지웁니다. 되돌릴 수 없어요.", isPresented: $confirmWipe, titleVisibility: .visible) {
+        .confirmationDialog("등록한 물건, 사진, 기록을 모두 지워요. 되돌릴 수 없어요.", isPresented: $confirmWipe, titleVisibility: .visible) {
             Button("모두 삭제", role: .destructive, action: wipe)
         }
     }
