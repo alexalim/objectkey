@@ -5,7 +5,7 @@ import ObjectKeyCore
 /// 엔진 상태를 잠금 화면 실시간 현황과 맞춘다. 활동은 늘 하나만 둔다.
 @MainActor
 enum LiveActivitySync {
-    static func update(_ state: ActivityState, keys: [UUID: (name: String, emoji: String)]) {
+    static func update(_ state: ObjectKeyCore.ActivityState, keys: [UUID: (name: String, emoji: String)]) {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
         let content: MokiActivityAttributes.ContentState?
         switch state {
