@@ -21,31 +21,35 @@ struct HomeView: View {
         NavigationStack {
             let tracked = keys.filter(\.supportsGoal).map { (key: $0, progress: KeyProgress.of($0, logs: logs, state: store.state)) }
             let progressByID = Dictionary(uniqueKeysWithValues: tracked.map { ($0.key.id, $0.progress) })
+            // 오늘 할 일: 일정상 오늘 해야 하거나 오늘 이미 한 습관. 시간이 정해진 것부터 시간순.
+            let todo = tracked.filter { $0.key.schedule.isDue(on: .now, metToday: $0.progress.metToday,
+                                                              weekDone: $0.progress.weekDone, calendar: .current) }
+                .map(\.key)
+                .sorted { ($0.todoMinute ?? Int.max, $0.createdAt) < ($1.todoMinute ?? Int.max, $1.createdAt) }
+            let resting = tracked.map(\.key).filter { key in !todo.contains { $0.id == key.id } }
+            let tools = keys.filter { !$0.supportsGoal }
+            let doneCount = todo.filter { progressByID[$0.id]?.metToday == true }.count
             List {
                 if !tracked.isEmpty { MoodHeader(items: tracked) }
                 ActiveBanner(state: store.state, keys: keys)
 
-                Section {
-                    ForEach(keys) { key in
-                        Button { detailKey = key } label: {
-                            KeyRow(key: key, active: store.state.activeKeyID == key.id, progress: progressByID[key.id])
+                if !tracked.isEmpty {
+                    Section {
+                        if todo.isEmpty {
+                            Text("오늘은 할 일이 없어요. 쉬는 날이에요.").foregroundStyle(.secondary)
                         }
-                        .tint(.primary)
-                        .contextMenu {
-                            if key.supportsGoal { Button("습관 설정…", systemImage: "target") { editingGoal = key } }
-                        }
-                        // 오른쪽 밀기는 onDelete가 쓰므로 습관은 왼쪽에서 민다.
-                        .swipeActions(edge: .leading) {
-                            if key.supportsGoal {
-                                Button("습관", systemImage: "target") { editingGoal = key }.tint(.orange)
-                            }
-                        }
+                        rows(todo, progress: progressByID, asTodo: true)
+                    } header: {
+                        Text("오늘 할 일 \(doneCount)/\(todo.count)")
+                    } footer: {
+                        Text("행을 누르면 달력과 기록이 열리고, 거기서 카메라 없이 기록할 수 있어요. 오른쪽으로 밀면 습관 설정이 열립니다.")
                     }
-                    .onDelete(perform: delete)
-                } header: {
-                    Text("내 물건")
-                } footer: {
-                    if !keys.isEmpty { Text("행을 누르면 달력과 기록이 열리고, 거기서 카메라 없이 기록할 수 있어요. 오른쪽으로 밀면 습관 설정이 열립니다.") }
+                }
+                if !resting.isEmpty {
+                    Section("오늘은 쉬는 날") { rows(resting, progress: progressByID, asTodo: false) }
+                }
+                if !tools.isEmpty {
+                    Section("기타") { rows(tools, progress: progressByID, asTodo: false) }
                 }
             }
             .overlay {
@@ -107,12 +111,34 @@ struct HomeView: View {
         Task { await HabitReminders.reschedule(keys: keys, logs: logs, state: store.state) }
     }
 
-    private func delete(at offsets: IndexSet) {
-        for index in offsets {
-            store.finishIfInvolved(keys[index], keys: keys, context: context)
-            let id = keys[index].id
+    /// 목록 한 묶음. 섹션마다 순서가 달라 삭제는 그 묶음 기준으로 처리한다.
+    private func rows(_ list: [KeyObject], progress: [UUID: KeyProgress], asTodo: Bool) -> some View {
+        ForEach(list) { key in
+            Button { detailKey = key } label: {
+                KeyRow(key: key, active: store.state.activeKeyID == key.id, progress: progress[key.id],
+                       done: asTodo ? progress[key.id]?.metToday ?? false : nil,
+                       time: asTodo ? key.todoMinute.map(KeyAction.clock) : nil)
+            }
+            .tint(.primary)
+            .contextMenu {
+                if key.supportsGoal { Button("습관 설정…", systemImage: "target") { editingGoal = key } }
+            }
+            // 오른쪽 밀기는 onDelete가 쓰므로 습관은 왼쪽에서 민다.
+            .swipeActions(edge: .leading) {
+                if key.supportsGoal {
+                    Button("습관", systemImage: "target") { editingGoal = key }.tint(.orange)
+                }
+            }
+        }
+        .onDelete { offsets in delete(offsets.map { list[$0] }) }
+    }
+
+    private func delete(_ targets: [KeyObject]) {
+        for key in targets {
+            store.finishIfInvolved(key, keys: keys, context: context)
+            let id = key.id
             try? context.delete(model: DayNote.self, where: #Predicate { $0.keyID == id })
-            context.delete(keys[index])
+            context.delete(key)
         }
         try? context.save()
     }
@@ -122,12 +148,24 @@ struct KeyRow: View {
     let key: KeyObject
     var active = false
     var progress: KeyProgress?
+    /// 오늘 할 일 목록이면 완료 여부. nil이면 체크 표시를 그리지 않는다.
+    var done: Bool?
+    /// 오늘 할 일의 시각("21:00").
+    var time: String?
 
     var body: some View {
         HStack(spacing: 12) {
+            if let done {
+                Image(systemName: done ? "checkmark.circle.fill" : "circle")
+                    .font(.title3).foregroundStyle(done ? Color.green : Color.secondary)
+                    .accessibilityLabel(done ? "오늘 완료" : "오늘 아직")
+            }
             KeyBadge(symbol: key.emoji)
             VStack(alignment: .leading, spacing: 2) {
-                Text(key.name).font(.headline)
+                HStack(spacing: 6) {
+                    Text(key.name).font(.headline)
+                    if let time { Text(time).font(.caption.monospacedDigit()).foregroundStyle(.secondary) }
+                }
                 Text(subtitle).font(.subheadline).foregroundStyle(.secondary)
                 if let habitLine { Text(habitLine).font(.caption).foregroundStyle(.secondary) }
             }
@@ -256,5 +294,13 @@ private struct SwitchConfirmation: ViewModifier {
         guard let p = pending else { return "" }
         let name = { (id: UUID) in keys.first { $0.id == id }?.name ?? "물건" }
         return "\(name(p.from)) → \(name(p.to))"
+    }
+}
+
+extension KeyObject {
+    /// 오늘 할 일에서 시간순 정렬·표시에 쓰는 시각. 참석은 시작 시각, 그 밖에는 알림 시각.
+    var todoMinute: Int? {
+        if actionKind == "attend" { return attendStartMinute }
+        return reminderMinute >= 0 ? reminderMinute : nil
     }
 }

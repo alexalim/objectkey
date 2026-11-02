@@ -230,4 +230,16 @@ final class ProgressTests: XCTestCase {
     func test_completionRate_noChancesYet_isNil() {
         XCTAssertNil(rate([], since: 0))
     }
+
+    // MARK: 오늘 할 일
+
+    func test_isDue_followsScheduleAndKeepsDoneItems() {
+        // now는 목요일(5).
+        XCTAssertTrue(HabitSchedule.daily.isDue(on: now, metToday: false, weekDone: 0, calendar: calendar))
+        XCTAssertFalse(monWedFri.isDue(on: now, metToday: false, weekDone: 0, calendar: calendar))
+        XCTAssertTrue(monWedFri.isDue(on: now, metToday: true, weekDone: 1, calendar: calendar), "쉬는 날에 했으면 완료로 보인다")
+        XCTAssertTrue(HabitSchedule.weekdays([5]).isDue(on: now, metToday: false, weekDone: 0, calendar: calendar))
+        XCTAssertTrue(HabitSchedule.perWeek(3).isDue(on: now, metToday: false, weekDone: 2, calendar: calendar))
+        XCTAssertFalse(HabitSchedule.perWeek(3).isDue(on: now, metToday: false, weekDone: 3, calendar: calendar), "이번 주를 채웠으면 쉰다")
+    }
 }

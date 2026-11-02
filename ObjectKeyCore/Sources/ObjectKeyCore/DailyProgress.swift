@@ -70,6 +70,19 @@ public enum HabitSchedule: Equatable, Sendable {
     case perWeek(Int)
 }
 
+extension HabitSchedule {
+    /// 오늘 할 일 목록에 올릴지. 오늘 이미 채웠으면 완료 표시를 위해 계속 올린다.
+    /// 주 N회는 이번 주를 다 채우기 전까지 매일 올린다.
+    public func isDue(on day: Date, metToday: Bool, weekDone: Int, calendar: Calendar) -> Bool {
+        if metToday { return true }
+        switch self {
+        case .daily: return true
+        case .weekdays(let days): return days.isEmpty || days.contains(calendar.component(.weekday, from: day))
+        case .perWeek(let n): return weekDone < max(1, n)
+        }
+    }
+}
+
 /// 달력에 칠할 하루 상태.
 public enum DayStatus: Equatable, Sendable {
     /// 조건을 채운 날. 연속 일수에 들어간다.
