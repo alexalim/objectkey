@@ -6,6 +6,8 @@ import UserNotifications
 struct ObjectKeyApp: App {
     @State private var store = ActivityStore.shared
     @State private var showSplash = true
+    /// 소개를 한 번 끝까지 봤거나 건너뛰었는지.
+    @AppStorage("didFinishOnboarding") private var didFinishOnboarding = false
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
@@ -20,6 +22,11 @@ struct ObjectKeyApp: App {
             // 홈은 뒤에서 미리 준비하고, 첫 화면을 누르면 걷어낸다.
             root
                 .environment(store)
+                // 처음 설치하면 시작 화면을 누른 뒤 소개를 한 번 보여 준다.
+                .fullScreenCover(isPresented: Binding(get: { !showSplash && !didFinishOnboarding },
+                                                      set: { if !$0 { didFinishOnboarding = true } })) {
+                    OnboardingView { didFinishOnboarding = true }
+                }
             // 앱을 완전히 새로 켤 때만이 아니라, 홈 화면으로 나갔다가 다시 열 때도 보여 준다.
             // 제어 센터를 내리는 정도(inactive)로는 다시 띄우지 않는다.
             .onChange(of: scenePhase) { _, phase in

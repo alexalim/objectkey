@@ -15,6 +15,7 @@ struct HomeView: View {
     /// 목록에서 누른 물건. 바로 기록하지 않고 상세 화면을 연다(실수 방지).
     @State private var detailKey: KeyObject?
     @State private var showAsk = false
+    @State private var showHelp = false
 
     private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -78,6 +79,10 @@ struct HomeView: View {
                     NavigationLink { HistoryView() } label: { Image(systemName: "clock.arrow.circlepath") }
                         .accessibilityLabel("기록")
                 }
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { showHelp = true } label: { Image(systemName: "questionmark.circle") }
+                        .accessibilityLabel("사용 안내")
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showRegister = true } label: { Image(systemName: "plus") }
                         .accessibilityLabel("물건 등록")
@@ -101,6 +106,7 @@ struct HomeView: View {
             .sheet(isPresented: $showRegister, onDismiss: rescheduleReminders) { RegisterView() }
             .sheet(item: $editingGoal, onDismiss: rescheduleReminders) { GoalEditor(key: $0) }
             .sheet(item: $detailKey, onDismiss: rescheduleReminders) { KeyDetailView(key: $0, keys: keys) }
+            .sheet(isPresented: $showHelp) { HelpView() }
             .sheet(isPresented: $showAsk, onDismiss: rescheduleReminders) {
                 if #available(iOS 26.0, *) {
                     AskMokiView()

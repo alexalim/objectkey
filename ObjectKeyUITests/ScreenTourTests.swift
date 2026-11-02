@@ -29,6 +29,20 @@ final class ScreenTourTests: XCTestCase {
         // 홈은 시작 화면 뒤에 이미 떠 있으므로, 홈이 보이는지가 아니라 시작 화면이 사라졌는지로 확인한다.
         if !start.waitForNonExistence(timeout: 5), start.exists { start.tap() }
         XCTAssertTrue(start.waitForNonExistence(timeout: 5), "누르면 시작 화면이 사라져야 한다")
+
+        // 처음 설치라 소개가 뜬다. 네 장을 넘겨 찍고 시작한다.
+        let next = app.buttons["다음"]
+        if next.waitForExistence(timeout: 5) {
+            snap("01b-onboarding-1")
+            for i in 2...4 {
+                next.tap()
+                if i == 3 { snap("01c-onboarding-3") }
+            }
+            snap("01d-onboarding-4")
+            app.buttons["시작하기"].tap()
+        } else {
+            XCTFail("처음 설치하면 소개가 보여야 한다")
+        }
         snap("02-home")
 
         // 2. 물건 상세: 행을 누르면 기록하지 않고 상세가 열린다
@@ -110,6 +124,17 @@ final class ScreenTourTests: XCTestCase {
             app.buttons["취소"].tap()
         } else {
             XCTFail("등록 화면이 열려야 한다")
+        }
+
+        // 7b. 사용 안내
+        tapIfExists(app.buttons["사용 안내"])
+        if app.navigationBars["사용 안내"].waitForExistence(timeout: 5) {
+            snap("10c-help")
+            app.swipeUp()
+            snap("10d-help-scrolled")
+            app.buttons["완료"].tap()
+        } else {
+            XCTFail("사용 안내가 열려야 한다")
         }
 
         // 8. 스캔 화면 (시뮬레이터에는 카메라가 없다)
