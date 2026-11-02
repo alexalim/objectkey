@@ -14,6 +14,7 @@ struct HomeView: View {
     @State private var editingGoal: KeyObject?
     /// 목록에서 누른 물건. 바로 기록하지 않고 상세 화면을 연다(실수 방지).
     @State private var detailKey: KeyObject?
+    @State private var showAsk = false
 
     private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -81,6 +82,12 @@ struct HomeView: View {
                     Button { showRegister = true } label: { Image(systemName: "plus") }
                         .accessibilityLabel("물건 등록")
                 }
+                if #available(iOS 26.0, *) {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button { showAsk = true } label: { Image(systemName: "sparkles") }
+                            .accessibilityLabel("MOKI에게 말하기")
+                    }
+                }
             }
             .safeAreaInset(edge: .bottom) {
                 if !keys.isEmpty {
@@ -95,6 +102,9 @@ struct HomeView: View {
             .sheet(isPresented: $showRegister, onDismiss: rescheduleReminders) { RegisterView() }
             .sheet(item: $editingGoal, onDismiss: rescheduleReminders) { GoalEditor(key: $0) }
             .sheet(item: $detailKey, onDismiss: rescheduleReminders) { KeyDetailView(key: $0, keys: keys) }
+            .sheet(isPresented: $showAsk, onDismiss: rescheduleReminders) {
+                if #available(iOS 26.0, *) { AskMokiView() }
+            }
             .fullScreenCover(isPresented: $showScan) { ScanView() }
             .resultToast(message: Binding(get: { store.lastMessage }, set: { store.lastMessage = $0 }))
             .onReceive(ticker) { _ in store.tick(keys: keys, context: context) }

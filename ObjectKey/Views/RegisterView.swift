@@ -30,6 +30,21 @@ struct RegisterView: View {
 
     private enum Field { case name, emoji, cue }
 
+    init(draft: RegisterDraft? = nil) {
+        // "MOKI에게 말하기"로 해석한 값을 미리 채운다. 사진은 여전히 직접 찍는다.
+        guard let d = draft else { return }
+        _name = State(initialValue: d.name)
+        _emoji = State(initialValue: d.emoji)
+        _kind = State(initialValue: d.kind)
+        _minutes = State(initialValue: d.countdownMinutes)
+        _goal = State(initialValue: d.goal)
+        _cue = State(initialValue: d.cue)
+        _reminderMinute = State(initialValue: d.reminderMinute)
+        _schedule = State(initialValue: d.schedule)
+        _attendStart = State(initialValue: d.attendStart)
+        _attendMinutes = State(initialValue: d.attendMinutes)
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -273,6 +288,8 @@ struct RegisterView: View {
             key.schedule = schedule
         }
         context.insert(key)
+        // 미리 채운 알림은 권한 창을 거치지 않았을 수 있다. 저장할 때 한 번 묻는다.
+        if key.reminderMinute >= 0 { Task { _ = await HabitReminders.requestPermission() } }
         key.shots = shots.compactMap { shot in shot.vector.map { ReferenceShot(vector: $0, thumbnail: shot.thumbnail) } }
         try? context.save()
         dismiss()
