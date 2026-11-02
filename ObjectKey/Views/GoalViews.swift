@@ -184,12 +184,15 @@ enum HabitCopy {
         }
     }
 
-    /// 끊기기 직전 경고. 홈 상단과 알림이 같이 쓴다.
-    static func risk(_ schedule: HabitSchedule, streak: Int) -> String {
+    /// 끊기기 직전 안내. 홈 상단·알림·상세가 같이 쓴다.
+    /// 무엇이 잘못됐는지보다 "무엇을 하면 이어지는지"를 먼저 말한다.
+    static func risk(_ schedule: HabitSchedule, streak: Int, weekDone: Int = 0) -> String {
         switch schedule {
-        case .daily: return "어제 쉬었어요. 오늘 비추지 않으면 \(streak)일이 끊겨요."
-        case .weekdays: return "지난번 정한 날을 놓쳤어요. 오늘 비추지 않으면 \(streak)일이 끊겨요."
-        case .perWeek(let n): return "지난주를 못 채웠어요. 이번 주 \(n)회를 채우지 않으면 \(streak)일이 끊겨요."
+        case .daily: return "오늘 한 번 하면 \(streak)일이 이어져요. 어제 쉬었으니 오늘은 꼭!"
+        case .weekdays: return "오늘 하면 \(streak)일이 이어져요. 지난번 정한 날을 쉬었어요."
+        case .perWeek(let n):
+            let remaining = max(1, n - weekDone)
+            return "이번 주 \(remaining)회 더 하면 \(streak)일이 이어져요. (이번 주 \(weekDone)/\(n)회)"
         }
     }
 }
@@ -382,7 +385,7 @@ struct HabitGuide: View {
         } footer: {
             let total = recordCount > 0 ? " 지금까지 \(recordCount)회 기록했어요." : ""
             if let progress, progress.streak > 0 {
-                Text((progress.atRisk ? HabitCopy.risk(schedule, streak: progress.streak) : "지금 \(progress.streak)일째 이어가고 있어요.") + total)
+                Text((progress.atRisk ? HabitCopy.risk(schedule, streak: progress.streak, weekDone: progress.weekDone) : "지금 \(progress.streak)일째 이어가고 있어요.") + total)
             } else {
                 Text("오늘 한 번 비추면 1일째가 시작돼요." + total)
             }
@@ -447,7 +450,7 @@ struct MoodHeader: View {
     private var reaction: (mood: Moki, message: String, key: KeyObject?) {
         // 끊기기 직전인 습관이 가장 먼저다. 이틀 연속만은 막는다.
         if let risky = items.filter(\.progress.atRisk).max(by: { $0.progress.streak < $1.progress.streak }) {
-            return (.question, "\(risky.key.name), " + HabitCopy.risk(risky.key.schedule, streak: risky.progress.streak), risky.key)
+            return (.question, "\(risky.key.name), " + HabitCopy.risk(risky.key.schedule, streak: risky.progress.streak, weekDone: risky.progress.weekDone), risky.key)
         }
         let goals = items.filter { $0.progress.goal != nil }
         let metGoals = goals.filter { $0.progress.metToday }.count

@@ -69,7 +69,7 @@ enum HabitReminders {
 
     /// 오늘 알림만 현재 연속 일수를 안다. 이후 날짜는 그날 상태를 모르므로 일반 문구를 쓴다.
     private static func body(for key: KeyObject, progress: KeyProgress, today: Bool) -> String {
-        if today, progress.atRisk { return HabitCopy.risk(key.schedule, streak: progress.streak) }
+        if today, progress.atRisk { return HabitCopy.risk(key.schedule, streak: progress.streak, weekDone: progress.weekDone) }
         if case .attend(let start, _) = key.action {
             let ahead = start - key.reminderMinute
             let when = ahead > 0 ? "\(ahead)분 뒤 \(KeyAction.clock(start))에 시작해요." : "\(KeyAction.clock(start))에 시작해요."
