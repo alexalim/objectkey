@@ -94,6 +94,7 @@ struct HomeView: View {
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active {
                     store.tick(keys: keys, context: context)
+                    store.syncLiveActivity(keys: keys)
                     rescheduleReminders()
                 }
             }

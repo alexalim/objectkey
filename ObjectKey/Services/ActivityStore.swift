@@ -91,6 +91,12 @@ final class ActivityStore {
         }
         try? context.save()
         persist()
+        syncLiveActivity(keys: keys)
+    }
+
+    /// 잠금 화면 실시간 현황을 지금 상태에 맞춘다. 앱으로 돌아올 때도 부른다(밖에서 끝났을 수 있다).
+    func syncLiveActivity(keys: [KeyObject]) {
+        LiveActivitySync.update(engine.state, keys: Dictionary(uniqueKeysWithValues: keys.map { ($0.id, ($0.name, $0.emoji)) }))
     }
 
     private static func hasRecord(_ id: UUID, on day: Date, context: ModelContext) -> Bool {
@@ -135,6 +141,7 @@ final class ActivityStore {
     /// 데이터 전체 삭제 시 진행 중 상태도 비운다.
     func reset() {
         engine = ActivityEngine()
+        LiveActivitySync.endAll()
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [Self.countdownNotificationID])
         try? FileManager.default.removeItem(at: stateURL)
     }

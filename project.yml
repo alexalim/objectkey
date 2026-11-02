@@ -26,11 +26,14 @@ targets:
     platform: iOS
     sources:
       - path: ObjectKey
+      - path: Shared
     dependencies:
       - package: ObjectKeyCore
+      - target: ObjectKeyWidgets
     info:
       path: ObjectKey/Info.plist
       properties:
+        NSSupportsLiveActivities: true
         CFBundleDisplayName: MOKI
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
@@ -55,6 +58,35 @@ targets:
           CODE_SIGN_STYLE: Manual
           CODE_SIGN_IDENTITY: "Apple Distribution"
           PROVISIONING_PROFILE_SPECIFIER: "${PROFILE_NAME}"
+
+  # 잠금 화면 실시간 현황(Live Activity). 나중에 홈 화면 위젯도 여기에 더한다.
+  ObjectKeyWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: ObjectKeyWidgets
+      - path: Shared
+    info:
+      path: ObjectKeyWidgets/Info.plist
+      properties:
+        CFBundleDisplayName: MOKI
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.aspynlim.moki.widgets
+        PRODUCT_NAME: MOKIWidgets
+        GENERATE_INFOPLIST_FILE: NO
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_STYLE: Automatic
+        SKIP_INSTALL: YES
+      configs:
+        Release:
+          CODE_SIGN_STYLE: Manual
+          CODE_SIGN_IDENTITY: "Apple Distribution"
+          PROVISIONING_PROFILE_SPECIFIER: "${WIDGET_PROFILE_NAME}"
 
   # 화면 점검용 UI 테스트. 데모 데이터로 앱을 띄워 주요 화면 스크린샷을 남긴다 (.github/workflows/ui-screens.yml).
   ObjectKeyUITests:

@@ -12,6 +12,7 @@ jobs:
     env:
       TEAM_ID: ""
       PROFILE_NAME: ""
+      WIDGET_PROFILE_NAME: ""
     steps:
       - uses: actions/checkout@v7
 
