@@ -19,7 +19,7 @@ struct OnboardingView: View {
         Page(mood: .success, title: "끊기지 않는 습관",
              body: "홈에서 오늘 할 일을 확인하세요. 하루 빠지는 건 괜찮아요. 이틀 연속만 피하면 이어지고, 평균 66일이면 습관이 돼요."),
         Page(mood: .reading, title: "카메라 없이도 돼요",
-             body: "물건을 눌러 바로 기록하거나, 위젯·Siri·알림으로도 기록할 수 있어요. ✨ 버튼에 한 문장으로 말해도 돼요."),
+             body: "물건을 눌러 상세 화면의 버튼으로 기록하거나, 위젯·Siri·알림으로도 기록할 수 있어요. ✨ 버튼에 한 문장으로 말해도 돼요."),
     ]
 
     var body: some View {
