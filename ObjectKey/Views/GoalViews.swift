@@ -420,38 +420,51 @@ struct ProgressMark: View {
 /// 오늘 상태에 따라 MOKI가 반응하는 홈 상단.
 struct MoodHeader: View {
     let items: [(key: KeyObject, progress: KeyProgress)]
+    /// 반응이 특정 물건 이야기면 누를 때 그 물건 상세(달력·메모·설정)를 연다.
+    var onSelect: (KeyObject) -> Void = { _ in }
 
     var body: some View {
         let r = reaction
         Section {
-            HStack(spacing: 12) {
-                Image(r.mood).resizable().scaledToFit().frame(width: 64, height: 64)
-                Text(r.message).font(.subheadline)
+            if let key = r.key {
+                Button { onSelect(key) } label: { card(r, showsChevron: true) }
+                    .tint(.primary)
+                    .accessibilityHint("\(key.name) 상세 화면을 엽니다")
+            } else {
+                card(r, showsChevron: false)
             }
         }
     }
 
-    private var reaction: (mood: Moki, message: String) {
+    private func card(_ r: (mood: Moki, message: String, key: KeyObject?), showsChevron: Bool) -> some View {
+        HStack(spacing: 12) {
+            Image(r.mood).resizable().scaledToFit().frame(width: 64, height: 64)
+            Text(r.message).font(.subheadline).frame(maxWidth: .infinity, alignment: .leading)
+            if showsChevron { Image(systemName: "chevron.right").font(.footnote.bold()).foregroundStyle(.tertiary) }
+        }
+    }
+
+    private var reaction: (mood: Moki, message: String, key: KeyObject?) {
         // 끊기기 직전인 습관이 가장 먼저다. 이틀 연속만은 막는다.
         if let risky = items.filter(\.progress.atRisk).max(by: { $0.progress.streak < $1.progress.streak }) {
-            return (.question, "\(risky.key.name), " + HabitCopy.risk(risky.key.schedule, streak: risky.progress.streak))
+            return (.question, "\(risky.key.name), " + HabitCopy.risk(risky.key.schedule, streak: risky.progress.streak), risky.key)
         }
         let goals = items.filter { $0.progress.goal != nil }
         let metGoals = goals.filter { $0.progress.metToday }.count
         let activeToday = items.filter { $0.progress.today > 0 }.count
         if !goals.isEmpty, metGoals == goals.count {
-            return (.success, "오늘 목표를 모두 채웠어요!")
+            return (.success, "오늘 목표를 모두 채웠어요!", nil)
         }
         if !goals.isEmpty, metGoals > 0 || activeToday > 0 {
-            return (.key, "오늘 목표 \(metGoals)/\(goals.count) 달성. 계속 가 볼까요?")
+            return (.key, "오늘 목표 \(metGoals)/\(goals.count) 달성. 계속 가 볼까요?", nil)
         }
         if activeToday > 0 {
-            return (.reading, "오늘도 비추고 있어요. 좋아요!")
+            return (.reading, "오늘도 비추고 있어요. 좋아요!", nil)
         }
         if let best = items.max(by: { $0.progress.streak < $1.progress.streak }),
            let phase = best.progress.phase {
-            return (.peek, "\(best.key.name) \(best.progress.streak)일째, \(phase.label). \(phase.tip)")
+            return (.peek, "\(best.key.name) \(best.progress.streak)일째, \(phase.label). \(phase.tip)", best.key)
         }
-        return (.scan, "오늘 첫 물건을 비춰 보세요. 작게 시작해도 충분해요.")
+        return (.scan, "오늘 첫 물건을 비춰 보세요. 작게 시작해도 충분해요.", nil)
     }
 }

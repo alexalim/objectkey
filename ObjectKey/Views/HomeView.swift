@@ -30,7 +30,7 @@ struct HomeView: View {
             let tools = keys.filter { !$0.supportsGoal }
             let doneCount = todo.filter { progressByID[$0.id]?.metToday == true }.count
             List {
-                if !tracked.isEmpty { MoodHeader(items: tracked) }
+                if !tracked.isEmpty { MoodHeader(items: tracked) { detailKey = $0 } }
                 ActiveBanner(state: store.state, keys: keys)
 
                 if !tracked.isEmpty {
@@ -40,7 +40,14 @@ struct HomeView: View {
                         }
                         rows(todo, progress: progressByID, asTodo: true)
                     } header: {
-                        Text("오늘 할 일 \(doneCount)/\(todo.count)")
+                        // 작은 회색 머리글은 눈에 잘 띄지 않아 홈의 주 제목처럼 키운다.
+                        HStack(alignment: .firstTextBaseline) {
+                            Text("오늘 할 일").font(.title3.bold()).foregroundStyle(.primary)
+                            Spacer()
+                            Text("\(doneCount)/\(todo.count)").font(.title3.bold().monospacedDigit())
+                                .foregroundStyle(doneCount == todo.count && !todo.isEmpty ? Color.green : Color.secondary)
+                        }
+                        .textCase(nil)
                     } footer: {
                         Text("행을 누르면 달력과 기록이 열리고, 거기서 카메라 없이 기록할 수 있어요. 오른쪽으로 밀면 습관 설정이 열립니다.")
                     }
