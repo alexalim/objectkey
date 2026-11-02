@@ -242,4 +242,28 @@ final class ProgressTests: XCTestCase {
         XCTAssertTrue(HabitSchedule.perWeek(3).isDue(on: now, metToday: false, weekDone: 2, calendar: calendar))
         XCTAssertFalse(HabitSchedule.perWeek(3).isDue(on: now, metToday: false, weekDone: 3, calendar: calendar), "이번 주를 채웠으면 쉰다")
     }
+
+    // MARK: 통계
+
+    func test_weeklyRates_onePointPerWeek_matchingCompletionRate() {
+        // 지난주(일 10/18 ~ 토 10/24 = daysAgo 11~5) 7일 중 7일, 이번 주(10/25~ 목) 오늘 빼고 4일 중 2일.
+        let entries = (5...11).map { entry($0, 1) } + [entry(4, 1), entry(2, 1)]
+        let rates = DailyProgress.weeklyRates(entries, goal: nil, since: daysAgo(11, hour: 0), now: now, calendar: calendar)
+        XCTAssertEqual(rates.count, 2)
+        XCTAssertEqual(rates[0].rate, 1)
+        XCTAssertEqual(rates[1].rate!, 0.5, accuracy: 1e-9)
+    }
+
+    func test_metDaysByWeekday_countsOnlyMetDays() {
+        // 목(7일 전)·수(1일 전) 채움, 화(2일 전)는 목표 미달.
+        let counts = DailyProgress.metDaysByWeekday([entry(7, 1800), entry(1, 1800), entry(2, 600)], goal: 1800,
+                                                    since: daysAgo(30), calendar: calendar)
+        XCTAssertEqual(counts, [5: 1, 4: 1])
+    }
+
+    func test_entriesByHour_groupsByStartHour() {
+        let counts = DailyProgress.entriesByHour([entry(1, 1, hour: 21), entry(2, 1, hour: 21), entry(3, 1, hour: 7), entry(4, 0, hour: 9)],
+                                                 since: daysAgo(30), calendar: calendar)
+        XCTAssertEqual(counts, [21: 2, 7: 1])
+    }
 }

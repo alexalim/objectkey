@@ -35,6 +35,15 @@ final class ScreenTourTests: XCTestCase {
         row("영양제").tap()
         XCTAssertTrue(app.navigationBars["영양제"].waitForExistence(timeout: 5), "상세 화면이 열려야 한다")
         snap("03-detail")
+        tapIfExists(app.buttons["통계 보기"])
+        if app.navigationBars["영양제 통계"].waitForExistence(timeout: 5) {
+            snap("03b-stats")
+            app.swipeUp()
+            snap("03c-stats-scrolled")
+            app.navigationBars.buttons.element(boundBy: 0).tap()
+        } else {
+            XCTFail("통계 화면이 열려야 한다")
+        }
         app.swipeUp()
         snap("04-detail-scrolled")
 

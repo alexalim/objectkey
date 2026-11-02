@@ -159,6 +159,42 @@ public enum DailyProgress {
         return chances == 0 ? nil : Double(hits) / Double(chances)
     }
 
+    // MARK: - 통계
+
+    /// 주별 완료율. 주마다 completionRate를 그 주 범위로 계산한다(진행 중인 이번 주 규칙도 같다).
+    /// 따질 기회가 없는 주는 rate가 nil이다.
+    public static func weeklyRates(_ entries: [ProgressEntry], goal: Double?, schedule: HabitSchedule = .daily,
+                                   since: Date, now: Date, calendar: Calendar) -> [(weekStart: Date, rate: Double?)] {
+        var result: [(Date, Double?)] = []
+        var start = calendar.dateInterval(of: .weekOfYear, for: since)?.start
+        while let s = start, s <= now, let week = calendar.dateInterval(of: .weekOfYear, for: s) {
+            let from = max(week.start, calendar.startOfDay(for: since))
+            let to = min(week.end.addingTimeInterval(-1), now)
+            result.append((week.start, completionRate(entries, goal: goal, schedule: schedule, since: from, now: to, calendar: calendar)))
+            start = week.end
+        }
+        return result
+    }
+
+    /// 요일별 채운 날 수. 키는 Calendar weekday(1=일 … 7=토).
+    public static func metDaysByWeekday(_ entries: [ProgressEntry], goal: Double?, since: Date, calendar: Calendar) -> [Int: Int] {
+        let from = calendar.startOfDay(for: since)
+        var counts: [Int: Int] = [:]
+        for (day, status) in days(entries, goal: goal, calendar: calendar) where status == .met && day >= from {
+            counts[calendar.component(.weekday, from: day), default: 0] += 1
+        }
+        return counts
+    }
+
+    /// 기록이 남은 시각(0~23시)별 건수. 언제 주로 하는지 보여 준다.
+    public static func entriesByHour(_ entries: [ProgressEntry], since: Date, calendar: Calendar) -> [Int: Int] {
+        var counts: [Int: Int] = [:]
+        for entry in entries where entry.date >= since && entry.amount > 0 {
+            counts[calendar.component(.hour, from: entry.date), default: 0] += 1
+        }
+        return counts
+    }
+
     /// 그날이 해야 하는 날인지. 요일 지정이 아니면 매일이다.
     private static func dueCheck(_ schedule: HabitSchedule, calendar: Calendar) -> (Date) -> Bool {
         if case .weekdays(let days) = schedule, !days.isEmpty {

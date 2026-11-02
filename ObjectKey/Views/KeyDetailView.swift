@@ -51,6 +51,7 @@ struct KeyDetailView: View {
                             stat(monthRate(entries, logs: logs).map { "\(Int(($0 * 100).rounded()))%" } ?? "–", "이번 달 완료율")
                             stat("\(logs.count)회", "전체 기록")
                         }
+                        NavigationLink("통계 보기") { KeyStatsView(key: key) }
                     }
                     Section {
                         HabitCalendar(days: days, schedule: key.schedule, noted: Set(notes.map(\.day))) { selectedDay = $0 }
