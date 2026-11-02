@@ -5,6 +5,7 @@ import WidgetKit
 @main
 struct MokiWidgets: WidgetBundle {
     var body: some Widget {
+        TodayWidget()
         MokiLiveActivity()
     }
 }

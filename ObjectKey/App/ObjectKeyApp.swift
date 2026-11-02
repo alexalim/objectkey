@@ -11,6 +11,8 @@ struct ObjectKeyApp: App {
     init() {
         // 알림의 "참석" 버튼은 앱이 꺼져 있어도 이 처리기로 들어온다. 실행 직후에 연결해야 놓치지 않는다.
         UNUserNotificationCenter.current().delegate = NotificationHandler.shared
+        // 위젯 체크 버튼은 앱을 뒤에서 깨워 이 경로로 기록한다.
+        WidgetActions.record = { WidgetBridge.record($0) }
     }
 
     var body: some Scene {

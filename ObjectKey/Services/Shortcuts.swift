@@ -74,6 +74,7 @@ struct RecordKeyIntent: AppIntent {
             store.confirm(pending, keys: keys, context: context)
             switched = "\(previous) 활동을 끝내고 기록했어요. "
         }
+        WidgetBridge.refreshFromStore()
         return .result(dialog: "\(switched)\(Self.outcome(target, store: store))")
     }
 

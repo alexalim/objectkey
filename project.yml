@@ -30,6 +30,10 @@ targets:
     dependencies:
       - package: ObjectKeyCore
       - target: ObjectKeyWidgets
+    entitlements:
+      path: ObjectKey/ObjectKey.entitlements
+      properties:
+        com.apple.security.application-groups: [group.com.aspynlim.moki]
     info:
       path: ObjectKey/Info.plist
       properties:
@@ -59,13 +63,17 @@ targets:
           CODE_SIGN_IDENTITY: "Apple Distribution"
           PROVISIONING_PROFILE_SPECIFIER: "${PROFILE_NAME}"
 
-  # 잠금 화면 실시간 현황(Live Activity). 나중에 홈 화면 위젯도 여기에 더한다.
+  # 잠금 화면 실시간 현황(Live Activity)과 홈·잠금 화면 위젯.
   ObjectKeyWidgets:
     type: app-extension
     platform: iOS
     sources:
       - path: ObjectKeyWidgets
       - path: Shared
+    entitlements:
+      path: ObjectKeyWidgets/ObjectKeyWidgets.entitlements
+      properties:
+        com.apple.security.application-groups: [group.com.aspynlim.moki]
     info:
       path: ObjectKeyWidgets/Info.plist
       properties:

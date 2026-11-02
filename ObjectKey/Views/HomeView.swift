@@ -108,7 +108,9 @@ struct HomeView: View {
         }
     }
 
+    /// 기록·설정이 바뀌면 알림과 홈 화면 위젯을 같이 맞춘다.
     private func rescheduleReminders() {
+        WidgetBridge.refresh(keys: keys, logs: logs, state: store.state)
         Task { await HabitReminders.reschedule(keys: keys, logs: logs, state: store.state) }
     }
 

@@ -85,6 +85,7 @@ enum HabitReminders {
         guard let keys = try? context.fetch(FetchDescriptor<KeyObject>()),
               let key = keys.first(where: { $0.id == id }) else { return }
         _ = ActivityStore.shared.activate(key, keys: keys, context: context)
+        WidgetBridge.refreshFromStore()
     }
 }
 
