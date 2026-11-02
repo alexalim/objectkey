@@ -34,6 +34,10 @@ struct KeyDetailView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(key.action.label).font(.subheadline)
                             if let habit = habitSummary { Text(habit).font(.caption).foregroundStyle(.secondary) }
+                            if key.shots.isEmpty {
+                                Label("사진 없음 · 아래 버튼·위젯·Siri로 기록", systemImage: "camera.badge.ellipsis")
+                                    .font(.caption2).foregroundStyle(.secondary)
+                            }
                         }
                     }
                     Button(action: run) {

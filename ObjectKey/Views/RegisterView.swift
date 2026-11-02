@@ -24,6 +24,8 @@ struct RegisterView: View {
     @State private var shots: [CameraController.Frame] = []
     @State private var latest: CameraController.Frame?
     @State private var cameraAllowed: Bool?
+    /// 사진은 선택이다. 누를 때만 카메라를 켜서, 사진 없이 쓰는 사람에게 권한 창을 띄우지 않는다.
+    @State private var wantsPhotos = false
     @State private var camera = CameraController()
     @State private var duplicateOf: KeyObject?
     @FocusState private var focus: Field?
@@ -31,7 +33,7 @@ struct RegisterView: View {
     private enum Field { case name, emoji, cue }
 
     init(draft: RegisterDraft? = nil) {
-        // "MOKI에게 말하기"로 해석한 값을 미리 채운다. 사진은 여전히 직접 찍는다.
+        // "MOKI에게 말하기"로 해석한 값을 미리 채운다. 사진은 원하면 직접 찍는다.
         guard let d = draft else { return }
         _name = State(initialValue: d.name)
         _emoji = State(initialValue: d.emoji)
@@ -133,10 +135,13 @@ struct RegisterView: View {
                 Section {
                     captureArea
                 } header: {
-                    Text("참조 사진 \(shots.count)/\(Self.requiredShots)+")
+                    Text(shots.isEmpty ? "물건 사진 (선택)" : "물건 사진 \(shots.count)장 (선택)")
                 } footer: {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("노란 상자가 물건을 감싼 상태에서, 각도와 거리를 조금씩 바꿔 \(Self.requiredShots)장 이상 찍어 주세요. 사진은 기기 안에만 저장됩니다.")
+                        if wantsPhotos {
+                            Text("노란 상자가 물건을 감싼 상태에서, 각도와 거리를 조금씩 바꿔 \(Self.requiredShots)장 이상 찍어 주세요. 사진은 기기 안에만 저장됩니다.")
+                        }
+                        Text(photoNote).foregroundStyle(shots.isEmpty || shots.count >= Self.requiredShots ? Color.secondary : Color.orange)
                         if let saveHint { Text(saveHint).foregroundStyle(.orange) }
                         if shots.count >= 2 {
                             // 기준값 보정용 진단 표시. 실측이 끝나면 뺀다.
@@ -162,11 +167,6 @@ struct RegisterView: View {
                     Button("완료") { focus = nil }
                 }
             }
-            .task {
-                let allowed = await CameraController.requestAccess()
-                cameraAllowed = allowed
-                if allowed { camera.start(includeThumbnail: true) { latest = $0 } }
-            }
             .onDisappear { camera.stop() }
             .alert("이미 등록한 물건과 비슷해요",
                    isPresented: Binding(get: { duplicateOf != nil }, set: { if !$0 { duplicateOf = nil } }),
@@ -179,8 +179,39 @@ struct RegisterView: View {
         }
     }
 
+    private func startCamera() async {
+        wantsPhotos = true
+        focus = nil
+        let allowed = await CameraController.requestAccess()
+        cameraAllowed = allowed
+        if allowed { camera.start(includeThumbnail: true) { latest = $0 } }
+    }
+
+    /// 사진이 몇 장인지에 따라 무엇이 되고 안 되는지 알려 준다. 저장을 막지는 않는다.
+    private var photoNote: String {
+        switch shots.count {
+        case 0: return "사진 없이도 저장할 수 있어요. 대신 비추기로는 알아보지 못하니 상세 화면 버튼·위젯·Siri·✨로 기록해요."
+        case 1..<Self.requiredShots: return "비추기로 알아보게 하려면 \(Self.requiredShots - shots.count)장 더 찍는 걸 권해요. 지금 저장해도 돼요."
+        default: return "비추면 알아볼 수 있어요."
+        }
+    }
+
     @ViewBuilder
     private var captureArea: some View {
+        if !wantsPhotos {
+            Button {
+                Task { await startCamera() }
+            } label: {
+                Label("카메라로 사진 찍기", systemImage: "camera").frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+        } else {
+            cameraArea
+        }
+    }
+
+    @ViewBuilder
+    private var cameraArea: some View {
         switch cameraAllowed {
         case .none:
             ProgressView().frame(maxWidth: .infinity)
@@ -247,7 +278,6 @@ struct RegisterView: View {
     private var saveHint: String? {
         var missing: [String] = []
         if name.trimmingCharacters(in: .whitespaces).isEmpty { missing.append("이름을 입력") }
-        if shots.count < Self.requiredShots { missing.append("사진을 \(Self.requiredShots - shots.count)장 더 촬영") }
         return missing.isEmpty ? nil : "저장하려면 " + missing.joined(separator: "하고, ") + "해 주세요."
     }
 
