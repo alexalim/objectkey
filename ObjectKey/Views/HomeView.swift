@@ -82,11 +82,10 @@ struct HomeView: View {
                     Button { showRegister = true } label: { Image(systemName: "plus") }
                         .accessibilityLabel("물건 등록")
                 }
-                if #available(iOS 26.0, *) {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button { showAsk = true } label: { Image(systemName: "sparkles") }
-                            .accessibilityLabel("MOKI에게 말하기")
-                    }
+                // 툴바 빌더는 #available 분기를 받지 않아 버튼은 늘 두고, 시트 안에서 버전을 가른다.
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { showAsk = true } label: { Image(systemName: "sparkles") }
+                        .accessibilityLabel("MOKI에게 말하기")
                 }
             }
             .safeAreaInset(edge: .bottom) {
@@ -103,7 +102,13 @@ struct HomeView: View {
             .sheet(item: $editingGoal, onDismiss: rescheduleReminders) { GoalEditor(key: $0) }
             .sheet(item: $detailKey, onDismiss: rescheduleReminders) { KeyDetailView(key: $0, keys: keys) }
             .sheet(isPresented: $showAsk, onDismiss: rescheduleReminders) {
-                if #available(iOS 26.0, *) { AskMokiView() }
+                if #available(iOS 26.0, *) {
+                    AskMokiView()
+                } else {
+                    ContentUnavailableView("iOS 26 이상에서 쓸 수 있어요", systemImage: "sparkles",
+                                           description: Text("MOKI에게 말하기는 기기 안 AI(Apple Intelligence)로 동작해요."))
+                        .presentationDetents([.medium])
+                }
             }
             .fullScreenCover(isPresented: $showScan) { ScanView() }
             .resultToast(message: Binding(get: { store.lastMessage }, set: { store.lastMessage = $0 }))
