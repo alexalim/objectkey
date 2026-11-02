@@ -45,7 +45,12 @@ final class ScreenTourTests: XCTestCase {
         if day.waitForExistence(timeout: 3) {
             day.tap()
             snap("05-day-dialog")
-            tapIfExists(app.buttons["취소"])
+            // iOS 26은 확인 창을 말풍선으로 띄우고 취소 버튼 대신 바깥을 누르게 한다.
+            if app.buttons["취소"].exists {
+                app.buttons["취소"].tap()
+            } else {
+                app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.97)).tap()
+            }
         } else {
             XCTFail("달력에 채운 날이 있어야 한다")
         }
