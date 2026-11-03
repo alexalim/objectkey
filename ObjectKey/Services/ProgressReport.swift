@@ -17,7 +17,8 @@ extension KeyProgress {
             return QuitHabit.cleanDays(slips: mine.map(\.startedAt), since: start, now: now, calendar: .current)
         }
         var entries = mine.map {
-            ProgressEntry(date: $0.startedAt, amount: $0.kind == "counter" ? $0.amount : $0.duration)
+            // 시간 기록은 길이, 횟수·건강 자동 기록은 양으로 센다.
+            ProgressEntry(date: $0.startedAt, amount: $0.kind == "session" ? $0.duration : $0.amount)
         }
         switch state {
         case .session(let id, _, let segmentStart, let accumulated) where id == key.id:

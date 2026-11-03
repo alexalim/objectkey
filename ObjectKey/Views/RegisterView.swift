@@ -24,6 +24,8 @@ struct RegisterView: View {
     @State private var tags: [String] = []
     @State private var measureStep = 0
     @State private var measureUnit = ""
+    @State private var healthMetric = ""
+    @State private var healthTarget = 0
     @State private var shots: [CameraController.Frame] = []
     @State private var latest: CameraController.Frame?
     @State private var cameraAllowed: Bool?
@@ -134,6 +136,7 @@ struct RegisterView: View {
                     Section {
                         // 끊기는 매일 지키는 것이라 일정·목표·알림이 필요 없다.
                         if kind != "quit" { ScheduleEditor(schedule: $schedule) }
+                        if kind == "counter" || kind == "session" { HealthLinkEditor(metric: $healthMetric, target: $healthTarget) }
                         TagPicker(tags: $tags)
                         if kind != "attend" && kind != "quit" {
                             GoalStepper(actionKind: kind, goal: $goal, measureStep: measureUnit.isEmpty ? 0 : max(measureStep, 1),
@@ -332,6 +335,10 @@ struct RegisterView: View {
                             threshold: Calibration.suggestThreshold(for: vectors),
                             dailyGoal: kind == "countdown" || kind == "attend" || kind == "quit" ? 0 : goal)
         if kind == "quit" { key.isQuit = true }
+        if kind == "counter" || kind == "session" {
+            key.healthMetric = healthMetric
+            key.healthTarget = healthTarget
+        }
         if kind == "counter", !measureUnit.trimmingCharacters(in: .whitespaces).isEmpty {
             key.measureStep = max(measureStep, 1)
             key.measureUnit = measureUnit.trimmingCharacters(in: .whitespaces)

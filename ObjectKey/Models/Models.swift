@@ -34,6 +34,9 @@ final class KeyObject {
     /// 수치 습관. 한 번 기록할 때 더하는 양과 단위(예: 250, "ml"). 0이면 그냥 횟수. (v0.4)
     var measureStep: Int = 0
     var measureUnit: String = ""
+    /// 건강 앱 자동 완료. HealthMetric 원시값("steps" 등)과 하루 목표. 빈 문자열이면 쓰지 않음. (v0.4)
+    var healthMetric: String = ""
+    var healthTarget: Int = 0
     @Relationship(deleteRule: .cascade, inverse: \ReferenceShot.key)
     var shots: [ReferenceShot] = []
 

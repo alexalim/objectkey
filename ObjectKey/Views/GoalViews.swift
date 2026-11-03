@@ -78,6 +78,28 @@ struct TimeOfDayPicker: View {
     }
 }
 
+/// 건강 앱 자동 완료: 무엇을, 하루 얼마 이상이면 완료로 볼지.
+struct HealthLinkEditor: View {
+    @Binding var metric: String
+    @Binding var target: Int
+
+    var body: some View {
+        Picker("건강 앱", selection: Binding(get: { metric }, set: { new in
+            metric = new
+            if let m = HealthMetric(rawValue: new) {
+                target = m.defaultTarget
+                Task { await HealthSync.requestAccess(m) }
+            }
+        })) {
+            Text("사용 안 함").tag("")
+            ForEach(HealthMetric.allCases, id: \.rawValue) { Text($0.label).tag($0.rawValue) }
+        }
+        if let m = HealthMetric(rawValue: metric) {
+            Stepper("하루 \(target)\(m.unit) 이상", value: $target, in: m.targetStep...(m == .steps ? 50000 : 600), step: m.targetStep)
+        }
+    }
+}
+
 /// 정해진 시간 참석의 시작 시각과 길이.
 struct AttendEditor: View {
     @Binding var startMinute: Int
@@ -191,6 +213,7 @@ enum HabitCopy {
     static let goalFooter = "실패할 수 없을 만큼 작게 시작해요. 목표가 없으면 한 번만 기록해도 채워져요."
     static let cuePlaceholder = "예: 아침 커피 내린 (→ 아침 커피 내린 다음에)"
     static let cueFooter = "매일 하는 행동 바로 뒤에 붙이면 덜 잊어요. 입력한 말 뒤에 '다음에'가 붙어 보여요."
+    static let healthFooter = "건강 앱의 값이 목표를 넘으면 그날을 자동으로 채워요. 앱을 열 때 최근 7일을 확인해요. 건강 데이터는 읽기만 하고 기기 밖으로 보내지 않아요."
     static let quitFooter = "했을 때만 기록해요. 기록이 없는 날이 지킨 날이에요. 한 번 했어도 이어지고, 이틀 연속이면 끊겨요."
     static let measureFooter = "단위를 쓰면 스캔할 때마다 정한 양만큼 더해져요. 예: 물 250ml, 책 10쪽."
     static let attendFooter = "스캔하거나 알림의 '참석'을 누르면 정한 시간만큼 바로 기록돼요. 시작·종료를 따로 하지 않아도 되고, 진행 중인 다른 기록도 멈추지 않아요."
@@ -245,6 +268,13 @@ struct GoalEditor: View {
                     Text("얼마나 자주")
                 } footer: {
                     Text(HabitCopy.rule(key.schedule))
+                }
+                Section {
+                    HealthLinkEditor(metric: $key.healthMetric, target: $key.healthTarget)
+                } header: {
+                    Text("건강 앱으로 자동 완료 (선택)")
+                } footer: {
+                    Text(HabitCopy.healthFooter)
                 }
                 if key.actionKind == "counter" {
                     Section {
