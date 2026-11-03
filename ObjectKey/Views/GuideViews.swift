@@ -117,7 +117,13 @@ struct HelpView: View {
                     ("lock", "기기 안 AI라 문장이 밖으로 나가지 않아요"),
                     ("gearshape", "설정 → Apple Intelligence를 켜 주세요"),
                 ])
-                guide("위젯과 잠금 화면", "8.circle", [
+                guide("백업", "8.circle", [
+                    ("square.and.arrow.up", "기록 화면 ⋯ → 백업 내보내기"),
+                    ("icloud", "iCloud Drive에 저장해 두세요"),
+                    ("square.and.arrow.down", "새 기기에서 ⋯ → 백업 가져오기"),
+                    ("arrow.triangle.2.circlepath", "같은 파일을 두 번 가져와도 겹치지 않아요"),
+                ])
+                guide("위젯과 잠금 화면", "9.circle", [
                     ("square.grid.2x2", "홈 화면 길게 누르기 → 편집 → 위젯 추가 → MOKI"),
                     ("lock.iphone", "잠금 화면 길게 누르기 → 사용자화 → MOKI"),
                     ("timer", "시간 기록 중에는 잠금 화면에 시간이 보여요"),
