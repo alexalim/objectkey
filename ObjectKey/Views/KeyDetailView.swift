@@ -40,11 +40,23 @@ struct KeyDetailView: View {
                             }
                         }
                     }
-                    Button(action: run) {
-                        Text(actionLabel).font(.headline).frame(maxWidth: .infinity).padding(.vertical, 4)
+                    HStack(spacing: 10) {
+                        // 횟수는 잘못 누른 걸 바로 되돌릴 수 있게 −1을 옆에 둔다.
+                        if key.actionKind == "counter" {
+                            let today = records(on: .now).count
+                            Button { removeLatest(on: .now) } label: {
+                                Text("−1").font(.headline).frame(width: 56).padding(.vertical, 4)
+                            }
+                            .buttonStyle(.bordered)
+                            .disabled(today == 0)
+                            .accessibilityLabel("오늘 기록 1회 빼기")
+                        }
+                        Button(action: run) {
+                            Text(actionLabel).font(.headline).frame(maxWidth: .infinity).padding(.vertical, 4)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(attendedToday)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(attendedToday)
                     .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 12, trailing: 16))
                 }
                 if key.supportsGoal {
@@ -94,8 +106,11 @@ struct KeyDetailView: View {
                 Button(addLabel) { addRecord(on: day) }
                 Button(note(on: day) == nil ? "메모 남기기" : "메모 고치기") { openNote(day) }
                 let count = records(on: day).count
-                if count > 0 {
-                    Button("이날 기록 \(count)회 지우기", role: .destructive) { removeRecords(on: day) }
+                if count > 1 {
+                    Button(key.actionKind == "counter" ? "1회 빼기" : "마지막 기록 1회 지우기") { removeLatest(on: day) }
+                    Button("이날 기록 \(count)회 모두 지우기", role: .destructive) { removeRecords(on: day) }
+                } else if count == 1 {
+                    Button("이날 기록 지우기", role: .destructive) { removeRecords(on: day) }
                 }
                 Button("취소", role: .cancel) {}
             } message: { day in
@@ -205,6 +220,13 @@ struct KeyDetailView: View {
         } else if !text.isEmpty {
             context.insert(DayNote(keyID: key.id, day: calendar.startOfDay(for: day), text: text))
         }
+        try? context.save()
+    }
+
+    /// 그날 가장 나중 기록 하나만 지운다. 횟수는 −1, 시간 기록은 마지막 한 번.
+    private func removeLatest(on day: Date) {
+        guard let last = records(on: day).max(by: { $0.startedAt < $1.startedAt }) else { return }
+        context.delete(last)
         try? context.save()
     }
 

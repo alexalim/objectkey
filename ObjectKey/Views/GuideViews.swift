@@ -93,6 +93,7 @@ struct HelpView: View {
                 ])
                 guide("기록 보고 고치기", "4.circle", [
                     ("hand.tap", "물건을 누르면 달력과 기록이 나와요"),
+                    ("minus.circle", "잘못 누른 횟수는 상세 화면의 −1로 되돌려요"),
                     ("calendar", "날짜를 눌러 기록을 더하거나 지워요"),
                     ("note.text", "그날 메모도 남길 수 있어요"),
                     ("chart.xyaxis.line", "'통계 보기'에서 추이를 봐요"),
