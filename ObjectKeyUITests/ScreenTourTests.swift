@@ -156,8 +156,13 @@ final class ScreenTourTests: XCTestCase {
         snap("12-scan")
     }
 
+    /// 목록이 길면 화면 밖 행은 아직 만들어지지 않는다. 위아래로 넘겨 가며 찾는다.
     private func row(_ name: String) -> XCUIElement {
-        app.buttons.matching(NSPredicate(format: "label CONTAINS %@", name)).firstMatch
+        let element = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", name)).firstMatch
+        if element.waitForExistence(timeout: 1) && element.isHittable { return element }
+        for _ in 0..<4 where !(element.exists && element.isHittable) { app.swipeUp() }
+        for _ in 0..<8 where !(element.exists && element.isHittable) { app.swipeDown() }
+        return element
     }
 
     private func tapIfExists(_ element: XCUIElement) {
