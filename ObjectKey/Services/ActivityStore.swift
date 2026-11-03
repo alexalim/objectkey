@@ -99,6 +99,7 @@ final class ActivityStore {
     /// 잠금 화면 실시간 현황을 지금 상태에 맞춘다. 앱으로 돌아올 때도 부른다(밖에서 끝났을 수 있다).
     func syncLiveActivity(keys: [KeyObject]) {
         LiveActivitySync.update(engine.state, keys: Dictionary(uniqueKeysWithValues: keys.map { ($0.id, ($0.name, $0.emoji)) }))
+        RoutineAlerts.sync(engine.state, keys: keys)
     }
 
     private static func hasRecord(_ id: UUID, on day: Date, context: ModelContext) -> Bool {

@@ -43,19 +43,20 @@ public struct BackupFile: Codable, Equatable, Sendable {
         public var measureUnit: String?
         public var healthMetric: String?
         public var healthTarget: Int?
+        public var routineSteps: [String]?
 
         public init(id: UUID, name: String, emoji: String, actionKind: String, countdownMinutes: Int, threshold: Float,
                     createdAt: Date, dailyGoal: Int, cue: String, reminderMinute: Int, scheduleKind: String,
                     scheduleWeekdays: Int, timesPerWeek: Int, attendStartMinute: Int, attendMinutes: Int,
                     tags: [String], shots: [Shot], isQuit: Bool? = nil, measureStep: Int? = nil, measureUnit: String? = nil,
-                    healthMetric: String? = nil, healthTarget: Int? = nil) {
+                    healthMetric: String? = nil, healthTarget: Int? = nil, routineSteps: [String]? = nil) {
             self.id = id; self.name = name; self.emoji = emoji; self.actionKind = actionKind
             self.countdownMinutes = countdownMinutes; self.threshold = threshold; self.createdAt = createdAt
             self.dailyGoal = dailyGoal; self.cue = cue; self.reminderMinute = reminderMinute
             self.scheduleKind = scheduleKind; self.scheduleWeekdays = scheduleWeekdays; self.timesPerWeek = timesPerWeek
             self.attendStartMinute = attendStartMinute; self.attendMinutes = attendMinutes; self.tags = tags; self.shots = shots
             self.isQuit = isQuit; self.measureStep = measureStep; self.measureUnit = measureUnit
-            self.healthMetric = healthMetric; self.healthTarget = healthTarget
+            self.healthMetric = healthMetric; self.healthTarget = healthTarget; self.routineSteps = routineSteps
         }
     }
 

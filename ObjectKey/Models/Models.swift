@@ -37,6 +37,8 @@ final class KeyObject {
     /// 건강 앱 자동 완료. HealthMetric 원시값("steps" 등)과 하루 목표. 빈 문자열이면 쓰지 않음. (v0.4)
     var healthMetric: String = ""
     var healthTarget: Int = 0
+    /// 단계별 루틴. "세수|3" 형식의 단계 목록. 시간 기록 물건에만 쓴다. (v0.4)
+    var routineSteps: [String] = []
     @Relationship(deleteRule: .cascade, inverse: \ReferenceShot.key)
     var shots: [ReferenceShot] = []
 

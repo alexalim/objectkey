@@ -78,6 +78,39 @@ struct TimeOfDayPicker: View {
     }
 }
 
+/// 단계별 루틴 편집. 단계 이름과 분을 차례로 쌓는다.
+struct RoutineEditor: View {
+    @Binding var stored: [String]
+    @State private var name = ""
+    @State private var minutes = 3
+
+    var body: some View {
+        let steps = Routine.steps(stored)
+        ForEach(Array(steps.enumerated()), id: \.offset) { i, step in
+            LabeledContent("\(i + 1). \(step.name)", value: "\(step.minutes)분")
+        }
+        .onDelete { offsets in
+            var list = steps
+            list.remove(atOffsets: offsets)
+            stored = list.map(\.stored)
+        }
+        HStack {
+            TextField("단계 이름 (예: 세수)", text: $name)
+            Stepper("\(minutes)분", value: $minutes, in: 1...120).fixedSize()
+        }
+        Button("단계 추가", systemImage: "plus") {
+            let trimmed = name.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: "|", with: " ")
+            guard !trimmed.isEmpty else { return }
+            stored.append(RoutineStep(name: trimmed, minutes: minutes).stored)
+            name = ""
+        }
+        .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+        if !steps.isEmpty {
+            Text("모두 \(Routine.totalMinutes(steps))분").font(.footnote).foregroundStyle(.secondary)
+        }
+    }
+}
+
 /// 건강 앱 자동 완료: 무엇을, 하루 얼마 이상이면 완료로 볼지.
 struct HealthLinkEditor: View {
     @Binding var metric: String
@@ -213,6 +246,7 @@ enum HabitCopy {
     static let goalFooter = "실패할 수 없을 만큼 작게 시작해요. 목표가 없으면 한 번만 기록해도 채워져요."
     static let cuePlaceholder = "예: 아침 커피 내린 (→ 아침 커피 내린 다음에)"
     static let cueFooter = "매일 하는 행동 바로 뒤에 붙이면 덜 잊어요. 입력한 말 뒤에 '다음에'가 붙어 보여요."
+    static let routineFooter = "시작하면 지금 단계와 남은 시간을 보여 주고, 단계가 바뀔 때 알려 줘요. 예: 세수 3분 → 양치 2분 → 스트레칭 5분."
     static let healthFooter = "건강 앱의 값이 목표를 넘으면 그날을 자동으로 채워요. 앱을 열 때 최근 7일을 확인해요. 건강 데이터는 읽기만 하고 기기 밖으로 보내지 않아요."
     static let quitFooter = "했을 때만 기록해요. 기록이 없는 날이 지킨 날이에요. 한 번 했어도 이어지고, 이틀 연속이면 끊겨요."
     static let measureFooter = "단위를 쓰면 스캔할 때마다 정한 양만큼 더해져요. 예: 물 250ml, 책 10쪽."
@@ -268,6 +302,15 @@ struct GoalEditor: View {
                     Text("얼마나 자주")
                 } footer: {
                     Text(HabitCopy.rule(key.schedule))
+                }
+                if key.actionKind == "session" {
+                    Section {
+                        RoutineEditor(stored: $key.routineSteps)
+                    } header: {
+                        Text("단계별 루틴 (선택)")
+                    } footer: {
+                        Text(HabitCopy.routineFooter)
+                    }
                 }
                 Section {
                     HealthLinkEditor(metric: $key.healthMetric, target: $key.healthTarget)

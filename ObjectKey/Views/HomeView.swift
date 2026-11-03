@@ -257,7 +257,13 @@ struct ActiveBanner: View {
         case .session(let id, _, let segmentStart, let accumulated):
             Section {
                 TimelineView(.periodic(from: .now, by: 1)) { context in
-                    banner(id, title: "진행 중", value: ActivityStore.format(accumulated + context.date.timeIntervalSince(segmentStart)))
+                    let elapsed = accumulated + context.date.timeIntervalSince(segmentStart)
+                    VStack(alignment: .leading, spacing: 8) {
+                        banner(id, title: "진행 중", value: ActivityStore.format(elapsed))
+                        if let line = routineLine(id, elapsed: elapsed) {
+                            Label(line, systemImage: "list.number").font(.subheadline.weight(.semibold)).foregroundStyle(Color.accentColor)
+                        }
+                    }
                 }
             } footer: { Text("다시 스캔하거나 상세 화면에서 끝내면 기록돼요.") }
         case .countdown(let id, let endsAt, let paused):
@@ -269,6 +275,17 @@ struct ActiveBanner: View {
                 if paused != nil { Text("휴식이 끝나면 멈춰 둔 시간 기록이 이어져요.") }
             }
         }
+    }
+
+    /// 단계별 루틴이면 "2/3 양치 · 1:40 남음", 다 끝났으면 끝 안내.
+    private func routineLine(_ id: UUID, elapsed: TimeInterval) -> String? {
+        guard let key = keys.first(where: { $0.id == id }) else { return nil }
+        let steps = Routine.steps(key.routineSteps)
+        guard !steps.isEmpty else { return nil }
+        let p = Routine.progress(steps, elapsed: elapsed)
+        if p.isFinished { return "루틴 끝! 다시 스캔하거나 상세 화면에서 끝내요" }
+        let r = Int(p.remaining)
+        return "\(p.index + 1)/\(steps.count) \(steps[p.index].name) · \(r / 60):\(String(format: "%02d", r % 60)) 남음"
     }
 
     private func banner(_ id: UUID, title: String, value: String) -> some View {
