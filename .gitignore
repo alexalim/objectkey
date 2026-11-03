@@ -2,6 +2,7 @@
 ObjectKey/Info.plist
 ObjectKeyWidgets/Info.plist
 MOKIWatch/Info.plist
+MOKIWatchWidgets/Info.plist
 *.entitlements
 .build/
 DerivedData/
