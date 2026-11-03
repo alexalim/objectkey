@@ -122,7 +122,9 @@ final class ScreenTourTests: XCTestCase {
         // 6. 행 밀기 → 습관 버튼
         row("영양제").swipeRight()
         snap("09-swipe")
-        app.tap() // 밀린 행 되돌리기
+        // 화면 가운데를 누르면 요일에 따라 다른 행이 눌려 상세가 열릴 수 있다. 제목을 눌러 되돌리고, 혹시 열린 창은 닫는다.
+        app.navigationBars["MOKI"].tap()
+        tapIfExists(app.buttons["닫기"])
 
         // 7. 등록 화면
         app.buttons["물건 등록"].tap()
