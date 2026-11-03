@@ -52,6 +52,16 @@ jobs:
             | tee build.log | grep -E "error:|warning: .*deprecated|BUILD (SUCCEEDED|FAILED)" || true
           grep -q "BUILD SUCCEEDED" build.log
 
+      - name: 워치 앱·위젯이 앱 안에 들어갔는지 확인
+        run: |
+          app=$(find ~/Library/Developer/Xcode/DerivedData -type d -name "MOKI.app" -path "*iphonesimulator*" | head -1)
+          echo "앱: $app"
+          ls "$app" | head -50
+          ls "$app/PlugIns" 2>/dev/null || echo "(PlugIns 없음)"
+          ls "$app/Watch" 2>/dev/null || echo "(Watch 없음)"
+          test -d "$app/PlugIns/MOKIWidgets.appex" || { echo "::error::위젯 확장이 앱 안에 없습니다"; exit 1; }
+          test -d "$app/Watch/MOKIWatch.app" || { echo "::error::워치 앱이 앱 안에 없습니다"; exit 1; }
+
       - name: 실패 시 빌드 로그 보관
         if: failure()
         uses: actions/upload-artifact@v7
