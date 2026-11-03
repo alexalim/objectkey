@@ -16,8 +16,10 @@ enum WidgetBridge {
                                        time: key.todoMinute.map(KeyAction.clock), quit: key.isQuit ? true : nil)
         }
         .sorted { ($0.time ?? "99", $0.name) < ($1.time ?? "99", $1.name) }
-        WidgetSnapshot(day: Calendar.current.startOfDay(for: now), items: items).save()
+        let snapshot = WidgetSnapshot(day: Calendar.current.startOfDay(for: now), items: items)
+        snapshot.save()
         WidgetCenter.shared.reloadAllTimelines()
+        WatchBridge.shared.push(snapshot)
     }
 
     /// 화면 밖(위젯 버튼·단축어·알림)에서 기록한 뒤 부른다.
