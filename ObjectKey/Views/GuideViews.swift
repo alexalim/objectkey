@@ -106,6 +106,15 @@ struct HelpView: View {
                     ("mic", "Siri: \"MOKI에서 영양제 기록\""),
                     ("bell", "참석 알림을 길게 눌러 '참석'"),
                 ])
+                guide("다른 앱과 함께 쓰기", "link.circle", [
+                    ("lightbulb", "예: 단어 앱을 열면 MOKI에 자동으로 기록돼요"),
+                    ("1.square", "단축어 앱 → 자동화 → + → 앱"),
+                    ("2.square", "단어 앱(Duolingo, Anki 등)을 고르고 '열릴 때' 선택"),
+                    ("3.square", "'즉시 실행'으로 두고 다음"),
+                    ("4.square", "동작에서 MOKI → 물건 기록 → 물건 고르기"),
+                    ("timer", "시간 기록 물건이면 '닫힐 때'도 만들어 두세요"),
+                    ("clock", "그러면 앱을 쓴 시간이 공부 시간으로 쌓여요"),
+                ])
                 guide("태그로 묶기", "6.circle", [
                     ("number", "등록·습관 설정에서 #태그를 붙여요"),
                     ("line.3.horizontal.decrease", "홈 위 칩을 눌러 태그별로 봐요"),
