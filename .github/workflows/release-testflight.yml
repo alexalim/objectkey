@@ -7,6 +7,7 @@
 #   PROFILE_BASE64       .mobileprovision 파일의 base64
 #   WIDGET_PROFILE_NAME / WIDGET_PROFILE_BASE64   위젯 확장(com.aspynlim.moki.widgets) 프로파일
 #   WATCH_PROFILE_NAME / WATCH_PROFILE_BASE64     워치 앱(com.aspynlim.moki.watchkitapp) 프로파일
+#   WATCH_WIDGET_PROFILE_NAME / WATCH_WIDGET_PROFILE_BASE64   워치 컴플리케이션(…watchkitapp.widgets) 프로파일
 #   DIST_P12_BASE64      배포 인증서 .p12의 base64
 #   DIST_P12_PASSWORD    .p12 비밀번호
 #   ASC_KEY_ID           App Store Connect API 키 ID
@@ -35,6 +36,7 @@ jobs:
       PROFILE_NAME: ${{ secrets.PROFILE_NAME }}
       WIDGET_PROFILE_NAME: ${{ secrets.WIDGET_PROFILE_NAME }}
       WATCH_PROFILE_NAME: ${{ secrets.WATCH_PROFILE_NAME }}
+      WATCH_WIDGET_PROFILE_NAME: ${{ secrets.WATCH_WIDGET_PROFILE_NAME }}
       KEYCHAIN: build.keychain-db
     steps:
       - uses: actions/checkout@v7
@@ -42,12 +44,13 @@ jobs:
       - name: 비밀값 확인
         run: |
           missing=""
-          for v in TEAM_ID PROFILE_NAME WIDGET_PROFILE_NAME WATCH_PROFILE_NAME; do
+          for v in TEAM_ID PROFILE_NAME WIDGET_PROFILE_NAME WATCH_PROFILE_NAME WATCH_WIDGET_PROFILE_NAME; do
             [ -z "${!v}" ] && missing="$missing $v"
           done
           [ -z "${{ secrets.PROFILE_BASE64 }}" ] && missing="$missing PROFILE_BASE64"
           [ -z "${{ secrets.WIDGET_PROFILE_BASE64 }}" ] && missing="$missing WIDGET_PROFILE_BASE64"
           [ -z "${{ secrets.WATCH_PROFILE_BASE64 }}" ] && missing="$missing WATCH_PROFILE_BASE64"
+          [ -z "${{ secrets.WATCH_WIDGET_PROFILE_BASE64 }}" ] && missing="$missing WATCH_WIDGET_PROFILE_BASE64"
           [ -z "${{ secrets.DIST_P12_BASE64 }}" ] && missing="$missing DIST_P12_BASE64"
           [ -z "${{ secrets.ASC_KEY_P8_BASE64 }}" ] && missing="$missing ASC_KEY_P8_BASE64"
           if [ -n "$missing" ]; then echo "::error::Secrets 누락:$missing"; exit 1; fi
@@ -60,6 +63,7 @@ jobs:
           PROFILE_BASE64: ${{ secrets.PROFILE_BASE64 }}
           WIDGET_PROFILE_BASE64: ${{ secrets.WIDGET_PROFILE_BASE64 }}
           WATCH_PROFILE_BASE64: ${{ secrets.WATCH_PROFILE_BASE64 }}
+          WATCH_WIDGET_PROFILE_BASE64: ${{ secrets.WATCH_WIDGET_PROFILE_BASE64 }}
         run: |
           KC_PASS=$(openssl rand -hex 16)
           echo "KC_PASS=$KC_PASS" >> "$GITHUB_ENV"
@@ -78,7 +82,8 @@ jobs:
           echo "$PROFILE_BASE64" | base64 --decode > "$RUNNER_TEMP/app.mobileprovision"
           echo "$WIDGET_PROFILE_BASE64" | base64 --decode > "$RUNNER_TEMP/widgets.mobileprovision"
           echo "$WATCH_PROFILE_BASE64" | base64 --decode > "$RUNNER_TEMP/watch.mobileprovision"
-          for name in app widgets watch; do
+          echo "$WATCH_WIDGET_PROFILE_BASE64" | base64 --decode > "$RUNNER_TEMP/watchwidgets.mobileprovision"
+          for name in app widgets watch watchwidgets; do
             uuid=$(security cms -D -i "$RUNNER_TEMP/$name.mobileprovision" | plutil -extract UUID raw -)
             # Xcode 버전에 따라 찾는 위치가 달라 두 곳 모두에 둡니다.
             for dir in "$HOME/Library/MobileDevice/Provisioning Profiles" \
@@ -135,6 +140,7 @@ jobs:
               <key>${BUNDLE_ID}</key><string>${PROFILE_NAME}</string>
               <key>${BUNDLE_ID}.widgets</key><string>${WIDGET_PROFILE_NAME}</string>
               <key>${BUNDLE_ID}.watchkitapp</key><string>${WATCH_PROFILE_NAME}</string>
+              <key>${BUNDLE_ID}.watchkitapp.widgets</key><string>${WATCH_WIDGET_PROFILE_NAME}</string>
             </dict>
             <key>uploadSymbols</key><true/>
             <key>manageAppVersionAndBuildNumber</key><false/>

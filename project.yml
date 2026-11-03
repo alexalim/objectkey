@@ -110,6 +110,12 @@ targets:
     sources:
       - path: MOKIWatch
       - path: Shared/WidgetSnapshot.swift
+    dependencies:
+      - target: MOKIWatchWidgets
+    entitlements:
+      path: MOKIWatch/MOKIWatch.entitlements
+      properties:
+        com.apple.security.application-groups: [group.com.aspynlim.moki]
     info:
       path: MOKIWatch/Info.plist
       properties:
@@ -131,6 +137,39 @@ targets:
           CODE_SIGN_STYLE: Manual
           CODE_SIGN_IDENTITY: "Apple Distribution"
           PROVISIONING_PROFILE_SPECIFIER: "${WATCH_PROFILE_NAME}"
+
+  # 시계 화면 컴플리케이션. 워치 앱이 워치 안 공유 공간에 쓴 오늘 요약을 읽는다.
+  MOKIWatchWidgets:
+    type: app-extension
+    platform: watchOS
+    deploymentTarget: "10.0"
+    sources:
+      - path: MOKIWatchWidgets
+      - path: Shared/WidgetSnapshot.swift
+    entitlements:
+      path: MOKIWatchWidgets/MOKIWatchWidgets.entitlements
+      properties:
+        com.apple.security.application-groups: [group.com.aspynlim.moki]
+    info:
+      path: MOKIWatchWidgets/Info.plist
+      properties:
+        CFBundleDisplayName: MOKI
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.aspynlim.moki.watchkitapp.widgets
+        PRODUCT_NAME: MOKIWatchWidgets
+        GENERATE_INFOPLIST_FILE: NO
+        SKIP_INSTALL: YES
+        CODE_SIGN_STYLE: Automatic
+      configs:
+        Release:
+          CODE_SIGN_STYLE: Manual
+          CODE_SIGN_IDENTITY: "Apple Distribution"
+          PROVISIONING_PROFILE_SPECIFIER: "${WATCH_WIDGET_PROFILE_NAME}"
 
   # 화면 점검용 UI 테스트. 데모 데이터로 앱을 띄워 주요 화면 스크린샷을 남긴다 (.github/workflows/ui-screens.yml).
   ObjectKeyUITests:

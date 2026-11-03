@@ -20,6 +20,7 @@ jobs:
       PROFILE_NAME: ""
       WIDGET_PROFILE_NAME: ""
       WATCH_PROFILE_NAME: ""
+      WATCH_WIDGET_PROFILE_NAME: ""
     steps:
       - uses: actions/checkout@v7
 
@@ -61,6 +62,8 @@ jobs:
           ls "$app/Watch" 2>/dev/null || echo "(Watch 없음)"
           test -d "$app/PlugIns/MOKIWidgets.appex" || { echo "::error::위젯 확장이 앱 안에 없습니다"; exit 1; }
           test -d "$app/Watch/MOKIWatch.app" || { echo "::error::워치 앱이 앱 안에 없습니다"; exit 1; }
+          ls "$app/Watch/MOKIWatch.app/PlugIns" 2>/dev/null || echo "(워치 PlugIns 없음)"
+          test -d "$app/Watch/MOKIWatch.app/PlugIns/MOKIWatchWidgets.appex" || { echo "::error::워치 컴플리케이션이 워치 앱 안에 없습니다"; exit 1; }
 
       - name: 실패 시 빌드 로그 보관
         if: failure()

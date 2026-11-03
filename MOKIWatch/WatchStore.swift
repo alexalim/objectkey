@@ -1,5 +1,6 @@
 import Foundation
 import WatchConnectivity
+import WidgetKit
 
 /// 워치 쪽 상태. 아이폰이 보낸 오늘 요약을 보여 주고, 누른 기록을 아이폰으로 보낸다.
 /// 워치는 아이폰의 공유 공간을 읽을 수 없어서 WatchConnectivity로 주고받는다.
@@ -43,6 +44,9 @@ final class WatchStore: NSObject, ObservableObject {
     private func apply(_ s: WidgetSnapshot) {
         snapshot = s
         if let data = try? JSONEncoder().encode(s) { UserDefaults.standard.set(data, forKey: Self.cacheKey) }
+        // 시계 화면 컴플리케이션이 읽도록 워치 안 공유 공간에도 쓰고 다시 그리게 한다.
+        s.save()
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     fileprivate func receive(_ context: [String: Any]) {

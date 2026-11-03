@@ -14,6 +14,7 @@ jobs:
       PROFILE_NAME: ""
       WIDGET_PROFILE_NAME: ""
       WATCH_PROFILE_NAME: ""
+      WATCH_WIDGET_PROFILE_NAME: ""
     steps:
       - uses: actions/checkout@v7
 
