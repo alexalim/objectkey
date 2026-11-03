@@ -12,7 +12,7 @@ struct ScanView: View {
     @State private var camera = CameraController()
     @State private var cameraAllowed: Bool?
     @State private var filter = StabilityFilter(requiredStreak: 3)
-    @State private var hint = "네모 칸 안에 물건을 비춰 주세요"
+    @State private var hint = "네모 칸 안에 물건을 맞춰 주세요"
     @State private var paused = false
     @State private var choices: [KeyObject] = []
     @State private var pending: PendingSwitch?
@@ -98,7 +98,7 @@ struct ScanView: View {
             diagnostics = "물체 없음"
             _ = filter.feed(.noMatch)
             if Date.now.timeIntervalSince(lastSeen) > 4 {
-                hint = "네모 칸 안에 물건이 안 보여요. 가까이 비춰 주세요"
+                hint = "네모 칸 안에 물건이 안 보여요. 조금 더 가까이 대 주세요"
                 mood = .question
             }
             return
@@ -114,10 +114,10 @@ struct ScanView: View {
             mood = .key
             lastSeen = .now
         } else if Date.now.timeIntervalSince(lastSeen) > 4 {
-            hint = "등록한 물건이 안 보여요. 가까이 비추거나 직접 선택해 주세요"
+            hint = "등록한 물건을 찾지 못했어요. 가까이 대거나 직접 골라 주세요"
             mood = .question
         } else {
-            hint = "네모 칸 안에 물건을 비춰 주세요"
+            hint = "네모 칸 안에 물건을 맞춰 주세요"
             mood = .scan
         }
         guard let confirmed = filter.feed(outcome) else { return }

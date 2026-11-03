@@ -117,7 +117,7 @@ struct RegisterView: View {
                         AttendEditor(startMinute: $attendStart, minutes: $attendMinutes)
                     }
                 } header: {
-                    Text("비추면 실행할 동작")
+                    Text("스캔하면 실행할 동작")
                 } footer: {
                     Text(kind == "attend" ? HabitCopy.attendFooter
                          : "아이콘을 고르면 어울리는 동작이 먼저 골라져요. 원하는 동작으로 바꿔도 돼요.")
@@ -179,7 +179,7 @@ struct RegisterView: View {
                 Button("그래도 등록", action: commit)
                 Button("취소", role: .cancel) {}
             } message: { key in
-                Text("'\(key.name)'하고 비슷해 보여요. 둘 다 두면 비출 때마다 어느 쪽인지 골라야 해요.")
+                Text("'\(key.name)'하고 비슷해 보여요. 둘 다 두면 스캔할 때마다 어느 쪽인지 골라야 해요.")
             }
         }
     }
@@ -195,9 +195,9 @@ struct RegisterView: View {
     /// 사진이 몇 장인지에 따라 무엇이 되고 안 되는지 알려 준다. 저장을 막지는 않는다.
     private var photoNote: String {
         switch shots.count {
-        case 0: return "사진 없이도 저장할 수 있어요. 대신 비추기로는 알아보지 못하니 상세 화면 버튼·위젯·Siri·✨로 기록해요."
-        case 1..<Self.requiredShots: return "\(Self.requiredShots - shots.count)장 더 찍으면 비추기로 알아봐요. 지금 저장해도 돼요."
-        default: return "비추면 알아볼 수 있어요."
+        case 0: return "사진 없이도 저장할 수 있어요. 대신 스캔으로는 알아보지 못하니 상세 화면 버튼·위젯·Siri·✨로 기록해요."
+        case 1..<Self.requiredShots: return "\(Self.requiredShots - shots.count)장 더 찍으면 스캔으로 알아봐요. 지금 저장해도 돼요."
+        default: return "스캔하면 알아볼 수 있어요."
         }
     }
 
@@ -337,7 +337,7 @@ struct CameraDeniedView: View {
         VStack(spacing: 8) {
             Image(.question).resizable().scaledToFit().frame(height: 96)
             Text("카메라 권한이 꺼져 있어요").font(.headline)
-            Text("비추기로 기록하려면 카메라가 필요해요. 카메라 없이도 물건을 눌러 상세 화면에서 기록할 수 있어요.")
+            Text("스캔으로 기록하려면 카메라가 필요해요. 카메라 없이도 물건을 눌러 상세 화면에서 기록할 수 있어요.")
                 .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
             if let url = URL(string: UIApplication.openSettingsURLString) {
                 Link("설정에서 허용하기", destination: url)

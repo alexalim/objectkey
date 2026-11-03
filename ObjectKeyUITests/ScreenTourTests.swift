@@ -148,7 +148,7 @@ final class ScreenTourTests: XCTestCase {
         }
 
         // 8. 스캔 화면 (시뮬레이터에는 카메라가 없다)
-        tapIfExists(app.buttons["물건 비추기"])
+        tapIfExists(app.buttons["물건 스캔"])
         sleep(2)
         app.tap()
         snap("12-scan")

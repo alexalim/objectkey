@@ -29,7 +29,7 @@ struct MokiLiveActivity: Widget {
                     Clock(state: context.state).font(.title3.monospacedDigit().bold())
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    Text(context.state.isBreak ? "휴식 중 · 끝나면 멈춰 둔 기록이 이어져요" : "기록 중 · 다시 비추거나 앱에서 끝내요")
+                    Text(context.state.isBreak ? "휴식 중 · 끝나면 멈춰 둔 기록이 이어져요" : "기록 중 · 다시 스캔하거나 앱에서 끝내요")
                         .font(.caption).foregroundStyle(.secondary)
                 }
             } compactLeading: {

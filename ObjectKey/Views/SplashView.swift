@@ -11,7 +11,7 @@ struct SplashView: View {
                 Spacer()
                 Image(.key).resizable().scaledToFit().frame(height: 200)
                 Text("MOKI").font(.system(size: 44, weight: .heavy, design: .rounded))
-                Text("물건을 비추면 습관이 시작돼요").font(.headline).foregroundStyle(.secondary)
+                Text("물건을 스캔하면 습관이 시작돼요").font(.headline).foregroundStyle(.secondary)
                 Spacer()
                 Text("화면을 눌러 시작하세요")
                     .font(.subheadline).foregroundStyle(.secondary)

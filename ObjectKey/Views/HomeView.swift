@@ -108,7 +108,7 @@ struct HomeView: View {
             .safeAreaInset(edge: .bottom) {
                 if !keys.isEmpty {
                     Button { showScan = true } label: {
-                        Label("물건 비추기", systemImage: "viewfinder").frame(maxWidth: .infinity).padding(.vertical, 6)
+                        Label("물건 스캔", systemImage: "viewfinder").frame(maxWidth: .infinity).padding(.vertical, 6)
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
@@ -257,7 +257,7 @@ struct ActiveBanner: View {
                 TimelineView(.periodic(from: .now, by: 1)) { context in
                     banner(id, title: "진행 중", value: ActivityStore.format(accumulated + context.date.timeIntervalSince(segmentStart)))
                 }
-            } footer: { Text("다시 비추거나 상세 화면에서 끝내면 기록돼요.") }
+            } footer: { Text("다시 스캔하거나 상세 화면에서 끝내면 기록돼요.") }
         case .countdown(let id, let endsAt, let paused):
             Section {
                 TimelineView(.periodic(from: .now, by: 1)) { context in

@@ -172,7 +172,7 @@ enum HabitCopy {
     static let goalFooter = "실패할 수 없을 만큼 작게 시작해요. 목표가 없으면 한 번만 기록해도 채워져요."
     static let cuePlaceholder = "예: 아침 커피 내린 (→ 아침 커피 내린 다음에)"
     static let cueFooter = "매일 하는 행동 바로 뒤에 붙이면 덜 잊어요. 입력한 말 뒤에 '다음에'가 붙어 보여요."
-    static let attendFooter = "비추거나 알림의 '참석'을 누르면 정한 시간만큼 바로 기록돼요. 시작·종료를 따로 하지 않아도 되고, 진행 중인 다른 기록도 멈추지 않아요."
+    static let attendFooter = "스캔하거나 알림의 '참석'을 누르면 정한 시간만큼 바로 기록돼요. 시작·종료를 따로 하지 않아도 되고, 진행 중인 다른 기록도 멈추지 않아요."
     static let reminderFooter = "그날 이미 기록했으면 알림이 오지 않아요. 요일 지정은 정한 요일에만 오고, 주 N회는 그 주를 채우면 멈춰요."
 
     /// 이틀 규칙을 일정에 맞게 풀어 쓴 문구.
@@ -473,6 +473,6 @@ struct MoodHeader: View {
            let phase = best.progress.phase {
             return (.peek, "\(best.key.name) \(best.progress.streak)일째, \(phase.label). \(phase.tip)", best.key)
         }
-        return (.scan, "오늘 첫 물건을 비춰 보세요. 작게 시작해도 충분해요.", nil)
+        return (.scan, "오늘 첫 물건을 스캔해 보세요. 작게 시작해도 충분해요.", nil)
     }
 }
