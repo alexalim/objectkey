@@ -1,6 +1,7 @@
 *.xcodeproj/
 ObjectKey/Info.plist
 ObjectKeyWidgets/Info.plist
+MOKIWatch/Info.plist
 *.entitlements
 .build/
 DerivedData/

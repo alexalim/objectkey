@@ -15,6 +15,8 @@ struct ObjectKeyApp: App {
         UNUserNotificationCenter.current().delegate = NotificationHandler.shared
         // 위젯 체크 버튼은 앱을 뒤에서 깨워 이 경로로 기록한다.
         WidgetActions.record = { WidgetBridge.record($0) }
+        // 워치에서 누른 기록도 앱이 뒤에서 깨어나 받는다.
+        WatchBridge.shared.activate()
     }
 
     var body: some Scene {
