@@ -3,12 +3,12 @@ import SwiftUI
 /// MOKI 캐릭터 에셋 이름.
 enum Moki: String, CaseIterable {
     case peek, success, scan, question, key
-    case reading, `break`, music, exercise, creative
+    case reading, `break`, music, exercise, creative, writing, meditate
 
     var assetName: String { "moki-\(rawValue)" }
 
     /// 등록할 때 물건 아이콘으로 고를 수 있는 활동형 캐릭터.
-    static let activities: [Moki] = [.reading, .break, .music, .exercise, .creative]
+    static let activities: [Moki] = [.reading, .writing, .exercise, .meditate, .music, .creative, .break]
 
     var label: String {
         switch self {
@@ -17,6 +17,8 @@ enum Moki: String, CaseIterable {
         case .music: return "음악"
         case .exercise: return "운동"
         case .creative: return "창작"
+        case .writing: return "공부"
+        case .meditate: return "명상"
         default: return "MOKI"
         }
     }
