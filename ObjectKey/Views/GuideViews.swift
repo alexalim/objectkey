@@ -13,13 +13,13 @@ struct OnboardingView: View {
 
     private let pages = [
         Page(mood: .key, title: "물건이 열쇠가 돼요",
-             body: "책, 컵, 영양제처럼 늘 쓰는 물건을 등록해 두세요. 카메라로 스캔하면 MOKI가 알아보고 기록을 시작해요."),
+             body: "책, 컵, 영양제처럼\n늘 쓰는 물건을 등록해요.\n스캔하면 MOKI가 알아보고 기록해요."),
         Page(mood: .scan, title: "등록은 이름 하나면 돼요",
-             body: "동작은 시간 기록·횟수 +1·정해진 시간 참석·휴식 타이머 중에서 골라요. 사진을 3장 찍어 두면 스캔만 해도 기록돼요. 사진은 없어도 돼요."),
+             body: "동작은 4가지 중에서 골라요.\n사진을 찍어 두면 스캔만으로 기록돼요.\n사진은 없어도 돼요."),
         Page(mood: .success, title: "끊기지 않는 습관",
-             body: "홈에서 오늘 할 일을 확인해요. 한 번 빠져도 괜찮아요. 두 번 연속만 피하면 이어지고, 평균 66일이면 습관이 돼요."),
+             body: "오늘 할 일은 홈에서 확인해요.\n한 번 빠져도 괜찮아요.\n평균 66일이면 습관이 돼요."),
         Page(mood: .reading, title: "카메라 없이도 돼요",
-             body: "물건을 눌러 상세 화면의 버튼으로 기록하거나, 위젯·Siri·알림으로도 기록할 수 있어요. ✨ 버튼에 한 문장으로 말해도 돼요."),
+             body: "버튼·위젯·Siri로도 기록해요.\n✨ 버튼에 한 문장으로 말해도 돼요."),
     ]
 
     var body: some View {
@@ -38,7 +38,7 @@ struct OnboardingView: View {
                         Image(pages[i].mood).resizable().scaledToFit().frame(height: 220)
                         Text(pages[i].title).font(.title.bold())
                         Text(pages[i].body).font(.body).foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center).padding(.horizontal, 32)
+                            .multilineTextAlignment(.center).lineSpacing(4).padding(.horizontal, 32)
                         Spacer()
                     }
                     .tag(i)
@@ -72,40 +72,55 @@ struct HelpView: View {
                     Button { showIntro = true } label: { Label("소개 다시 보기", systemImage: "play.rectangle") }
                 }
                 guide("시작하기", "1.circle", [
-                    "오른쪽 위 +로 등록해요. 이름만 있으면 저장돼요.",
-                    "사진은 선택이에요. 노란 상자가 물건을 감싼 상태로 3장 이상 찍어 두면 스캔으로 기록할 수 있고, 없으면 버튼·위젯·Siri·✨로 기록해요.",
-                    "아래 '물건 스캔'으로 물건을 스캔하면 정해 둔 동작이 실행돼요. 비슷한 물건이 둘이면 어느 쪽인지 물어봐요.",
+                    ("plus.circle", "오른쪽 위 + 로 등록해요"),
+                    ("character.cursor.ibeam", "이름만 있으면 저장돼요"),
+                    ("camera", "사진 3장을 찍어 두면 스캔으로 기록돼요"),
+                    ("hand.tap", "사진이 없으면 버튼·위젯·Siri로 기록해요"),
                 ])
-                guide("스캔하면 하는 동작 4가지", "2.circle", [
-                    "시간 기록: 스캔하면 시작, 다시 스캔하면 끝나고 기록돼요. 기록 중에는 잠금 화면에 시간이 보여요.",
-                    "횟수 +1: 영양제·물처럼 스캔할 때마다 1회씩 쌓여요.",
-                    "정해진 시간 참석: 수업처럼 시간이 정해진 일. 한 번 스캔하거나 알림의 '참석'을 누르면 정한 시간만큼 바로 기록돼요(하루 한 번).",
-                    "휴식 타이머: 정한 시간만큼 쉬어요. 시간 기록 중이었다면 쉬는 동안 멈췄다가 이어져요.",
+                guide("스캔하면 하는 동작", "2.circle", [
+                    ("timer", "시간 기록: 스캔하면 시작, 다시 스캔하면 끝"),
+                    ("plus.square", "횟수 +1: 스캔할 때마다 1회"),
+                    ("calendar.badge.clock", "정해진 시간 참석: 한 번 스캔하면 정한 시간만큼 기록"),
+                    ("cup.and.saucer", "휴식 타이머: 쉬는 동안 시간 기록은 잠시 멈춰요"),
+                    ("questionmark.circle", "비슷한 물건이 둘이면 어느 쪽인지 물어봐요"),
                 ])
                 guide("습관 규칙", "3.circle", [
-                    "홈에서 물건을 오른쪽으로 밀거나 상세 화면의 ◎를 누르면 습관 설정이 열려요. 얼마나 자주 할지, 하루 목표, 무엇 다음에 할지, 알림을 정해요.",
-                    "이틀 규칙: 한 번 빠져도 이어지고, 두 번 연속 빠지면 끊겨요. 끊기기 직전이면 불꽃이 빨갛게 바뀌어요.",
-                    "평균 66일이면 습관이 된다고 해요(사람마다 18~254일). 1~22일 적응, 23~44일 회로 형성, 45~66일 자동화 단계로 보여 드려요.",
+                    ("hand.point.right", "물건을 오른쪽으로 밀면 습관 설정"),
+                    ("repeat", "매일 · 요일 지정 · 주 N회 중에서 골라요"),
+                    ("checkmark.circle", "한 번 빠져도 괜찮아요"),
+                    ("flame", "두 번 연속 빠지면 끊겨요"),
+                    ("leaf", "평균 66일이면 습관이 돼요 (사람마다 달라요)"),
                 ])
                 guide("기록 보고 고치기", "4.circle", [
-                    "물건을 누르면 연속 일수·최고 기록, 이번 달 완료율, 달력이 나와요.",
-                    "달력 날짜를 누르면 깜빡한 기록을 더하거나 지우고, 그날 메모를 남길 수 있어요.",
-                    "'통계 보기'에서 주별 완료율, 요일별·시간대별 기록을 볼 수 있어요.",
+                    ("hand.tap", "물건을 누르면 달력과 기록이 나와요"),
+                    ("calendar", "날짜를 눌러 기록을 더하거나 지워요"),
+                    ("note.text", "그날 메모도 남길 수 있어요"),
+                    ("chart.xyaxis.line", "'통계 보기'에서 추이를 봐요"),
                 ])
                 guide("카메라 없이 기록하기", "5.circle", [
-                    "상세 화면의 큰 버튼",
-                    "홈 화면 위젯(중간 크기)의 ○ 버튼",
-                    "Siri: \"MOKI에서 영양제 기록\" · 단축어 앱의 'MOKI 물건 기록' · 액션 버튼",
-                    "정해진 시간 참석 알림을 길게 눌러 '참석'",
+                    ("rectangle.and.hand.point.up.left", "상세 화면의 큰 버튼"),
+                    ("square.grid.2x2", "홈 화면 위젯의 ○ 버튼"),
+                    ("mic", "Siri: \"MOKI에서 영양제 기록\""),
+                    ("bell", "참석 알림을 길게 눌러 '참석'"),
                 ])
-                guide("MOKI에게 말하기 ✨", "6.circle", [
-                    "한 문장으로 등록·기록·질문을 할 수 있어요. 예: \"화요일 밤 9시 아이스하키 수업 90분, 30분 전에 알려줘\", \"어제 책 30분 읽었어\", \"이번 달 영양제 몇 번?\"",
-                    "기기 안 AI(Apple Intelligence)로만 동작해 문장이 밖으로 나가지 않아요. 설정 → Apple Intelligence 및 Siri에서 켜 주세요(iOS 26, iPhone 15 Pro 이상).",
+                guide("태그로 묶기", "6.circle", [
+                    ("number", "등록·습관 설정에서 #태그를 붙여요"),
+                    ("line.3.horizontal.decrease", "홈 위 칩을 눌러 태그별로 봐요"),
+                    ("slider.horizontal.3", "칩 끝 아이콘에서 이름 바꾸기·지우기"),
                 ])
-                guide("위젯과 잠금 화면", "7.circle", [
-                    "홈 화면 빈 곳을 길게 누름 → 편집 → 위젯 추가 → MOKI → '오늘 할 일'.",
-                    "잠금 화면을 길게 누름 → 사용자화 → 시계 아래 칸에서 MOKI를 추가해요.",
-                    "시간 기록·휴식 중에는 잠금 화면과 Dynamic Island에 시간이 보여요. 안 보이면 설정 → MOKI → 실시간 현황을 켜 주세요.",
+                guide("MOKI에게 말하기 ✨", "7.circle", [
+                    ("sparkles", "✨ 버튼에 한 문장으로 말해요"),
+                    ("text.bubble", "\"화요일 밤 9시 아이스하키 수업\""),
+                    ("text.bubble", "\"어제 책 30분 읽었어\""),
+                    ("text.bubble", "\"이번 달 영양제 몇 번?\""),
+                    ("lock", "기기 안 AI라 문장이 밖으로 나가지 않아요"),
+                    ("gearshape", "설정 → Apple Intelligence를 켜 주세요"),
+                ])
+                guide("위젯과 잠금 화면", "8.circle", [
+                    ("square.grid.2x2", "홈 화면 길게 누르기 → 편집 → 위젯 추가 → MOKI"),
+                    ("lock.iphone", "잠금 화면 길게 누르기 → 사용자화 → MOKI"),
+                    ("timer", "시간 기록 중에는 잠금 화면에 시간이 보여요"),
+                    ("gearshape", "안 보이면 설정 → MOKI → 실시간 현황 켜기"),
                 ])
                 Section {
                     Text("사진과 기록은 이 기기 안에만 저장돼요.").font(.footnote).foregroundStyle(.secondary)
@@ -118,9 +133,16 @@ struct HelpView: View {
         }
     }
 
-    private func guide(_ title: String, _ icon: String, _ lines: [String]) -> some View {
+    /// 한 줄에 한 가지. 줄마다 아이콘을 붙여 훑어보기 쉽게 한다.
+    private func guide(_ title: String, _ icon: String, _ lines: [(icon: String, text: String)]) -> some View {
         Section {
-            ForEach(lines, id: \.self) { Text($0).font(.subheadline) }
+            ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
+                Label {
+                    Text(line.text).font(.subheadline)
+                } icon: {
+                    Image(systemName: line.icon).foregroundStyle(Color.accentColor)
+                }
+            }
         } header: {
             Label(title, systemImage: icon).font(.headline).foregroundStyle(.primary).textCase(nil)
         }
