@@ -46,6 +46,8 @@ targets:
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         ITSAppUsesNonExemptEncryption: false
+        # 쓰지는 않지만 HealthKit 권한이 있으면 Apple이 쓰기 설명도 요구한다(없으면 업로드 거절).
+        NSHealthUpdateUsageDescription: "MOKI는 건강 앱에 데이터를 쓰지 않습니다. 걸음 수·운동 시간·마음챙김 기록을 읽기만 합니다."
         NSHealthShareUsageDescription: "건강 앱의 걸음 수·운동 시간·마음챙김 기록을 읽어, 목표를 넘은 날 습관을 자동으로 채웁니다. 읽기만 하고 기기 밖으로 보내지 않습니다."
         NSCameraUsageDescription: "등록한 물건을 알아보기 위해 카메라를 사용합니다. 촬영한 이미지는 기기 밖으로 전송되지 않습니다."
     settings:
