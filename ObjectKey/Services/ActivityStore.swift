@@ -66,6 +66,8 @@ final class ActivityStore {
         guard !effects.isEmpty else { return }
         let names = Dictionary(uniqueKeysWithValues: keys.map { ($0.id, $0.name) })
         let attendIDs = Set(keys.filter { $0.actionKind == "attend" }.map(\.id))
+        let amounts = Dictionary(uniqueKeysWithValues: keys.map { ($0.id, $0.recordAmount) })
+        let units = Dictionary(uniqueKeysWithValues: keys.map { ($0.id, $0.measureStep > 0 ? "+\($0.measureStep)\($0.measureUnit)" : "+1") })
         for effect in effects {
             switch effect {
             case .recordSession(let id, let startedAt, let duration):
@@ -79,8 +81,8 @@ final class ActivityStore {
                 lastMessage = "\(names[id] ?? "세션") \(Self.format(duration)) 기록"
             case .incrementCounter(let id, let at):
                 context.insert(ActivityLog(keyID: id, keyName: names[id] ?? "삭제된 물건", kind: "counter",
-                                           startedAt: at, duration: 0))
-                lastMessage = "\(names[id] ?? "카운터") +1"
+                                           startedAt: at, duration: 0, amount: amounts[id] ?? 1))
+                lastMessage = "\(names[id] ?? "카운터") \(units[id] ?? "+1")"
             case .scheduleCountdownEnd(let id, let at):
                 scheduleNotification(name: names[id] ?? "휴식", at: at)
             case .cancelCountdownEnd:

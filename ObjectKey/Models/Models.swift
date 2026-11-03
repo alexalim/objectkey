@@ -29,6 +29,11 @@ final class KeyObject {
     var attendMinutes: Int = 90
     /// 태그. "운동", "건강" 같은 이름 목록. (v0.4)
     var tags: [String] = []
+    /// 끊기 습관. 횟수 물건인데, 기록은 "저지른 날"이고 기록이 없는 날을 지킨 날로 센다. (v0.4)
+    var isQuit: Bool = false
+    /// 수치 습관. 한 번 기록할 때 더하는 양과 단위(예: 250, "ml"). 0이면 그냥 횟수. (v0.4)
+    var measureStep: Int = 0
+    var measureUnit: String = ""
     @Relationship(deleteRule: .cascade, inverse: \ReferenceShot.key)
     var shots: [ReferenceShot] = []
 
@@ -66,8 +71,8 @@ final class KeyObject {
 
     /// Progress 계산에 넘길 목표량. 세션은 초, 카운터는 횟수.
     var goalAmount: Double? {
-        // 참석은 다녀오면 그날을 채운 것이다. 분 단위 목표를 따로 두지 않는다.
-        guard supportsGoal, actionKind != "attend", dailyGoal > 0 else { return nil }
+        // 참석은 다녀오면 그날을 채운 것이다. 끊기는 안 한 날이 채운 날이다. 둘 다 목표량을 두지 않는다.
+        guard supportsGoal, actionKind != "attend", !isQuit, dailyGoal > 0 else { return nil }
         return actionKind == "counter" ? Double(dailyGoal) : Double(dailyGoal * 60)
     }
 
@@ -89,6 +94,19 @@ final class KeyObject {
             }
         }
     }
+
+    /// 수치 습관이면 한 번에 더하는 양, 아니면 1.
+    var recordAmount: Double { measureStep > 0 ? Double(measureStep) : 1 }
+
+    /// "+250ml", "+1", "끊기" 처럼 목록에 보이는 동작 이름.
+    var actionTitle: String {
+        if isQuit { return "끊기 · 했을 때만 기록" }
+        if actionKind == "counter", measureStep > 0 { return "+\(measureStep)\(measureUnit)" }
+        return action.label
+    }
+
+    /// 횟수 단위. 수치 습관이면 그 단위.
+    var countUnit: String { measureStep > 0 ? measureUnit : "회" }
 
     var registered: RegisteredKey {
         RegisteredKey(id: id, references: shots.map(\.vector), threshold: threshold)
@@ -123,13 +141,16 @@ final class ActivityLog {
     var kind: String
     var startedAt: Date
     var duration: Double
+    /// 횟수 기록 한 번의 양. 수치 습관이면 250 같은 값, 아니면 1. (v0.4, 기존 기록은 1)
+    var amount: Double = 1
 
-    init(keyID: UUID, keyName: String, kind: String, startedAt: Date, duration: Double) {
+    init(keyID: UUID, keyName: String, kind: String, startedAt: Date, duration: Double, amount: Double = 1) {
         self.keyID = keyID
         self.keyName = keyName
         self.kind = kind
         self.startedAt = startedAt
         self.duration = duration
+        self.amount = amount
     }
 }
 

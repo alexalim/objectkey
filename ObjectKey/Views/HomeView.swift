@@ -222,8 +222,9 @@ struct KeyRow: View {
 
     /// 오늘 기록이 있으면 동작 이름 대신 진행 상황("오늘 20/30분")을 보여준다.
     private var subtitle: String {
-        guard let progress, progress.today > 0 || progress.goal != nil else { return key.action.label }
-        return "오늘 " + progress.summary(forCounter: key.actionKind == "counter")
+        if key.isQuit, let progress { return progress.metToday ? "오늘 지키는 중" : "오늘은 했어요" }
+        guard let progress, progress.today > 0 || progress.goal != nil else { return key.actionTitle }
+        return "오늘 " + progress.summary(forCounter: key.actionKind == "counter", unit: key.countUnit)
     }
 
     /// "월·수·금 · 커피 내린 다음에 · 12일째 1단계 적응". 모두 없으면 nil.

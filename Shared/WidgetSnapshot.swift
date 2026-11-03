@@ -13,6 +13,8 @@ struct WidgetSnapshot: Codable {
         var atRisk: Bool
         /// "21:00" 같은 시각. 없으면 nil.
         var time: String?
+        /// 끊기 습관. 위젯의 ○ 버튼은 "했다"를 기록하므로 끊기에는 버튼을 두지 않는다. (옛 파일에는 없어 선택값)
+        var quit: Bool?
     }
 
     /// 쓴 날의 0시.

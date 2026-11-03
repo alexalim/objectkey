@@ -28,7 +28,8 @@ enum HabitReminders {
         let stale = await center.pendingNotificationRequests().map(\.identifier).filter { $0.hasPrefix(prefix) }
         center.removePendingNotificationRequests(withIdentifiers: stale)
 
-        let targets = keys.filter { $0.supportsGoal && $0.reminderMinute >= 0 }
+        // 끊기 습관은 "할 시간"이 없으므로 알리지 않는다.
+        let targets = keys.filter { $0.supportsGoal && !$0.isQuit && $0.reminderMinute >= 0 }
         guard !targets.isEmpty, await center.notificationSettings().authorizationStatus == .authorized else { return }
         let days = min(7, budget / targets.count)
         let calendar = Calendar.current
@@ -69,7 +70,7 @@ enum HabitReminders {
 
     /// 오늘 알림만 현재 연속 일수를 안다. 이후 날짜는 그날 상태를 모르므로 일반 문구를 쓴다.
     private static func body(for key: KeyObject, progress: KeyProgress, today: Bool) -> String {
-        if today, progress.atRisk { return HabitCopy.risk(key.schedule, streak: progress.streak, weekDone: progress.weekDone) }
+        if today, progress.atRisk { return HabitCopy.risk(key.schedule, streak: progress.streak, weekDone: progress.weekDone, quit: key.isQuit) }
         if case .attend(let start, _) = key.action {
             let ahead = start - key.reminderMinute
             let when = ahead > 0 ? "\(ahead)분 뒤 \(KeyAction.clock(start))에 시작해요." : "\(KeyAction.clock(start))에 시작해요."

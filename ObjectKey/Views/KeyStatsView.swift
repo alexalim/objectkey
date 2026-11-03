@@ -35,7 +35,8 @@ struct KeyStatsView: View {
         let weekly = DailyProgress.weeklyRates(entries, goal: key.goalAmount, schedule: key.schedule,
                                                since: since, now: .now, calendar: calendar)
         let byWeekday = DailyProgress.metDaysByWeekday(entries, goal: key.goalAmount, since: since, calendar: calendar)
-        let byHour = DailyProgress.entriesByHour(entries, since: since, calendar: calendar)
+        // 시간대는 실제 기록 시각으로 본다(끊기 습관의 지킨 날은 만든 기록이라 시각이 없다).
+        let byHour = DailyProgress.entriesByHour(logs.map { ProgressEntry(date: $0.startedAt, amount: 1) }, since: since, calendar: calendar)
 
         List {
             Section {

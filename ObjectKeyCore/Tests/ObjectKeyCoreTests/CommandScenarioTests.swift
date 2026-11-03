@@ -39,6 +39,8 @@ final class CommandScenarioTests: XCTestCase {
               weekdays: [1, 7], start: 870, duration: 120),
         .init(text: "목요일마다 영어 학원 밤 8시부터 1시간 30분", name: "영어 학원", kind: "attend",
               weekdays: [5], start: 1200, duration: 90),
+        .init(text: "담배 끊기", name: "담배 끊기", kind: "quit"),
+        .init(text: "야식 안 하기", name: "야식 안 하기", kind: "quit"),
         .init(text: "커피 휴식 15분 타이머 등록해줘", name: "커피 휴식", kind: "countdown", duration: 15),
     ]
 

@@ -45,7 +45,7 @@ struct KeyDetailView: View {
                         if key.actionKind == "counter" {
                             let today = records(on: .now).count
                             Button { removeLatest(on: .now) } label: {
-                                Text("−1").font(.headline).frame(width: 56).padding(.vertical, 4)
+                                Text(key.measureStep > 0 && !key.isQuit ? "−\(key.measureStep)" : "−1").font(.headline).frame(minWidth: 56).padding(.vertical, 4)
                             }
                             .buttonStyle(.bordered)
                             .disabled(today == 0)
@@ -70,7 +70,8 @@ struct KeyDetailView: View {
                         NavigationLink("통계 보기") { KeyStatsView(key: key) }
                     }
                     Section {
-                        HabitCalendar(days: days, schedule: key.schedule, noted: Set(notes.map(\.day))) { selectedDay = $0 }
+                        HabitCalendar(days: days, schedule: key.schedule, noted: Set(notes.map(\.day)),
+                                      slips: key.isQuit ? Set(logs.map { calendar.startOfDay(for: $0.startedAt) }) : []) { selectedDay = $0 }
                     } header: {
                         Text("기록 달력")
                     } footer: {
@@ -154,7 +155,9 @@ struct KeyDetailView: View {
         switch key.action {
         case .session: return "시간 기록 시작"
         case .countdown(let minutes): return "\(minutes)분 휴식 시작"
-        case .counter: return "+1 기록"
+        case .counter:
+            if key.isQuit { return "했어요 (기록)" }
+            return key.measureStep > 0 ? "+\(key.measureStep)\(key.measureUnit) 기록" : "+1 기록"
         case .attend(_, let minutes): return attendedToday ? "오늘 참석 완료" : "참석 기록 (\(minutes)분)"
         }
     }
@@ -177,7 +180,9 @@ struct KeyDetailView: View {
     }
 
     private var addLabel: String {
-        key.actionKind == "counter" ? "+1 기록 추가" : "\(addedMinutes)분 기록 추가"
+        if key.isQuit { return "이날 했어요 (기록 추가)" }
+        if key.actionKind == "counter" { return key.measureStep > 0 ? "+\(key.measureStep)\(key.measureUnit) 기록 추가" : "+1 기록 추가" }
+        return "\(addedMinutes)분 기록 추가"
     }
 
     private func records(on day: Date) -> [ActivityLog] {
@@ -189,7 +194,8 @@ struct KeyDetailView: View {
         let at = calendar.isDateInToday(day) ? Date.now : calendar.date(byAdding: .hour, value: 12, to: calendar.startOfDay(for: day)) ?? day
         let counter = key.actionKind == "counter"
         context.insert(ActivityLog(keyID: key.id, keyName: key.name, kind: counter ? "counter" : "session",
-                                   startedAt: at, duration: counter ? 0 : Double(addedMinutes * 60)))
+                                   startedAt: at, duration: counter ? 0 : Double(addedMinutes * 60),
+                                   amount: counter ? key.recordAmount : 1))
         try? context.save()
     }
 

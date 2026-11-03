@@ -37,16 +37,21 @@ public struct BackupFile: Codable, Equatable, Sendable {
         public var tags: [String]
         /// 스캔으로 알아보는 데 필요한 특징값. 빠지면 복원한 물건을 스캔할 수 없다. 썸네일은 크기 때문에 넣지 않는다.
         public var shots: [Shot]
+        /// 끊기·수치 습관(나중에 생긴 칸). 예전 백업에는 없으므로 선택값이다.
+        public var isQuit: Bool?
+        public var measureStep: Int?
+        public var measureUnit: String?
 
         public init(id: UUID, name: String, emoji: String, actionKind: String, countdownMinutes: Int, threshold: Float,
                     createdAt: Date, dailyGoal: Int, cue: String, reminderMinute: Int, scheduleKind: String,
                     scheduleWeekdays: Int, timesPerWeek: Int, attendStartMinute: Int, attendMinutes: Int,
-                    tags: [String], shots: [Shot]) {
+                    tags: [String], shots: [Shot], isQuit: Bool? = nil, measureStep: Int? = nil, measureUnit: String? = nil) {
             self.id = id; self.name = name; self.emoji = emoji; self.actionKind = actionKind
             self.countdownMinutes = countdownMinutes; self.threshold = threshold; self.createdAt = createdAt
             self.dailyGoal = dailyGoal; self.cue = cue; self.reminderMinute = reminderMinute
             self.scheduleKind = scheduleKind; self.scheduleWeekdays = scheduleWeekdays; self.timesPerWeek = timesPerWeek
             self.attendStartMinute = attendStartMinute; self.attendMinutes = attendMinutes; self.tags = tags; self.shots = shots
+            self.isQuit = isQuit; self.measureStep = measureStep; self.measureUnit = measureUnit
         }
     }
 
@@ -62,8 +67,11 @@ public struct BackupFile: Codable, Equatable, Sendable {
         public var kind: String
         public var startedAt: Date
         public var duration: Double
-        public init(keyID: UUID, keyName: String, kind: String, startedAt: Date, duration: Double) {
+        /// 수치 기록의 양(나중에 생긴 칸). 없으면 1.
+        public var amount: Double?
+        public init(keyID: UUID, keyName: String, kind: String, startedAt: Date, duration: Double, amount: Double? = nil) {
             self.keyID = keyID; self.keyName = keyName; self.kind = kind; self.startedAt = startedAt; self.duration = duration
+            self.amount = amount
         }
     }
 

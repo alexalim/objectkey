@@ -18,7 +18,8 @@ enum BackupService {
                                threshold: k.threshold, createdAt: k.createdAt, dailyGoal: k.dailyGoal, cue: k.cue,
                                reminderMinute: k.reminderMinute, scheduleKind: k.scheduleKind, scheduleWeekdays: k.scheduleWeekdays,
                                timesPerWeek: k.timesPerWeek, attendStartMinute: k.attendStartMinute, attendMinutes: k.attendMinutes,
-                               tags: k.tags, shots: k.shots.map { BackupFile.Shot(featureData: $0.featureData, revision: $0.revision) })
+                               tags: k.tags, shots: k.shots.map { BackupFile.Shot(featureData: $0.featureData, revision: $0.revision) },
+                               isQuit: k.isQuit, measureStep: k.measureStep, measureUnit: k.measureUnit)
             },
             logs: logs.map(dto),
             notes: notes.map { BackupFile.Note(keyID: $0.keyID, day: $0.day, text: $0.text) })
@@ -45,6 +46,9 @@ enum BackupService {
             key.attendStartMinute = k.attendStartMinute
             key.attendMinutes = k.attendMinutes
             key.tags = k.tags
+            key.isQuit = k.isQuit ?? false
+            key.measureStep = k.measureStep ?? 0
+            key.measureUnit = k.measureUnit ?? ""
             context.insert(key)
             key.shots = k.shots.map { shot in
                 let values = shot.featureData.withUnsafeBytes { Array($0.bindMemory(to: Float.self)) }
@@ -52,7 +56,8 @@ enum BackupService {
             }
         }
         for l in plan.logs {
-            context.insert(ActivityLog(keyID: l.keyID, keyName: l.keyName, kind: l.kind, startedAt: l.startedAt, duration: l.duration))
+            context.insert(ActivityLog(keyID: l.keyID, keyName: l.keyName, kind: l.kind, startedAt: l.startedAt,
+                                       duration: l.duration, amount: l.amount ?? 1))
         }
         for n in plan.notes { context.insert(DayNote(keyID: n.keyID, day: n.day, text: n.text)) }
         try context.save()
@@ -62,7 +67,8 @@ enum BackupService {
     }
 
     private static func dto(_ l: ActivityLog) -> BackupFile.Log {
-        BackupFile.Log(keyID: l.keyID, keyName: l.keyName, kind: l.kind, startedAt: l.startedAt, duration: l.duration)
+        BackupFile.Log(keyID: l.keyID, keyName: l.keyName, kind: l.kind, startedAt: l.startedAt, duration: l.duration,
+                       amount: l.amount == 1 ? nil : l.amount)
     }
 }
 

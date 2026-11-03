@@ -22,6 +22,8 @@ struct RegisterView: View {
     @State private var attendStart = 21 * 60
     @State private var attendMinutes = 90
     @State private var tags: [String] = []
+    @State private var measureStep = 0
+    @State private var measureUnit = ""
     @State private var shots: [CameraController.Frame] = []
     @State private var latest: CameraController.Frame?
     @State private var cameraAllowed: Bool?
@@ -107,6 +109,7 @@ struct RegisterView: View {
                         Text("휴식 타이머").tag("countdown")
                         Text("횟수 +1").tag("counter")
                         Text("정해진 시간 참석 (수업·레슨)").tag("attend")
+                        Text("끊기 (안 한 날이 성공)").tag("quit")
                     }
                     .pickerStyle(.inline)
                     .labelsHidden()
@@ -116,21 +119,32 @@ struct RegisterView: View {
                     if kind == "attend" {
                         AttendEditor(startMinute: $attendStart, minutes: $attendMinutes)
                     }
+                    if kind == "counter" {
+                        MeasureEditor(step: $measureStep, unit: $measureUnit)
+                    }
                 } header: {
                     Text("스캔하면 실행할 동작")
                 } footer: {
                     Text(kind == "attend" ? HabitCopy.attendFooter
+                         : kind == "quit" ? HabitCopy.quitFooter
+                         : kind == "counter" ? HabitCopy.measureFooter
                          : "아이콘을 고르면 어울리는 동작이 먼저 골라져요. 원하는 동작으로 바꿔도 돼요.")
                 }
                 if kind != "countdown" {
                     Section {
-                        ScheduleEditor(schedule: $schedule)
+                        // 끊기는 매일 지키는 것이라 일정·목표·알림이 필요 없다.
+                        if kind != "quit" { ScheduleEditor(schedule: $schedule) }
                         TagPicker(tags: $tags)
-                        if kind != "attend" { GoalStepper(actionKind: kind, goal: $goal) }
-                        TextField(HabitCopy.cuePlaceholder, text: $cue)
-                            .focused($focus, equals: .cue)
-                            .submitLabel(.done)
-                        ReminderPicker(minute: $reminderMinute, defaultMinute: kind == "attend" ? max(0, attendStart - 30) : 9 * 60)
+                        if kind != "attend" && kind != "quit" {
+                            GoalStepper(actionKind: kind, goal: $goal, measureStep: measureUnit.isEmpty ? 0 : max(measureStep, 1),
+                                        measureUnit: measureUnit)
+                        }
+                        if kind != "quit" {
+                            TextField(HabitCopy.cuePlaceholder, text: $cue)
+                                .focused($focus, equals: .cue)
+                                .submitLabel(.done)
+                            ReminderPicker(minute: $reminderMinute, defaultMinute: kind == "attend" ? max(0, attendStart - 30) : 9 * 60)
+                        }
                     } header: {
                         Text("습관 (선택)")
                     } footer: {
@@ -289,7 +303,7 @@ struct RegisterView: View {
     private var action: KeyAction {
         switch kind {
         case "countdown": return .countdown(minutes: minutes)
-        case "counter": return .counter
+        case "counter", "quit": return .counter
         case "attend": return .attend(startMinute: attendStart, minutes: attendMinutes)
         default: return .session
         }
@@ -316,7 +330,12 @@ struct RegisterView: View {
         let vectors = shots.compactMap(\.vector)
         let key = KeyObject(name: name.trimmingCharacters(in: .whitespaces), emoji: emoji, action: action,
                             threshold: Calibration.suggestThreshold(for: vectors),
-                            dailyGoal: kind == "countdown" || kind == "attend" ? 0 : goal)
+                            dailyGoal: kind == "countdown" || kind == "attend" || kind == "quit" ? 0 : goal)
+        if kind == "quit" { key.isQuit = true }
+        if kind == "counter", !measureUnit.trimmingCharacters(in: .whitespaces).isEmpty {
+            key.measureStep = max(measureStep, 1)
+            key.measureUnit = measureUnit.trimmingCharacters(in: .whitespaces)
+        }
         if kind != "countdown" {
             key.cue = cue.trimmingCharacters(in: .whitespaces)
             key.reminderMinute = reminderMinute

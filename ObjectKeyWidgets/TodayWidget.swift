@@ -97,6 +97,8 @@ private struct MediumView: View {
                     // 아직 안 한 것만 누를 수 있다. 이미 한 것은 실수로 또 기록되지 않게 버튼이 아니다.
                     if item.done {
                         Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                    } else if item.quit == true {
+                        Image(systemName: "xmark.circle").foregroundStyle(.red)
                     } else {
                         Button(intent: WidgetRecordIntent(keyID: item.id)) {
                             Image(systemName: "circle").foregroundStyle(.secondary)

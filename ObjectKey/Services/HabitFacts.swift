@@ -24,7 +24,8 @@ enum HabitFacts {
                                                     since: max(monthStart, began), now: now, calendar: calendar)
             let days = DailyProgress.days(entries, goal: key.goalAmount, calendar: calendar)
             let monthLogs = mine.filter { $0.startedAt >= monthStart }
-            let amount = key.actionKind == "counter" ? "이번 달 \(monthLogs.count)회"
+            let amount = key.isQuit ? "끊기 습관, 이번 달 한 날 \(Set(monthLogs.map { calendar.startOfDay(for: $0.startedAt) }).count)일"
+                : key.actionKind == "counter" ? "이번 달 \(Int(monthLogs.reduce(0) { $0 + $1.amount }))\(key.countUnit)"
                 : "이번 달 \(Int(monthLogs.reduce(0) { $0 + $1.duration } / 60))분(\(monthLogs.count)회)"
             let recent = (0..<7).compactMap { calendar.date(byAdding: .day, value: -$0, to: calendar.startOfDay(for: now)) }
                 .map { "\($0.formatted(dayFormat)) \(days[$0] == .met ? "함" : "안 함")" }

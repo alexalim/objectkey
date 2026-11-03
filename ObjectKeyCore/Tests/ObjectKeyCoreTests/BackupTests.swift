@@ -22,6 +22,24 @@ final class BackupTests: XCTestCase {
         XCTAssertEqual(try Backup.decode(try Backup.encode(file)), file)
     }
 
+    func test_oldFileWithoutNewFields_stillDecodes() throws {
+        // 끊기·수치 칸이 생기기 전 형식(칸 없음)도 읽혀야 한다.
+        var json = String(data: try Backup.encode(sample()), encoding: .utf8)!
+        json = json.replacingOccurrences(of: ",\"isQuit\":null", with: "")
+        let file = try Backup.decode(Data(json.utf8))
+        XCTAssertNil(file.keys[0].isQuit)
+        XCTAssertNil(file.logs[0].amount)
+    }
+
+    func test_newFields_roundTrip() throws {
+        var file = sample()
+        file.keys[0].isQuit = true
+        file.keys[0].measureStep = 250
+        file.keys[0].measureUnit = "ml"
+        file.logs[0].amount = 250
+        XCTAssertEqual(try Backup.decode(try Backup.encode(file)), file)
+    }
+
     func test_newerVersion_isRejectedWithReason() throws {
         var file = sample()
         file.version = BackupFile.currentVersion + 1

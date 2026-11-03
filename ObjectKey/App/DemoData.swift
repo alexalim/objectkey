@@ -38,7 +38,15 @@ enum DemoData {
         book.tags = ["공부"]
         workout.tags = ["운동", "건강"]
         hockey.tags = ["운동"]
-        [supplement, book, workout, nap, hockey].forEach { context.insert($0) }
+        let smoke = KeyObject(name: "담배 끊기", emoji: "🚭", action: .counter, threshold: 0.6)
+        smoke.isQuit = true
+        smoke.tags = ["건강"]
+        smoke.createdAt = day(20)
+        [supplement, book, workout, nap, hockey, smoke].forEach { context.insert($0) }
+        // 끊기: 9일 전과 3일 전에 한 번씩 했다.
+        for ago in [9, 3] {
+            context.insert(ActivityLog(keyID: smoke.id, keyName: smoke.name, kind: "counter", startedAt: day(ago, hour: 22), duration: 0))
+        }
         // 최근 화요일 세 번 중 두 번 참석.
         let lastTuesday = (0..<7).first { calendar.component(.weekday, from: day($0)) == 3 } ?? 0
         for ago in [lastTuesday + 7, lastTuesday + 14] where ago > 0 {

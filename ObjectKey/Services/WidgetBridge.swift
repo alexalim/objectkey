@@ -13,7 +13,7 @@ enum WidgetBridge {
             guard key.schedule.isDue(on: now, metToday: progress.metToday, weekDone: progress.weekDone, calendar: .current) else { return nil }
             return WidgetSnapshot.Item(id: key.id, name: key.name, emoji: key.emoji.hasPrefix("moki-") ? "" : key.emoji,
                                        done: progress.metToday, streak: progress.streak, atRisk: progress.atRisk,
-                                       time: key.todoMinute.map(KeyAction.clock))
+                                       time: key.todoMinute.map(KeyAction.clock), quit: key.isQuit ? true : nil)
         }
         .sorted { ($0.time ?? "99", $0.name) < ($1.time ?? "99", $1.name) }
         WidgetSnapshot(day: Calendar.current.startOfDay(for: now), items: items).save()

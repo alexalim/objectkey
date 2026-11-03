@@ -82,6 +82,8 @@ struct HelpView: View {
                     ("plus.square", "횟수 +1: 스캔할 때마다 1회"),
                     ("calendar.badge.clock", "정해진 시간 참석: 한 번 스캔하면 정한 시간만큼 기록"),
                     ("cup.and.saucer", "휴식 타이머: 쉬는 동안 시간 기록은 잠시 멈춰요"),
+                    ("nosign", "끊기: 했을 때만 기록, 안 한 날이 성공"),
+                    ("drop", "횟수에 단위를 쓰면 정한 양만큼 더해져요 (예: 물 250ml)"),
                     ("questionmark.circle", "비슷한 물건이 둘이면 어느 쪽인지 물어봐요"),
                 ])
                 guide("습관 규칙", "3.circle", [

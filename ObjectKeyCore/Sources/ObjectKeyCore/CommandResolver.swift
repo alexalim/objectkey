@@ -209,6 +209,7 @@ public enum CommandResolver {
     /// - Returns: "session" / "counter" / "attend" / "countdown"
     public static func inferAction(text: String, model: String?, hasStart: Bool, hasDuration: Bool) -> String {
         let has = { (words: [String]) in words.contains { text.contains($0) } }
+        if has(["끊기", "끊을", "끊고", "금연", "금주", "안 하기", "안하기", "참기", "줄이기"]) { return "quit" }
         if has(["휴식", "낮잠", "타이머", "쉬는 시간"]) { return "countdown" }
         if has(["수업", "레슨", "강의", "학원", "클래스", "과외", "PT", "모임", "예배", "미사"]) || (hasStart && hasDuration) { return "attend" }
         if has(["먹기", "먹어", "마시", "복용", "번씩", "회씩"]) { return "counter" }
