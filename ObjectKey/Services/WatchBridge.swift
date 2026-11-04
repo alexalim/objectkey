@@ -18,11 +18,25 @@ final class WatchBridge: NSObject, WCSessionDelegate {
         guard WCSession.isSupported(), session.activationState == .activated, session.isPaired, session.isWatchAppInstalled,
               let data = try? JSONEncoder().encode(snapshot) else { return }
         try? session.updateApplicationContext(["snapshot": data])
+        // 시계 화면에 컴플리케이션이 있으면 워치 앱을 깨워 바로 다시 그리게 한다(하루 횟수 제한이 있어 남았을 때만).
+        if session.isComplicationEnabled, session.remainingComplicationUserInfoTransfers > 0 {
+            session.transferCurrentComplicationUserInfo(["snapshot": data])
+        }
     }
 
     private func handle(_ message: [String: Any]) {
+        if message["want"] != nil {
+            // 워치가 요약이 없다고 알려 오면 바로 보낸다(예: 워치 앱을 막 설치했을 때).
+            Task { @MainActor in WidgetBridge.refreshFromStore() }
+            return
+        }
         guard let id = message["record"] as? String else { return }
         Task { @MainActor in WidgetBridge.record(id) }
+    }
+
+    /// 워치 앱이 설치되거나 짝이 바뀌면 바로 요약을 보낸다. 안 그러면 아이폰 앱을 다시 켤 때까지 워치가 비어 있다.
+    func sessionWatchStateDidChange(_ session: WCSession) {
+        Task { @MainActor in WidgetBridge.refreshFromStore() }
     }
 
     func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {

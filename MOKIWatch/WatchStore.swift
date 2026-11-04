@@ -60,10 +60,19 @@ extension WatchStore: WCSessionDelegate {
     nonisolated func session(_ session: WCSession, activationDidCompleteWith state: WCSessionActivationState, error: Error?) {
         let context = session.receivedApplicationContext
         let reachable = session.isReachable
+        // 받은 요약이 없으면(막 설치한 경우 등) 아이폰에 달라고 한다.
+        if context["snapshot"] == nil {
+            if reachable { session.sendMessage(["want": "snapshot"], replyHandler: nil) } else { session.transferUserInfo(["want": "snapshot"]) }
+        }
         Task { @MainActor in
             self.reachable = reachable
             self.receive(context)
         }
+    }
+
+    /// 컴플리케이션용 전송(아이폰이 기록하면 워치 앱을 깨워 보낸다).
+    nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
+        Task { @MainActor in self.receive(userInfo) }
     }
 
     nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {

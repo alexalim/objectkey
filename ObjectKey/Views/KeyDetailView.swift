@@ -34,6 +34,11 @@ struct KeyDetailView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(key.action.label).font(.subheadline)
                             if let habit = habitSummary { Text(habit).font(.caption).foregroundStyle(.secondary) }
+                            if HealthMetric(rawValue: key.healthMetric) != nil, HealthSync.hasNoData(key) {
+                                Label("건강 앱 값이 안 들어와요. 설정 → 건강 → 데이터 접근 및 기기 → MOKI에서 켜 주세요.",
+                                      systemImage: "heart.slash")
+                                    .font(.caption2).foregroundStyle(.orange)
+                            }
                             if key.shots.isEmpty {
                                 Label("사진 없음 · 아래 버튼·위젯·Siri로 기록", systemImage: "camera.badge.ellipsis")
                                     .font(.caption2).foregroundStyle(.secondary)

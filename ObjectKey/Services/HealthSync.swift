@@ -10,6 +10,14 @@ enum HealthSync {
 
     static var isAvailable: Bool { HKHealthStore.isHealthDataAvailable() }
 
+    private static let noDataKey = "moki.health.noData"
+
+    /// 최근 7일 동안 건강 앱에서 값이 하나도 안 들어온 물건. 권한이 꺼졌거나 기기에 기록이 없을 가능성이 크다.
+    /// 건강 앱은 거절 여부를 알려 주지 않으므로, 값이 비어 있는 것으로 판단해 안내한다.
+    static func hasNoData(_ key: KeyObject) -> Bool {
+        (UserDefaults.standard.stringArray(forKey: noDataKey) ?? []).contains(key.id.uuidString)
+    }
+
     private static func readType(_ metric: HealthMetric) -> HKObjectType {
         switch metric {
         case .steps: return HKQuantityType(.stepCount)
@@ -60,9 +68,11 @@ enum HealthSync {
         guard !linked.isEmpty, let logs = try? context.fetch(FetchDescriptor<ActivityLog>()) else { return }
         let calendar = Calendar.current
         var added = false
+        var noData: [String] = []
         for key in linked {
             guard let metric = HealthMetric(rawValue: key.healthMetric) else { continue }
             let values = await dailyValues(metric, days: HealthRules.backfillDays)
+            if values.values.allSatisfy({ $0 <= 0 }) { noData.append(key.id.uuidString) }
             let recorded = Set(logs.filter { $0.keyID == key.id && $0.kind == "health" }.map(\.startedAt))
             for day in HealthRules.daysToRecord(values: values, target: key.healthTarget, alreadyRecorded: recorded, calendar: calendar) {
                 let at = calendar.isDateInToday(day) ? Date.now : day.addingTimeInterval(12 * 3600)
@@ -70,6 +80,7 @@ enum HealthSync {
                 added = true
             }
         }
+        UserDefaults.standard.set(noData, forKey: noDataKey)
         if added {
             try? context.save()
             WidgetBridge.refreshFromStore()

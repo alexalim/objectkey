@@ -11,7 +11,8 @@ enum HabitReminders {
     static let attendCategory = "objectkey.attend"
     static let attendAction = "attend"
     /// iOS는 앱당 대기 알림을 64개까지만 둔다. 휴식 타이머 몫을 남긴다.
-    private static let budget = 60
+    /// 휴식 타이머(1)와 단계별 루틴(최대 12)의 몫을 남긴다. 합이 64를 넘으면 iOS가 나중 알림을 버린다.
+    private static let budget = 50
 
     static func requestPermission() async -> Bool {
         (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])) ?? false

@@ -322,6 +322,8 @@ struct GoalEditor: View {
                 if key.actionKind == "counter" {
                     Section {
                         MeasureEditor(step: $key.measureStep, unit: $key.measureUnit)
+                            // 단위가 바뀌면 예전 목표(예: 2000ml)가 새 단위(2000쪽)로 남지 않게 비운다.
+                            .onChange(of: key.measureUnit) { _, _ in key.dailyGoal = 0 }
                     } header: {
                         Text("한 번에 얼마나 (선택)")
                     } footer: {

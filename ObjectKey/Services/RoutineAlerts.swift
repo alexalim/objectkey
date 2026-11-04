@@ -18,7 +18,8 @@ enum RoutineAlerts {
             guard !steps.isEmpty,
                   (try? await center.requestAuthorization(options: [.alert, .sound])) == true else { return }
             let runStart = segmentStart.addingTimeInterval(-accumulated)
-            for (i, boundary) in Routine.upcomingBoundaries(steps, runStart: runStart, now: .now).enumerated() {
+            // 습관 알림 몫(50)과 합쳐 64를 넘지 않게 12개까지만 잡는다.
+            for (i, boundary) in Routine.upcomingBoundaries(steps, runStart: runStart, now: .now).prefix(12).enumerated() {
                 let content = UNMutableNotificationContent()
                 content.title = key.name
                 content.body = boundary.next.map { "다음 단계: \($0.name) \($0.minutes)분" } ?? "루틴 끝! 다시 스캔하면 기록돼요."

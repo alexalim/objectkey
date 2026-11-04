@@ -63,7 +63,14 @@ struct HomeView: View {
                         }
                         .textCase(nil)
                     } footer: {
-                        Text("누르면 상세 화면에서 기록할 수 있어요. 오른쪽으로 밀면 습관 설정, 왼쪽은 삭제예요.")
+                        VStack(alignment: .leading, spacing: 6) {
+                            // 고른 태그를 기억하므로, 다른 물건이 사라진 것처럼 보이지 않게 알린다.
+                            if !filter.isEmpty, keys.count > visible.count {
+                                Button("다른 물건 \(keys.count - visible.count)개는 '전체'에서 보여요 · 전체 보기") { tagFilter = "" }
+                                    .font(.footnote.weight(.semibold))
+                            }
+                            Text("누르면 상세 화면에서 기록할 수 있어요. 오른쪽으로 밀면 습관 설정, 왼쪽은 삭제예요.")
+                        }
                     }
                 }
                 if !resting.isEmpty {
