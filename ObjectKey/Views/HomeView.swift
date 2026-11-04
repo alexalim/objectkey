@@ -18,7 +18,8 @@ struct HomeView: View {
     @State private var showHelp = false
     @State private var showTags = false
     /// 홈에서 고른 태그. 빈 문자열이면 전체.
-    @AppStorage("homeTagFilter") private var tagFilter = ""
+    /// 앱을 열 때마다 전체로 시작한다. 예전에는 마지막 태그를 기억해, 새로 등록한 물건이 안 보이는 혼란이 있었다.
+    @State private var tagFilter = ""
 
     private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 

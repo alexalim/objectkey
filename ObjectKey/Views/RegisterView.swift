@@ -33,6 +33,7 @@ struct RegisterView: View {
     @State private var wantsPhotos = false
     @State private var camera = CameraController()
     @State private var duplicateOf: KeyObject?
+    @State private var saveFailed = false
     @FocusState private var focus: Field?
 
     private enum Field { case name, emoji, cue }
@@ -194,6 +195,11 @@ struct RegisterView: View {
                 }
             }
             .onDisappear { camera.stop() }
+            .alert("저장하지 못했어요", isPresented: $saveFailed) {
+                Button("확인", role: .cancel) {}
+            } message: {
+                Text("잠시 뒤 다시 저장해 주세요. 계속 안 되면 이 화면을 피드백으로 보내 주세요.")
+            }
             .alert("이미 등록한 물건과 비슷해요",
                    isPresented: Binding(get: { duplicateOf != nil }, set: { if !$0 { duplicateOf = nil } }),
                    presenting: duplicateOf) { _ in
@@ -357,7 +363,14 @@ struct RegisterView: View {
         // 미리 채운 알림은 권한 창을 거치지 않았을 수 있다. 저장할 때 한 번 묻는다.
         if key.reminderMinute >= 0 { Task { _ = await HabitReminders.requestPermission() } }
         key.shots = shots.compactMap { shot in shot.vector.map { ReferenceShot(vector: $0, thumbnail: shot.thumbnail) } }
-        try? context.save()
+        do {
+            try context.save()
+        } catch {
+            // 조용히 실패하면 "등록했는데 없다"가 된다. 알리고 화면에 남는다.
+            context.delete(key)
+            saveFailed = true
+            return
+        }
         onSaved?()
         dismiss()
     }
