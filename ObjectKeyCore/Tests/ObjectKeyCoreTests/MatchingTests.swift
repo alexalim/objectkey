@@ -97,4 +97,23 @@ final class MatchingTests: XCTestCase {
         let mid = Calibration.suggestThreshold(for: [v([1, 0, 0]), v([1, 0.5, 0])])
         XCTAssertEqual(mid, 0.5 * Calibration.marginFactor, accuracy: 1e-5)
     }
+
+    // MARK: 인식 점검 → 권장 기준값
+
+    func test_recommend_separable_picksMidpoint() {
+        let r = Calibration.recommend(positives: [0.40, 0.45, 0.50, 0.55], negatives: [0.78, 0.80, 0.95, 1.0])!
+        XCTAssertTrue(r.separable)
+        XCTAssertEqual(r.threshold, (0.55 + 0.78) / 2, accuracy: 1e-5)
+    }
+
+    func test_recommend_overlapping_favorsNoFalseMatch() {
+        // 키보드(다른 물건)가 0.62까지 가깝게 나오고, 같은 물건은 0.70까지 멀게 나오는 경우.
+        let r = Calibration.recommend(positives: [0.5, 0.6, 0.7], negatives: [0.62, 0.8, 0.9])!
+        XCTAssertFalse(r.separable)
+        XCTAssertEqual(r.threshold, 0.60, accuracy: 1e-5, "다른 물건 가장 가까운 값 바로 아래로 잡아 오인식을 막는다")
+    }
+
+    func test_recommend_needsBothKinds() {
+        XCTAssertNil(Calibration.recommend(positives: [0.5], negatives: []))
+    }
 }

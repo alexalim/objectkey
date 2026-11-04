@@ -19,8 +19,6 @@ struct ScanView: View {
     @State private var showManual = false
     @State private var mood: Moki = .scan
     @State private var lastSeen = Date()
-    /// 기준값 보정용 진단 표시. 실측이 끝나면 뺀다.
-    @State private var diagnostics = ""
     @State private var objectRegion: CGRect?
 
     private let matcher = ObjectMatcher()
@@ -51,10 +49,6 @@ struct ScanView: View {
                 }
                 .foregroundStyle(.white)
                 .padding()
-                Text(diagnostics)
-                    .font(.caption.monospacedDigit()).foregroundStyle(.white)
-                    .padding(.horizontal, 10).padding(.vertical, 6)
-                    .background(.black.opacity(0.5), in: RoundedRectangle(cornerRadius: 8))
                 Spacer()
                 Image(mood).resizable().scaledToFit().frame(height: 110)
                     .animation(.spring, value: mood)
@@ -95,7 +89,6 @@ struct ScanView: View {
         objectRegion = frame.region
         // 가이드 안에 물체가 없으면 비교조차 하지 않는다. 빈 책상에서 실행되는 일을 막는다.
         guard let vector = frame.vector else {
-            diagnostics = "물체 없음"
             _ = filter.feed(.noMatch)
             if Date.now.timeIntervalSince(lastSeen) > 4 {
                 hint = "네모 칸 안에 물건이 안 보여요. 조금 더 가까이 대 주세요"
@@ -105,10 +98,6 @@ struct ScanView: View {
         }
         let registered = keys.map(\.registered)
         let outcome = matcher.evaluate(vector, against: registered)
-        diagnostics = matcher.distances(vector, against: registered).prefix(2).map { c in
-            let key = keys.first { $0.id == c.keyID }
-            return "\(key?.name ?? "?") \(String(format: "%.2f", c.distance))/기준 \(String(format: "%.2f", key.map { Calibration.effectiveThreshold($0.threshold) } ?? 0))"
-        }.joined(separator: "  ·  ")
         if case .match(let candidate) = outcome, let key = keys.first(where: { $0.id == candidate.keyID }) {
             hint = "\(key.name) 확인 중…"
             mood = .key

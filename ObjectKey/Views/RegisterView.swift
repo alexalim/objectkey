@@ -170,13 +170,6 @@ struct RegisterView: View {
                         }
                         Text(photoNote).foregroundStyle(shots.isEmpty || shots.count >= Self.requiredShots ? Color.secondary : Color.orange)
                         if let saveHint { Text(saveHint).foregroundStyle(.orange) }
-                        if shots.count >= 2 {
-                            // 기준값 보정용 진단 표시. 실측이 끝나면 뺀다.
-                            let vectors = shots.compactMap(\.vector)
-                            Text(String(format: "진단: 사진끼리 최대 거리 %.2f → 인식 기준 %.2f",
-                                        Calibration.maxIntraDistance(of: vectors), Calibration.suggestThreshold(for: vectors)))
-                                .monospacedDigit()
-                        }
                     }
                 }
             }

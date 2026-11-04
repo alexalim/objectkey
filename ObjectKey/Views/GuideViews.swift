@@ -88,6 +88,7 @@ struct HelpView: View {
                     ("checkmark.shield", "처음 연결할 때 '권한 허용하기'를 눌러 건강 권한을 켜요"),
                     ("drop", "횟수에 단위를 쓰면 정한 양만큼 더해져요 (예: 물 250ml)"),
                     ("questionmark.circle", "비슷한 물건이 둘이면 어느 쪽인지 물어봐요"),
+                    ("viewfinder", "다른 물건으로 잘못 알아보면: 기록 화면 ⋯ → 인식 점검"),
                 ])
                 guide("습관 규칙", "3.circle", [
                     ("hand.point.right", "물건을 오른쪽으로 밀면 습관 설정"),

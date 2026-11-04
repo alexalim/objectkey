@@ -47,6 +47,7 @@ struct HistoryView: View {
         .navigationTitle("기록")
         .toolbar {
             Menu {
+                NavigationLink { CalibrationView() } label: { Label("인식 점검", systemImage: "viewfinder") }
                 Button("백업 내보내기", systemImage: "square.and.arrow.up") { exportBackup() }
                 Button("백업 가져오기", systemImage: "square.and.arrow.down") { importing = true }
                 Divider()

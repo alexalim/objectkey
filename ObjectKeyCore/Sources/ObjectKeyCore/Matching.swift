@@ -159,6 +159,27 @@ public enum Calibration {
         min(stored, maximumThreshold)
     }
 
+    /// 인식 점검 결과로 기준값을 권한다.
+    /// - Parameters:
+    ///   - positives: 그 물건을 비췄을 때 거리들(낮을수록 같은 물건).
+    ///   - negatives: 다른 물건을 비췄을 때 그 물건까지의 거리들.
+    /// - Returns: 권장 기준값과, 두 무리가 겹치지 않고 갈리는지. 같은 물건 거리의 상위 95%와 다른 물건 거리의 하위 5% 사이 가운데를 고른다.
+    ///   겹치면(같은 물건이 다른 물건보다 멀게 나오는 경우가 많으면) 오인식을 막는 쪽(다른 물건 하위 5% 바로 아래)을 고른다.
+    public static func recommend(positives: [Float], negatives: [Float]) -> (threshold: Float, separable: Bool)? {
+        guard !positives.isEmpty, !negatives.isEmpty else { return nil }
+        func quantile(_ values: [Float], _ q: Float) -> Float {
+            let sorted = values.sorted()
+            let i = min(sorted.count - 1, max(0, Int((Float(sorted.count - 1) * q).rounded())))
+            return sorted[i]
+        }
+        let posHigh = quantile(positives, 0.95)
+        let negLow = quantile(negatives, 0.05)
+        if posHigh < negLow {
+            return ((posHigh + negLow) / 2, true)
+        }
+        return (max(minimumThreshold, negLow - 0.02), false)
+    }
+
     /// 같은 물건 참조끼리의 최대 거리. 등록 화면의 진단 표시에도 쓴다.
     public static func maxIntraDistance(of references: [FeatureVector]) -> Float {
         var maxIntra: Float = 0
