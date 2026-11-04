@@ -35,7 +35,7 @@ struct KeyDetailView: View {
                             Text(key.action.label).font(.subheadline)
                             if let habit = habitSummary { Text(habit).font(.caption).foregroundStyle(.secondary) }
                             if HealthMetric(rawValue: key.healthMetric) != nil, HealthSync.hasNoData(key) {
-                                Label("건강 앱 값이 안 들어와요. 설정 → 건강 → 데이터 접근 및 기기 → MOKI에서 켜 주세요.",
+                                Label("건강 앱 값이 안 들어와요. 설정 → MOKI → 건강에서 켜 주세요.",
                                       systemImage: "heart.slash")
                                     .font(.caption2).foregroundStyle(.orange)
                             }

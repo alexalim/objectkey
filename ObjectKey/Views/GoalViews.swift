@@ -157,16 +157,19 @@ struct HealthLinkEditor: View {
             .padding(.vertical, 4)
         } else if canAsk == false {
             VStack(alignment: .leading, spacing: 6) {
-                Label("권한 창은 한 번만 떠요. 바꾸려면 건강 앱에서 MOKI를 켜 주세요.", systemImage: "heart.text.square")
+                Label("권한 창은 한 번만 떠요. 설정에서 바꿀 수 있어요.", systemImage: "heart.text.square")
                     .font(.subheadline)
-                Text("건강 앱 → 오른쪽 위 프로필 → 개인정보 보호 → 앱 → MOKI → '\(m.label)' 켜기")
+                Text("설정 → MOKI → 건강 → '\(m.label)' 켜기")
                     .font(.caption).foregroundStyle(.secondary)
+                // 건강 앱 안의 MOKI 권한 화면으로 바로 가는 공개 링크가 없어, 가장 가까운 설정 앱의 MOKI 화면을 연다.
                 Button {
-                    if let url = URL(string: "x-apple-health://") { openURL(url) }
+                    if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
                 } label: {
-                    Label("건강 앱 열기", systemImage: "arrow.up.forward.app").frame(maxWidth: .infinity)
+                    Label("설정에서 건강 권한 열기", systemImage: "gearshape").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
+                Text("'건강'이 안 보이면: 건강 앱 → 프로필 → 개인정보 보호 → 앱 → MOKI")
+                    .font(.caption2).foregroundStyle(.secondary)
             }
             .padding(.vertical, 4)
         }
