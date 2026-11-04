@@ -32,6 +32,13 @@ enum HealthSync {
         try? await store.requestAuthorization(toShare: [], read: [readType(metric)])
     }
 
+    /// 권한 창을 아직 띄운 적이 없는지. iOS는 이 창을 한 번만 띄우므로, 이미 물어봤으면 건강 앱에서 바꾸도록 안내해야 한다.
+    /// 허용·거절 여부 자체는 개인정보라 알 수 없다.
+    static func shouldAsk(_ metric: HealthMetric) async -> Bool {
+        guard isAvailable else { return false }
+        return (try? await store.statusForAuthorizationRequest(toShare: [], read: [readType(metric)])) == .shouldRequest
+    }
+
     /// 최근 며칠의 하루 값(그날 0시 → 값).
     private static func dailyValues(_ metric: HealthMetric, days: Int) async -> [Date: Double] {
         let calendar = Calendar.current

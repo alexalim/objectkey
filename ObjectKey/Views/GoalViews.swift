@@ -115,20 +115,60 @@ struct RoutineEditor: View {
 struct HealthLinkEditor: View {
     @Binding var metric: String
     @Binding var target: Int
+    /// nil이면 아직 확인 전. true면 권한 창을 띄울 수 있고, false면 이미 물어봤다.
+    @State private var canAsk: Bool?
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
         Picker("건강 앱", selection: Binding(get: { metric }, set: { new in
             metric = new
-            if let m = HealthMetric(rawValue: new) {
-                target = m.defaultTarget
-                Task { await HealthSync.requestAccess(m) }
-            }
+            if let m = HealthMetric(rawValue: new) { target = m.defaultTarget }
         })) {
             Text("사용 안 함").tag("")
             ForEach(HealthMetric.allCases, id: \.rawValue) { Text($0.label).tag($0.rawValue) }
         }
         if let m = HealthMetric(rawValue: metric) {
             Stepper("하루 \(target)\(m.unit) 이상", value: $target, in: m.targetStep...(m == .steps ? 50000 : 600), step: m.targetStep)
+            permissionRow(m)
+                .task(id: metric) { canAsk = await HealthSync.shouldAsk(m) }
+        }
+    }
+
+    /// 권한을 화면에서 보이게 받는다. 처음이면 Apple 건강 권한 창을 띄우고, 이미 물어봤으면 건강 앱에서 바꾸는 길을 알려 준다.
+    @ViewBuilder
+    private func permissionRow(_ m: HealthMetric) -> some View {
+        if !HealthSync.isAvailable {
+            Label("이 기기에서는 건강 앱을 쓸 수 없어요.", systemImage: "heart.slash").foregroundStyle(.secondary)
+        } else if canAsk == true {
+            VStack(alignment: .leading, spacing: 6) {
+                Label("건강 앱의 \(m.label)를 읽으려면 권한이 필요해요.", systemImage: "heart.text.square")
+                    .font(.subheadline)
+                Button {
+                    Task {
+                        await HealthSync.requestAccess(m)
+                        canAsk = await HealthSync.shouldAsk(m)
+                    }
+                } label: {
+                    Label("권한 허용하기", systemImage: "checkmark.shield").frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                Text("다음 화면에서 '\(m.label)'를 켜고 '허용'을 눌러 주세요.").font(.caption).foregroundStyle(.secondary)
+            }
+            .padding(.vertical, 4)
+        } else if canAsk == false {
+            VStack(alignment: .leading, spacing: 6) {
+                Label("권한 창은 한 번만 떠요. 바꾸려면 건강 앱에서 MOKI를 켜 주세요.", systemImage: "heart.text.square")
+                    .font(.subheadline)
+                Text("건강 앱 → 오른쪽 위 프로필 → 개인정보 보호 → 앱 → MOKI → '\(m.label)' 켜기")
+                    .font(.caption).foregroundStyle(.secondary)
+                Button {
+                    if let url = URL(string: "x-apple-health://") { openURL(url) }
+                } label: {
+                    Label("건강 앱 열기", systemImage: "arrow.up.forward.app").frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+            }
+            .padding(.vertical, 4)
         }
     }
 }
