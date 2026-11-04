@@ -149,7 +149,12 @@ struct HomeView: View {
             }
             // 기록이 생기면 오늘 알림을 뺄 수 있다. 스캔 화면에서 기록해도 여기서 반영된다.
             .onChange(of: logs.count) { rescheduleReminders() }
-            .onChange(of: keys.count) {
+            .onChange(of: keys.count) { old, new in
+                // 새로 등록한 물건이 지금 고른 태그에 없으면 전체로 돌려, 등록이 안 된 것처럼 보이지 않게 한다(TestFlight 피드백).
+                if new > old, !tagFilter.isEmpty, let newest = keys.max(by: { $0.createdAt < $1.createdAt }),
+                   !newest.tags.contains(tagFilter) {
+                    tagFilter = ""
+                }
                 rescheduleReminders()
                 // Siri 문구("MOKI에서 영양제 기록")에 들어갈 물건 목록을 갱신한다.
                 MokiShortcuts.updateAppShortcutParameters()

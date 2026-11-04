@@ -201,8 +201,13 @@ public enum CommandResolver {
     /// 기록할 횟수. "2번", "3회", "두 번". 없으면 nil.
     public static func extractCount(_ text: String) -> Int? {
         if let m = matches("(\\d+)\\s*(?:번|회|알|잔|개)", in: text).first { return Int(m[1]) }
-        let words: [(String, Int)] = [("한 번", 1), ("두 번", 2), ("세 번", 3), ("네 번", 4), ("다섯 번", 5), ("한번", 1), ("두번", 2), ("세번", 3)]
-        return words.first { text.contains($0.0) }?.1
+        // 붙여 쓴 말("네번")과 띄어 쓴 말("네 번")을 모두 읽는다. 긴 말부터 본다("열번"이 "한번"보다 먼저).
+        let numbers: [(String, Int)] = [("열", 10), ("아홉", 9), ("여덟", 8), ("일곱", 7), ("여섯", 6), ("다섯", 5),
+                                        ("네", 4), ("세", 3), ("두", 2), ("한", 1)]
+        for (word, n) in numbers {
+            if matches("(?<![가-힣])\(word)\\s*(?:번|회|잔|알)", in: text).first != nil { return n }
+        }
+        return nil
     }
 
     /// 할 일 종류. 휴식은 말에 휴식·낮잠·타이머가 있을 때만. 수업·레슨이거나 시각과 길이가 다 있으면 참석.
@@ -213,6 +218,8 @@ public enum CommandResolver {
         if has(["휴식", "낮잠", "타이머", "쉬는 시간"]) { return "countdown" }
         if has(["수업", "레슨", "강의", "학원", "클래스", "과외", "PT", "모임", "예배", "미사"]) || (hasStart && hasDuration) { return "attend" }
         if has(["먹기", "먹어", "마시", "복용", "번씩", "회씩"]) { return "counter" }
+        // "하루 네번", "하루에 3회"처럼 하루 횟수를 말하면 횟수 습관이다.
+        if text.contains("하루"), extractCount(text) != nil { return "counter" }
         if let model, model != "countdown" { return model }
         return "session"
     }
@@ -225,7 +232,7 @@ public enum CommandResolver {
             "\\d+\\s*(?:시간|분)\\s*전(?:에)?",
             "\\d+\\s*시간(?:\\s*\\d+\\s*분)?(?:씩|동안)?",
             "(?:주|일주일에?)\\s*(?:\\d+|한|두|세|네|다섯|여섯)\\s*(?:번|회)(?:씩)?",
-            "(?:하루에?\\s*)?\\d+\\s*(?:잔|번|회|알|개)(?:씩)?",
+            "(?:하루에?\\s*)?(?:\\d+|(?<![가-힣])(?:한|두|세|네|다섯|여섯|일곱|여덟|아홉|열))\\s*(?:잔|번|회|알|개)(?:씩)?",
             "(?:매주|매일|평일|주말|하루에?)",
             "([월화수목금토일][·,/ ]?)+요일(?:마다|에)?",
             "(?<![가-힣])[월화수목금토일]{2,}(?![가-힣])",

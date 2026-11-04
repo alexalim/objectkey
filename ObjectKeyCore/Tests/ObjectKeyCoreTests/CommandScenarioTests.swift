@@ -39,6 +39,9 @@ final class CommandScenarioTests: XCTestCase {
               weekdays: [1, 7], start: 870, duration: 120),
         .init(text: "목요일마다 영어 학원 밤 8시부터 1시간 30분", name: "영어 학원", kind: "attend",
               weekdays: [5], start: 1200, duration: 90),
+        // TestFlight: "하루 네번"(붙여 씀)을 못 읽어 목표 없는 시간 기록으로 등록됐다.
+        .init(text: "횡격막 호흡 명상 하루 네번", name: "횡격막 호흡 명상", kind: "counter", count: 4),
+        .init(text: "스트레칭 하루 세 번", name: "스트레칭", kind: "counter", count: 3),
         .init(text: "담배 끊기", name: "담배 끊기", kind: "quit"),
         .init(text: "야식 안 하기", name: "야식 안 하기", kind: "quit"),
         .init(text: "커피 휴식 15분 타이머 등록해줘", name: "커피 휴식", kind: "countdown", duration: 15),
