@@ -55,6 +55,8 @@ struct AskMokiView: View {
     @State private var draft: RegisterDraft?
     @State private var plan: RecordPlan?
     @State private var recorded: String?
+    /// 미리 채운 등록 화면에서 저장했는지. 저장했으면 이 창도 닫고 홈으로 간다(TestFlight 피드백).
+    @State private var registered = false
     @FocusState private var focused: Bool
 
     private let examples = [
@@ -109,7 +111,9 @@ struct AskMokiView: View {
             .navigationTitle("MOKI에게 말하기")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } } }
-            .sheet(item: $draft) { RegisterView(draft: $0) }
+            .sheet(item: $draft, onDismiss: { if registered { dismiss() } }) {
+                RegisterView(draft: $0, onSaved: { registered = true })
+            }
             .confirmationDialog(plan?.summary ?? "", isPresented: Binding(get: { plan != nil }, set: { if !$0 { plan = nil } }),
                                 titleVisibility: .visible, presenting: plan) { plan in
                 Button("기록하기") { record(plan) }

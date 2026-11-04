@@ -91,18 +91,26 @@ enum HabitReminders {
 }
 
 /// 알림 버튼 처리와 앱이 열려 있을 때의 알림 표시.
+///
+/// 완료 핸들러 형태로 구현하고 반드시 메인 스레드에서 부른다. async 형태로 두면 알림을 눌렀을 때 시스템이
+/// 백그라운드 스레드에서 UIKit 상태 저장을 실행해 앱이 강제 종료된다(TestFlight 빌드 43 크래시, 2026-11-03).
 final class NotificationHandler: NSObject, UNUserNotificationCenterDelegate {
     static let shared = NotificationHandler()
 
-    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
-        guard response.actionIdentifier == HabitReminders.attendAction,
-              let raw = response.notification.request.content.userInfo["keyID"] as? String,
-              let id = UUID(uuidString: raw) else { return }
-        await HabitReminders.recordAttendance(id)
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
+                                withCompletionHandler completionHandler: @escaping () -> Void) {
+        let isAttend = response.actionIdentifier == HabitReminders.attendAction
+        let id = (response.notification.request.content.userInfo["keyID"] as? String).flatMap(UUID.init(uuidString:))
+        DispatchQueue.main.async {
+            if isAttend, let id {
+                MainActor.assumeIsolated { HabitReminders.recordAttendance(id) }
+            }
+            completionHandler()
+        }
     }
 
-    func userNotificationCenter(_ center: UNUserNotificationCenter,
-                                willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
-        [.banner, .list, .sound]
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification,
+                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        DispatchQueue.main.async { completionHandler([.banner, .list, .sound]) }
     }
 }

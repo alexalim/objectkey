@@ -37,7 +37,11 @@ struct RegisterView: View {
 
     private enum Field { case name, emoji, cue }
 
-    init(draft: RegisterDraft? = nil) {
+    /// 저장이 끝나면 부른다. "MOKI에게 말하기"에서 열었을 때 그 창까지 닫고 홈으로 가기 위해서다.
+    var onSaved: (() -> Void)?
+
+    init(draft: RegisterDraft? = nil, onSaved: (() -> Void)? = nil) {
+        self.onSaved = onSaved
         // "MOKI에게 말하기"로 해석한 값을 미리 채운다. 사진은 원하면 직접 찍는다.
         guard let d = draft else { return }
         _name = State(initialValue: d.name)
@@ -354,6 +358,7 @@ struct RegisterView: View {
         if key.reminderMinute >= 0 { Task { _ = await HabitReminders.requestPermission() } }
         key.shots = shots.compactMap { shot in shot.vector.map { ReferenceShot(vector: $0, thumbnail: shot.thumbnail) } }
         try? context.save()
+        onSaved?()
         dismiss()
     }
 }
