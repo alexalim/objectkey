@@ -266,7 +266,7 @@ struct RegisterView: View {
     /// 사진이 몇 장인지에 따라 무엇이 되고 안 되는지 알려 준다. 저장을 막지는 않는다.
     private var photoNote: String {
         switch shots.count {
-        case 0: return "사진 없이도 저장할 수 있어요. 대신 스캔으로는 알아보지 못하니 상세 화면 버튼·위젯·Siri·✨로 기록해요."
+        case 0: return "사진 없이도 저장할 수 있어요. 스캔 대신 오늘 화면에서 눌러서 해요."
         case 1..<Self.requiredShots: return "\(Self.requiredShots - shots.count)장 더 찍으면 스캔으로 알아봐요. 지금 저장해도 돼요."
         default: return "스캔하면 알아볼 수 있어요."
         }
