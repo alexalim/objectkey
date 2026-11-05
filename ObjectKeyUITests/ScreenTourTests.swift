@@ -148,7 +148,8 @@ final class ScreenTourTests: XCTestCase {
         } else {
             XCTFail("가운데 +를 누르면 새로 만들기 시트가 열려야 한다")
         }
-        tapIfExists(app.buttons["이름만 적어 등록"])
+        // 버튼 이름에 설명까지 붙어 읽히므로 앞부분으로 찾는다.
+        tapIfExists(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "이름만 적어 등록")).firstMatch)
         if app.navigationBars["새 물건 등록"].waitForExistence(timeout: 5) {
             snap("10-register")
             app.swipeUp()

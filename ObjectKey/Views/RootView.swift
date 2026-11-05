@@ -92,7 +92,7 @@ struct QuickAddSheet: View {
                     .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title).font(.headline)
-                    Text(detail).font(.subheadline).foregroundStyle(.secondary)
+                    Text(detail).font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.leading)
                 }
                 Spacer()
                 Image(systemName: "chevron.right").font(.footnote.bold()).foregroundStyle(.tertiary)
