@@ -39,7 +39,11 @@ struct KeyDetailView: View {
                                       systemImage: "heart.slash")
                                     .font(.caption2).foregroundStyle(.orange)
                             }
-                            if key.shots.isEmpty {
+                            let owner = key.objectOwner(in: keys)
+                            if owner.id != key.id {
+                                Label("'\(owner.name)' 물건을 함께 써요", systemImage: "link")
+                                    .font(.caption2).foregroundStyle(.secondary)
+                            } else if key.shots.isEmpty {
                                 Label("사진 없음 · 아래 버튼·위젯·Siri로 기록", systemImage: "camera.badge.ellipsis")
                                     .font(.caption2).foregroundStyle(.secondary)
                             }

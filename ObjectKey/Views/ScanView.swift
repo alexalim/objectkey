@@ -17,6 +17,10 @@ struct ScanView: View {
     @State private var choices: [KeyObject] = []
     /// 직접 선택 창에서 고른 물건. 창이 다 닫힌 뒤에 실행 화면을 연다(시트가 겹치면 뜨지 않는다).
     @State private var manualPick: KeyObject?
+    /// 고르는 창이 "어느 물건"이 아니라 "이 물건의 어느 습관"을 묻는 중인지.
+    @State private var pickingHabit = false
+    /// 물건을 고른 뒤 습관 고르는 창을 다시 띄우는 중. 그사이 스캔이 다시 돌지 않게 한다.
+    @State private var reopening = false
     @State private var showManual = false
     @State private var mood: Moki = .scan
     @State private var lastSeen = Date()
@@ -75,16 +79,20 @@ struct ScanView: View {
             else { showManual = true }
         }
         .onDisappear { camera.stop() }
-        .confirmationDialog("어떤 물건인가요?", isPresented: Binding(get: { !choices.isEmpty }, set: { if !$0 { choices = []; paused = false } }),
+        .confirmationDialog(pickingHabit ? "어떤 습관을 할까요?" : "어떤 물건인가요?",
+                            isPresented: Binding(get: { !choices.isEmpty }, set: {
+                                if !$0 { choices = []; if runKey == nil && !reopening { paused = false } }
+                            }),
                             titleVisibility: .visible) {
             ForEach(choices) { key in
-                Button(key.name) { open(key) }
+                Button(key.name) { picked(key) }
             }
         } message: {
-            Text("비슷한 물건이 여러 개예요. 고를 때까지 기다릴게요.")
+            Text(pickingHabit ? "이 물건에 연결한 습관이 여러 개예요." : "비슷한 물건이 여러 개예요. 고를 때까지 기다릴게요.")
         }
         .sheet(isPresented: $showManual, onDismiss: {
-            if let key = manualPick { manualPick = nil; open(key) } else { paused = false }
+            // 직접 선택은 습관 목록에서 고르므로 바로 실행 화면을 연다.
+            if let key = manualPick { manualPick = nil; runKey = key } else { paused = false }
         }) { manualPicker }
         // 실행 화면을 닫으면(완료든 나중에든) 스캔도 끝내고 오늘 화면으로 돌아간다.
         .sheet(item: $runKey, onDismiss: { dismiss() }) { HabitRunView(key: $0) }
@@ -127,9 +135,31 @@ struct ScanView: View {
         }
     }
 
+    /// 알아본 물건을 연다. 그 물건에 습관이 여럿이면 어느 습관인지 먼저 묻는다.
     private func open(_ key: KeyObject) {
-        choices = []
-        runKey = key
+        reopening = false
+        let members = key.objectMembers(in: keys)
+        if members.count > 1 {
+            pickingHabit = true
+            choices = members
+        } else {
+            choices = []
+            runKey = key
+        }
+    }
+
+    private func picked(_ key: KeyObject) {
+        if pickingHabit {
+            pickingHabit = false
+            runKey = key
+            return
+        }
+        // 물건을 골랐다. 창이 닫힌 뒤에 습관 고르는 창(또는 실행 화면)을 연다.
+        reopening = true
+        Task {
+            try? await Task.sleep(for: .milliseconds(400))
+            open(key)
+        }
     }
 
     private var manualPicker: some View {

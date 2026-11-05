@@ -37,6 +37,7 @@ final class BackupTests: XCTestCase {
         file.keys[0].measureStep = 250
         file.keys[0].measureUnit = "ml"
         file.logs[0].amount = 250
+        file.keys[0].photoSourceID = UUID()
         XCTAssertEqual(try Backup.decode(try Backup.encode(file)), file)
     }
 

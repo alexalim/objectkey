@@ -163,6 +163,15 @@ final class ScreenTourTests: XCTestCase {
         // 7a. 내 물건 · 기록 탭
         app.tabBars.buttons["내 물건"].tap()
         if app.navigationBars["내 물건"].waitForExistence(timeout: 5) { snap("13-objects") } else { XCTFail("내 물건 탭이 열려야 한다") }
+        // 운동 매트에는 습관이 둘(운동 매트, 아침 스트레칭) 걸려 있다.
+        row("운동 매트").tap()
+        if app.navigationBars["물건"].waitForExistence(timeout: 5) {
+            snap("13b-object")
+            XCTAssertTrue(app.staticTexts["아침 스트레칭"].exists, "같은 물건의 습관이 함께 보여야 한다")
+            app.buttons["닫기"].tap()
+        } else {
+            XCTFail("물건을 누르면 물건 상세가 열려야 한다")
+        }
         app.tabBars.buttons["기록"].tap()
         if app.navigationBars["기록"].waitForExistence(timeout: 5) { snap("14-history") } else { XCTFail("기록 탭이 열려야 한다") }
 

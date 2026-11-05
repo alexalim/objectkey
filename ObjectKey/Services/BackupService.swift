@@ -21,7 +21,8 @@ enum BackupService {
                                tags: k.tags, shots: k.shots.map { BackupFile.Shot(featureData: $0.featureData, revision: $0.revision) },
                                isQuit: k.isQuit, measureStep: k.measureStep, measureUnit: k.measureUnit,
                                healthMetric: k.healthMetric.isEmpty ? nil : k.healthMetric, healthTarget: k.healthTarget,
-                               routineSteps: k.routineSteps.isEmpty ? nil : k.routineSteps)
+                               routineSteps: k.routineSteps.isEmpty ? nil : k.routineSteps,
+                               photoSourceID: k.photoSourceID)
             },
             logs: logs.map(dto),
             notes: notes.map { BackupFile.Note(keyID: $0.keyID, day: $0.day, text: $0.text) })
@@ -54,6 +55,7 @@ enum BackupService {
             key.healthMetric = k.healthMetric ?? ""
             key.healthTarget = k.healthTarget ?? 0
             key.routineSteps = k.routineSteps ?? []
+            key.photoSourceID = k.photoSourceID
             context.insert(key)
             key.shots = k.shots.map { shot in
                 let values = shot.featureData.withUnsafeBytes { Array($0.bindMemory(to: Float.self)) }

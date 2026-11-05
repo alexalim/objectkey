@@ -22,6 +22,7 @@ final class BackupRoundTripTests: XCTestCase {
         smoke.isQuit = true
         let morning = KeyObject(name: "아침 루틴", emoji: "🌅", action: .session, threshold: 0.6)
         morning.routineSteps = ["세수|3", "스트레칭|5"]
+        morning.photoSourceID = water.id
         let hockey = KeyObject(name: "아이스하키", emoji: "🏒", action: .attend(startMinute: 21 * 60, minutes: 90), threshold: 0.6)
         [water, smoke, morning, hockey].forEach(source.insert)
         water.shots = [ReferenceShot(vector: FeatureVector(values: [0.1, 0.2, 0.3], revision: 2), thumbnail: nil)]
@@ -53,6 +54,7 @@ final class BackupRoundTripTests: XCTestCase {
         XCTAssertEqual(w.shots.first?.vector.revision, 2)
         XCTAssertEqual(restored.first { $0.id == smoke.id }?.isQuit, true)
         XCTAssertEqual(restored.first { $0.id == morning.id }?.routineSteps, ["세수|3", "스트레칭|5"])
+        XCTAssertEqual(restored.first { $0.id == morning.id }?.photoSourceID, water.id)
         XCTAssertEqual(restored.first { $0.id == hockey.id }?.action, .attend(startMinute: 21 * 60, minutes: 90))
         XCTAssertEqual(try target.fetch(FetchDescriptor<ActivityLog>()).first?.amount, 250)
         XCTAssertEqual(try target.fetch(FetchDescriptor<DayNote>()).first?.text, "더웠음")

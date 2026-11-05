@@ -191,6 +191,7 @@ struct HomeView: View {
     private func delete(_ targets: [KeyObject]) {
         for key in targets {
             store.finishIfInvolved(key, keys: keys, context: context)
+            key.handOverObject(in: keys)
             let id = key.id
             try? context.delete(model: DayNote.self, where: #Predicate { $0.keyID == id })
             context.delete(key)

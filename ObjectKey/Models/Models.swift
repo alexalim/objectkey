@@ -39,6 +39,8 @@ final class KeyObject {
     var healthTarget: Int = 0
     /// 단계별 루틴. "세수|3" 형식의 단계 목록. 시간 기록 물건에만 쓴다. (v0.4)
     var routineSteps: [String] = []
+    /// 같은 물건을 쓰는 다른 습관(물건 주인). 그 사진으로 스캔한다. nil이면 자기 사진을 쓴다. (v0.5)
+    var photoSourceID: UUID?
     @Relationship(deleteRule: .cascade, inverse: \ReferenceShot.key)
     var shots: [ReferenceShot] = []
 
@@ -119,6 +121,32 @@ final class KeyObject {
     var registered: RegisteredKey {
         RegisteredKey(id: id, references: shots.map(\.vector), threshold: threshold)
     }
+
+    /// 이 습관이 쓰는 물건의 주인(사진을 가진 습관). 혼자 쓰면 자기 자신.
+    func objectOwner(in keys: [KeyObject]) -> KeyObject {
+        let id = SharedObject.owner(of: sharedHabit, among: keys.map(\.sharedHabit))
+        return keys.first { $0.id == id } ?? self
+    }
+
+    /// 같은 물건을 쓰는 습관들. 주인이 맨 앞이다.
+    func objectMembers(in keys: [KeyObject]) -> [KeyObject] {
+        let owner = objectOwner(in: keys)
+        return [owner] + keys.filter { $0.id != owner.id && $0.objectOwner(in: keys).id == owner.id }
+    }
+
+    /// 주인 습관을 지우기 전에 사진과 빌려 쓰던 습관들을 다음 습관에 넘긴다. 안 그러면 사진이 같이 지워진다.
+    func handOverObject(in keys: [KeyObject]) {
+        let habits = keys.map(\.sharedHabit)
+        guard let heirID = SharedObject.heir(of: id, among: habits), let heir = keys.first(where: { $0.id == heirID }) else { return }
+        let moved = shots
+        shots = []
+        heir.shots = moved
+        heir.threshold = threshold
+        heir.photoSourceID = nil
+        for key in keys where key.photoSourceID == id && key.id != heirID { key.photoSourceID = heirID }
+    }
+
+    var sharedHabit: SharedObject.Habit { .init(id: id, source: photoSourceID) }
 }
 
 /// 물건 등록 시 찍은 참조 이미지 한 장의 특징값.

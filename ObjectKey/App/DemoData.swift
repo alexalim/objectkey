@@ -42,7 +42,11 @@ enum DemoData {
         smoke.isQuit = true
         smoke.tags = ["건강"]
         smoke.createdAt = day(20)
-        [supplement, book, workout, nap, hockey, smoke].forEach { context.insert($0) }
+        // 같은 물건(운동 매트)에 습관을 하나 더 건다.
+        let stretch = KeyObject(name: "아침 스트레칭", emoji: "moki-exercise", action: .session, threshold: 0.6, dailyGoal: 5)
+        stretch.photoSourceID = workout.id
+        stretch.tags = ["운동"]
+        [supplement, book, workout, nap, hockey, smoke, stretch].forEach { context.insert($0) }
         // 끊기: 9일 전과 3일 전에 한 번씩 했다.
         for ago in [9, 3] {
             context.insert(ActivityLog(keyID: smoke.id, keyName: smoke.name, kind: "counter", startedAt: day(ago, hour: 22), duration: 0))

@@ -44,10 +44,14 @@ struct RegisterView: View {
     var onSaved: (() -> Void)?
     /// + 시트의 "사진 찍어 등록"으로 열면 사진 칸으로 내려가 카메라를 바로 켠다.
     private let startWithPhotos: Bool
+    /// 이미 있는 물건에 습관을 더할 때 그 물건(주인 습관). 사진은 찍지 않고 그 물건 사진을 함께 쓴다.
+    private let sharing: KeyObject?
 
-    init(draft: RegisterDraft? = nil, startWithPhotos: Bool = false, onSaved: (() -> Void)? = nil) {
+    init(draft: RegisterDraft? = nil, startWithPhotos: Bool = false, sharing: KeyObject? = nil, onSaved: (() -> Void)? = nil) {
         self.onSaved = onSaved
         self.startWithPhotos = startWithPhotos
+        self.sharing = sharing
+        if let sharing { _emoji = State(initialValue: sharing.emoji) }
         // "MOKI에게 말하기"로 해석한 값을 미리 채운다. 사진은 원하면 직접 찍는다.
         guard let d = draft else { return }
         _name = State(initialValue: d.name)
@@ -67,8 +71,22 @@ struct RegisterView: View {
         NavigationStack {
           ScrollViewReader { proxy in
             Form {
-                Section("물건") {
-                    TextField("이름 (예: 읽는 책)", text: $name)
+                if let sharing {
+                    Section {
+                        HStack(spacing: 12) {
+                            KeyBadge(symbol: sharing.emoji, size: 40)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(sharing.name).font(.headline)
+                                Text(sharing.shots.isEmpty ? "같은 물건으로 묶여요" : "이 물건 사진을 함께 써요. 스캔하면 어느 습관인지 물어봐요.")
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                    } header: {
+                        Text("연결할 물건")
+                    }
+                }
+                Section(sharing == nil ? "물건" : "습관") {
+                    TextField(sharing == nil ? "이름 (예: 읽는 책)" : "습관 이름 (예: 5분 걷기)", text: $name)
                         .focused($focus, equals: .name)
                         .submitLabel(.done)
                         .onChange(of: name) { nameTouched = true }
@@ -170,6 +188,7 @@ struct RegisterView: View {
                         Text(HabitCopy.goalFooter + " 나중에 홈에서 오른쪽으로 밀어 바꿀 수 있어요.")
                     }
                 }
+                if sharing == nil {
                 Section {
                     captureArea
                 } header: {
@@ -185,9 +204,10 @@ struct RegisterView: View {
                     }
                 }
                 .id(Self.photosAnchor)
+                }
             }
             .scrollDismissesKeyboard(.immediately)
-            .navigationTitle("새 물건 등록")
+            .navigationTitle(sharing == nil ? "새 물건 등록" : "습관 추가")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("취소") { dismiss() } }
@@ -338,7 +358,7 @@ struct RegisterView: View {
 
     /// 같은 물건을 또 등록하면 비출 때마다 골라야 하므로 막지는 않고 알려만 준다.
     private func save() {
-        if let similar = closestExisting() { duplicateOf = similar } else { commit() }
+        if sharing == nil, let similar = closestExisting() { duplicateOf = similar } else { commit() }
     }
 
     /// 새 사진이 기존 물건의 임계값 안에 들어오면 그중 가장 가까운 물건.
@@ -359,6 +379,7 @@ struct RegisterView: View {
                             threshold: Calibration.suggestThreshold(for: vectors),
                             dailyGoal: kind == "countdown" || kind == "attend" || kind == "quit" ? 0 : goal)
         if kind == "quit" { key.isQuit = true }
+        if let sharing { key.photoSourceID = sharing.id }
         if kind == "counter" || kind == "session" {
             key.healthMetric = healthMetric
             key.healthTarget = healthTarget
