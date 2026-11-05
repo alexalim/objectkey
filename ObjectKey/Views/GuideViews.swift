@@ -110,7 +110,7 @@ struct HelpView: View {
                 guide("카메라 없이 기록하기", "5.circle", [
                     ("rectangle.and.hand.point.up.left", "오늘 화면에서 습관을 누르고 완료"),
                     ("square.grid.2x2", "홈 화면 위젯의 ○ 버튼"),
-                    ("mic", "Siri: \"MOKI에서 영양제 기록\""),
+                    ("mic", "Siri: \"모키에서 영양제 기록\" (모키라고 말해요)"),
                     ("bell", "알림을 길게 눌러 시작·+1·참석"),
                     ("hand.tap", "알림을 누르면 그 습관 화면이 열려요"),
                 ])
