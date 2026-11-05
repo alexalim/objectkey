@@ -15,6 +15,7 @@ struct StatsView: View {
         let key: KeyObject
         let streak: Int
         let monthRate: Double?
+        let weekDone: Int
         var id: UUID { key.id }
     }
 
@@ -45,7 +46,8 @@ struct StatsView: View {
                                 }
                                 Spacer()
                                 VStack(alignment: .trailing, spacing: 2) {
-                                    Text(r.monthRate.map { "\(Int(($0 * 100).rounded()))%" } ?? "아직")
+                                    // 주 N회는 달 완료율이 주가 끝나야 정해져 비어 보이므로, 이번 주 진행을 보여 준다(상세 화면과 같음).
+                                    Text(value(r))
                                         .font(.headline.monospacedDigit())
                                     Label("\(r.streak)일", systemImage: "flame.fill")
                                         .font(.caption.monospacedDigit()).foregroundStyle(.orange)
@@ -56,7 +58,7 @@ struct StatsView: View {
                 } header: {
                     Text("습관별")
                 } footer: {
-                    Text("숫자는 이번 달 완료율이에요. 쉬는 날은 빼고 셉니다. 누르면 주별·요일별·시간대 통계를 봐요.")
+                    Text("숫자는 이번 달 완료율이에요(주 N회는 이번 주 횟수). 쉬는 날은 빼고 셉니다. 누르면 주별·요일별·시간대 통계를 봐요.")
                 }
             }
             Section {
@@ -87,7 +89,12 @@ struct StatsView: View {
         let began = min(key.createdAt, mine.map(\.startedAt).min() ?? key.createdAt)
         let rate = DailyProgress.completionRate(entries, goal: key.goalAmount, schedule: key.schedule,
                                                 since: max(monthStart, began), now: .now, calendar: calendar)
-        return Row(key: key, streak: progress.streak, monthRate: rate)
+        return Row(key: key, streak: progress.streak, monthRate: rate, weekDone: progress.weekDone)
+    }
+
+    private func value(_ r: Row) -> String {
+        if case .perWeek(let n) = r.key.schedule { return "이번 주 \(r.weekDone)/\(n)" }
+        return r.monthRate.map { "\(Int(($0 * 100).rounded()))%" } ?? "아직"
     }
 
     private func tile(_ value: String, _ label: String) -> some View {
