@@ -139,7 +139,7 @@ final class ScreenTourTests: XCTestCase {
         snap("09-swipe")
         // 화면 가운데를 누르면 요일에 따라 다른 행이 눌려 상세가 열릴 수 있다. 제목을 눌러 되돌리고, 혹시 열린 창은 닫는다.
         app.navigationBars["오늘"].tap()
-        tapIfExists(app.buttons["닫기"])
+        closeTop()
 
         // 7. 가운데 + → 새로 만들기 시트 → 이름만 적어 등록
         app.tabBars.buttons["새로 만들기"].tap()
@@ -168,7 +168,7 @@ final class ScreenTourTests: XCTestCase {
         if app.navigationBars["물건"].waitForExistence(timeout: 5) {
             snap("13b-object")
             XCTAssertTrue(app.staticTexts["아침 스트레칭"].exists, "같은 물건의 습관이 함께 보여야 한다")
-            app.buttons["닫기"].tap()
+            closeTop()
         } else {
             XCTFail("물건을 누르면 물건 상세가 열려야 한다")
         }
@@ -213,8 +213,18 @@ final class ScreenTourTests: XCTestCase {
 
     /// 상세와 그 아래 실행 화면을 차례로 닫는다.
     private func closeDetail() {
-        tapIfExists(app.buttons["닫기"])
-        tapIfExists(app.buttons["닫기"])
+        closeTop()
+        closeTop()
+    }
+
+    /// 시트가 겹치면 "닫기"가 여러 개 잡힌다. 맨 위(누를 수 있는) 것만 누른다.
+    private func closeTop() {
+        let buttons = app.buttons.matching(NSPredicate(format: "label == %@", "닫기"))
+        _ = buttons.firstMatch.waitForExistence(timeout: 2)
+        for button in buttons.allElementsBoundByIndex.reversed() where button.isHittable {
+            button.tap()
+            return
+        }
     }
 
     private func tapIfExists(_ element: XCUIElement) {
