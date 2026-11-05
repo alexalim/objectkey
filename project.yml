@@ -183,6 +183,9 @@ targets:
       base:
         GENERATE_INFOPLIST_FILE: YES
         PRODUCT_BUNDLE_IDENTIFIER: com.aspynlim.moki.tests
+        # 앱 제품 이름이 MOKI라 기본값(타깃 이름 ObjectKey.app)으로는 테스트 호스트를 못 찾는다.
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/MOKI.app/MOKI
+        BUNDLE_LOADER: $(TEST_HOST)
         TARGETED_DEVICE_FAMILY: "1"
 
   ObjectKeyUITests:
