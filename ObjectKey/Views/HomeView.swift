@@ -15,6 +15,8 @@ struct HomeView: View {
     /// 목록에서 누른 물건. 바로 기록하지 않고 상세 화면을 연다(실수 방지).
     @State private var detailKey: KeyObject?
     @State private var route = NotificationRoute.shared
+    /// 상세 화면을 연 횟수. 몇 번 열어 봤으면 사용법 안내 문구를 접는다.
+    @AppStorage("detailOpenCount") private var detailOpenCount = 0
     @State private var showAsk = false
     @State private var showHelp = false
     @State private var showTags = false
@@ -71,7 +73,9 @@ struct HomeView: View {
                                 Button("다른 물건 \(keys.count - visible.count)개는 '전체'에서 보여요 · 전체 보기") { tagFilter = "" }
                                     .font(.footnote.weight(.semibold))
                             }
-                            Text("누르면 상세 화면에서 기록할 수 있어요. 오른쪽으로 밀면 습관 설정, 왼쪽은 삭제예요.")
+                            if detailOpenCount < 3 {
+                                Text("누르면 상세 화면에서 기록할 수 있어요. 오른쪽으로 밀면 습관 설정, 왼쪽은 삭제예요.")
+                            }
                         }
                     }
                 }
@@ -127,6 +131,7 @@ struct HomeView: View {
             .sheet(isPresented: $showRegister, onDismiss: rescheduleReminders) { RegisterView() }
             .sheet(item: $editingGoal, onDismiss: rescheduleReminders) { GoalEditor(key: $0) }
             .sheet(item: $detailKey, onDismiss: rescheduleReminders) { KeyDetailView(key: $0, keys: keys) }
+            .onChange(of: detailKey) { _, key in if key != nil { detailOpenCount += 1 } }
             .onChange(of: route.keyID, initial: true) { openFromNotification() }
             // 앱을 새로 켜며 들어오면 물건 목록이 늦게 채워질 수 있다.
             .onChange(of: keys.count) { openFromNotification() }
@@ -167,7 +172,6 @@ struct HomeView: View {
         }
     }
 
-    /// 기록·설정이 바뀌면 알림과 홈 화면 위젯을 같이 맞춘다.
     /// 알림 본문을 눌러 들어오면 그 물건의 상세 화면을 연다. 다른 화면이 떠 있으면 닫고 연다.
     private func openFromNotification() {
         guard let id = route.keyID, let key = keys.first(where: { $0.id == id }) else { return }
@@ -183,6 +187,7 @@ struct HomeView: View {
         }
     }
 
+    /// 기록·설정이 바뀌면 알림과 홈 화면 위젯을 같이 맞춘다.
     private func rescheduleReminders() {
         WidgetBridge.refresh(keys: keys, logs: logs, state: store.state)
         Task { await HabitReminders.reschedule(keys: keys, logs: logs, state: store.state) }

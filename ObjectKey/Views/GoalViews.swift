@@ -627,7 +627,8 @@ struct MoodHeader: View {
             return (.success, "오늘 목표를 모두 채웠어요!", nil)
         }
         if !goals.isEmpty, metGoals > 0 || activeToday > 0 {
-            return (.key, "오늘 목표 \(metGoals)/\(goals.count) 달성. 계속 가 볼까요?", nil)
+            // 개수는 바로 아래 "오늘 할 일" 머리글이 보여 준다. 기준이 다른 숫자를 또 쓰면 헷갈린다.
+            return (.key, "오늘 시작했어요. 남은 것도 해 볼까요?", nil)
         }
         if activeToday > 0 {
             return (.reading, "오늘도 기록하고 있네요. 좋아요!", nil)

@@ -69,7 +69,12 @@ struct KeyDetailView: View {
                         HStack {
                             stat("\(progress.streak)일", "연속", tint: progress.atRisk ? .red : .orange)
                             stat("\(DailyProgress.bestStreak(entries, goal: key.goalAmount, schedule: key.schedule, now: .now, calendar: calendar))일", "최고 기록")
-                            stat(monthRate(entries, logs: logs).map { "\(Int(($0 * 100).rounded()))%" } ?? "–", "이번 달 완료율")
+                            // 주 N회는 달 완료율이 주가 끝나야 정해져 비어 보이므로, 이번 주 진행을 보여 준다.
+                            if case .perWeek(let n) = key.schedule {
+                                stat("\(progress.weekDone)/\(n)회", "이번 주")
+                            } else {
+                                stat(monthRate(entries, logs: logs).map { "\(Int(($0 * 100).rounded()))%" } ?? "아직", "이번 달 완료율")
+                            }
                             stat("\(logs.count)회", "전체 기록")
                         }
                         NavigationLink("통계 보기") { KeyStatsView(key: key) }

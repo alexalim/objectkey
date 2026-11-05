@@ -14,6 +14,8 @@ struct RegisterView: View {
     @State private var name = ""
     @State private var emoji = ""
     @State private var kind = "session"
+    /// 이름 칸에 한 번이라도 썼는지.
+    @State private var nameTouched = false
     @State private var minutes = 5
     @State private var goal = 0
     @State private var cue = ""
@@ -65,6 +67,7 @@ struct RegisterView: View {
                     TextField("이름 (예: 읽는 책)", text: $name)
                         .focused($focus, equals: .name)
                         .submitLabel(.done)
+                        .onChange(of: name) { nameTouched = true }
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 10) {
                             ForEach(Moki.activities, id: \.self) { moki in
@@ -105,10 +108,14 @@ struct RegisterView: View {
                         }
                     }
                     .padding(.vertical, 4)
-                    TextField("직접 입력 (이모지 하나)", text: Binding(
-                        get: { emoji.hasPrefix("moki-") ? "" : emoji },
-                        set: { emoji = String($0.prefix(1)) }))
-                        .focused($focus, equals: .emoji)
+                    // 값만 덩그러니 보이지 않게 이름을 붙인다(고른 이모지가 여기에 그대로 나온다).
+                    LabeledContent("이모지 직접 입력") {
+                        TextField("한 글자", text: Binding(
+                            get: { emoji.hasPrefix("moki-") ? "" : emoji },
+                            set: { emoji = String($0.prefix(1)) }))
+                            .multilineTextAlignment(.trailing)
+                            .focused($focus, equals: .emoji)
+                    }
                 }
                 Section {
                     Picker("동작", selection: $kind) {
@@ -169,7 +176,8 @@ struct RegisterView: View {
                             Text("노란 상자가 물건을 감싸면 각도와 거리를 조금씩 바꿔 \(Self.requiredShots)장 이상 찍어 주세요. 사진은 이 기기에만 저장돼요.")
                         }
                         Text(photoNote).foregroundStyle(shots.isEmpty || shots.count >= Self.requiredShots ? Color.secondary : Color.orange)
-                        if let saveHint { Text(saveHint).foregroundStyle(.orange) }
+                        // 처음 열었을 때부터 잘못한 것처럼 보이지 않게, 이름을 쓰다 지운 경우에만 주황색으로 알린다.
+                        if let saveHint { Text(saveHint).foregroundStyle(nameTouched ? Color.orange : Color.secondary) }
                     }
                 }
             }
