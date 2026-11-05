@@ -54,7 +54,7 @@ struct OnboardingView: View {
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
             .padding()
-            Text("홈 왼쪽 위 ? 버튼에서 언제든 다시 볼 수 있어요.").font(.footnote).foregroundStyle(.secondary).padding(.bottom, 8)
+            Text("마이 → 사용 안내에서 언제든 다시 볼 수 있어요.").font(.footnote).foregroundStyle(.secondary).padding(.bottom, 8)
         }
         .background(Color(.systemBackground))
     }
@@ -72,7 +72,7 @@ struct HelpView: View {
                     Button { showIntro = true } label: { Label("소개 다시 보기", systemImage: "play.rectangle") }
                 }
                 guide("시작하기", "1.circle", [
-                    ("plus.circle", "오른쪽 위 + 로 등록해요"),
+                    ("plus.circle", "아래 가운데 + 로 등록해요"),
                     ("character.cursor.ibeam", "이름만 있으면 저장돼요"),
                     ("camera", "사진 3장을 찍어 두면 스캔으로 기록돼요"),
                     ("hand.tap", "사진이 없으면 버튼·위젯·Siri로 기록해요"),
@@ -88,7 +88,7 @@ struct HelpView: View {
                     ("checkmark.shield", "처음 연결할 때 '권한 허용하기'를 눌러 건강 권한을 켜요"),
                     ("drop", "횟수에 단위를 쓰면 정한 양만큼 더해져요 (예: 물 250ml)"),
                     ("questionmark.circle", "비슷한 물건이 둘이면 어느 쪽인지 물어봐요"),
-                    ("viewfinder", "다른 물건으로 잘못 알아보면: 기록 화면 ⋯ → 인식 점검"),
+                    ("viewfinder", "다른 물건으로 잘못 알아보면: 마이 → 인식 점검"),
                 ])
                 guide("습관 규칙", "3.circle", [
                     ("hand.point.right", "물건을 오른쪽으로 밀면 습관 설정"),
@@ -134,9 +134,9 @@ struct HelpView: View {
                     ("gearshape", "설정 → Apple Intelligence를 켜 주세요"),
                 ])
                 guide("백업", "8.circle", [
-                    ("square.and.arrow.up", "기록 화면 ⋯ → 백업 내보내기"),
+                    ("square.and.arrow.up", "마이 → 백업 내보내기"),
                     ("icloud", "iCloud Drive에 저장해 두세요"),
-                    ("square.and.arrow.down", "새 기기에서 ⋯ → 백업 가져오기"),
+                    ("square.and.arrow.down", "새 기기에서 마이 → 백업 가져오기"),
                     ("arrow.triangle.2.circlepath", "같은 파일을 두 번 가져와도 겹치지 않아요"),
                 ])
                 guide("위젯과 잠금 화면", "9.circle", [

@@ -40,11 +40,14 @@ struct RegisterView: View {
 
     private enum Field { case name, emoji, cue }
 
-    /// 저장이 끝나면 부른다. "MOKI에게 말하기"에서 열었을 때 그 창까지 닫고 홈으로 가기 위해서다.
+    /// 저장이 끝나면 부른다. "MOKI에게 말하기"나 + 시트에서 열었을 때 그 창까지 닫고 홈으로 가기 위해서다.
     var onSaved: (() -> Void)?
+    /// + 시트의 "사진 찍어 등록"으로 열면 사진 칸으로 내려가 카메라를 바로 켠다.
+    private let startWithPhotos: Bool
 
-    init(draft: RegisterDraft? = nil, onSaved: (() -> Void)? = nil) {
+    init(draft: RegisterDraft? = nil, startWithPhotos: Bool = false, onSaved: (() -> Void)? = nil) {
         self.onSaved = onSaved
+        self.startWithPhotos = startWithPhotos
         // "MOKI에게 말하기"로 해석한 값을 미리 채운다. 사진은 원하면 직접 찍는다.
         guard let d = draft else { return }
         _name = State(initialValue: d.name)
@@ -62,6 +65,7 @@ struct RegisterView: View {
 
     var body: some View {
         NavigationStack {
+          ScrollViewReader { proxy in
             Form {
                 Section("물건") {
                     TextField("이름 (예: 읽는 책)", text: $name)
@@ -180,6 +184,7 @@ struct RegisterView: View {
                         if let saveHint { Text(saveHint).foregroundStyle(nameTouched ? Color.orange : Color.secondary) }
                     }
                 }
+                .id(Self.photosAnchor)
             }
             .scrollDismissesKeyboard(.immediately)
             .navigationTitle("새 물건 등록")
@@ -196,6 +201,11 @@ struct RegisterView: View {
                 }
             }
             .onDisappear { camera.stop() }
+            .task {
+                guard startWithPhotos else { return }
+                await startCamera()
+                withAnimation { proxy.scrollTo(Self.photosAnchor, anchor: .top) }
+            }
             .alert("저장하지 못했어요", isPresented: $saveFailed) {
                 Button("확인", role: .cancel) {}
             } message: {
@@ -209,8 +219,11 @@ struct RegisterView: View {
             } message: { key in
                 Text("'\(key.name)'하고 비슷해 보여요. 둘 다 두면 스캔할 때마다 어느 쪽인지 골라야 해요.")
             }
+          }
         }
     }
+
+    private static let photosAnchor = "photos"
 
     private func startCamera() async {
         wantsPhotos = true

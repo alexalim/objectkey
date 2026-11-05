@@ -17,8 +17,6 @@ struct HomeView: View {
     @State private var route = NotificationRoute.shared
     /// 상세 화면을 연 횟수. 몇 번 열어 봤으면 사용법 안내 문구를 접는다.
     @AppStorage("detailOpenCount") private var detailOpenCount = 0
-    @State private var showAsk = false
-    @State private var showHelp = false
     @State private var showTags = false
     /// 홈에서 고른 태그. 빈 문자열이면 전체.
     /// 앱을 열 때마다 전체로 시작한다. 예전에는 마지막 태그를 기억해, 새로 등록한 물건이 안 보이는 혼란이 있었다.
@@ -98,26 +96,7 @@ struct HomeView: View {
                     }
                 }
             }
-            .navigationTitle("MOKI")
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    NavigationLink { HistoryView() } label: { Image(systemName: "clock.arrow.circlepath") }
-                        .accessibilityLabel("기록")
-                }
-                ToolbarItem(placement: .topBarLeading) {
-                    Button { showHelp = true } label: { Image(systemName: "questionmark.circle") }
-                        .accessibilityLabel("사용 안내")
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { showRegister = true } label: { Image(systemName: "plus") }
-                        .accessibilityLabel("물건 등록")
-                }
-                // 툴바 빌더는 #available 분기를 받지 않아 버튼은 늘 두고, 시트 안에서 버전을 가른다.
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { showAsk = true } label: { Image(systemName: "sparkles") }
-                        .accessibilityLabel("MOKI에게 말하기")
-                }
-            }
+            .navigationTitle("오늘")
             .safeAreaInset(edge: .bottom) {
                 if !keys.isEmpty {
                     Button { showScan = true } label: {
@@ -135,17 +114,7 @@ struct HomeView: View {
             .onChange(of: route.keyID, initial: true) { openFromNotification() }
             // 앱을 새로 켜며 들어오면 물건 목록이 늦게 채워질 수 있다.
             .onChange(of: keys.count) { openFromNotification() }
-            .sheet(isPresented: $showHelp) { HelpView() }
             .sheet(isPresented: $showTags) { TagManagerView() }
-            .sheet(isPresented: $showAsk, onDismiss: rescheduleReminders) {
-                if #available(iOS 26.0, *) {
-                    AskMokiView()
-                } else {
-                    ContentUnavailableView("iOS 26 이상에서 쓸 수 있어요", systemImage: "sparkles",
-                                           description: Text("MOKI에게 말하기는 기기 안 AI(Apple Intelligence)로 동작해요."))
-                        .presentationDetents([.medium])
-                }
-            }
             .fullScreenCover(isPresented: $showScan) { ScanView() }
             .resultToast(message: Binding(get: { store.lastMessage }, set: { store.lastMessage = $0 }))
             .onReceive(ticker) { _ in store.tick(keys: keys, context: context) }
@@ -176,8 +145,8 @@ struct HomeView: View {
     private func openFromNotification() {
         guard let id = route.keyID, let key = keys.first(where: { $0.id == id }) else { return }
         route.keyID = nil
-        let covered = showScan || showRegister || showAsk || showHelp || showTags || editingGoal != nil || detailKey != nil
-        showScan = false; showRegister = false; showAsk = false; showHelp = false; showTags = false
+        let covered = showScan || showRegister || showTags || editingGoal != nil || detailKey != nil
+        showScan = false; showRegister = false; showTags = false
         editingGoal = nil; detailKey = nil
         if covered {
             // 닫히는 시트와 겹치면 새 시트가 뜨지 않는다.

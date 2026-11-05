@@ -48,7 +48,7 @@ struct ObjectKeyApp: App {
     @ViewBuilder
     private var root: some View {
         let content = ZStack {
-            HomeView()
+            RootView()
             if showSplash {
                 SplashView { withAnimation(.easeOut(duration: 0.3)) { showSplash = false } }
                     .transition(.opacity)

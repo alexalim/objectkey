@@ -123,12 +123,17 @@ final class ScreenTourTests: XCTestCase {
         row("영양제").swipeRight()
         snap("09-swipe")
         // 화면 가운데를 누르면 요일에 따라 다른 행이 눌려 상세가 열릴 수 있다. 제목을 눌러 되돌리고, 혹시 열린 창은 닫는다.
-        app.navigationBars["MOKI"].tap()
+        app.navigationBars["오늘"].tap()
         tapIfExists(app.buttons["닫기"])
 
-        // 7. 등록 화면
-        app.buttons["물건 등록"].tap()
-        app.tap() // 권한 창 처리를 위해 앱과 상호작용
+        // 7. 가운데 + → 새로 만들기 시트 → 이름만 적어 등록
+        app.tabBars.buttons["새로 만들기"].tap()
+        if app.navigationBars["어떻게 시작할까요?"].waitForExistence(timeout: 5) {
+            snap("10a-quick-add")
+        } else {
+            XCTFail("가운데 +를 누르면 새로 만들기 시트가 열려야 한다")
+        }
+        tapIfExists(app.buttons["이름만 적어 등록"])
         if app.navigationBars["새 물건 등록"].waitForExistence(timeout: 5) {
             snap("10-register")
             app.swipeUp()
@@ -137,8 +142,17 @@ final class ScreenTourTests: XCTestCase {
         } else {
             XCTFail("등록 화면이 열려야 한다")
         }
+        tapIfExists(app.buttons["닫기"])
 
-        // 7b. 사용 안내
+        // 7a. 내 물건 · 기록 탭
+        app.tabBars.buttons["내 물건"].tap()
+        if app.navigationBars["내 물건"].waitForExistence(timeout: 5) { snap("13-objects") } else { XCTFail("내 물건 탭이 열려야 한다") }
+        app.tabBars.buttons["기록"].tap()
+        if app.navigationBars["기록"].waitForExistence(timeout: 5) { snap("14-history") } else { XCTFail("기록 탭이 열려야 한다") }
+
+        // 7b. 마이 → 사용 안내
+        app.tabBars.buttons["마이"].tap()
+        if app.navigationBars["마이"].waitForExistence(timeout: 5) { snap("15-my") } else { XCTFail("마이 탭이 열려야 한다") }
         tapIfExists(app.buttons["사용 안내"])
         if app.navigationBars["사용 안내"].waitForExistence(timeout: 5) {
             snap("10c-help")
@@ -150,6 +164,7 @@ final class ScreenTourTests: XCTestCase {
         }
 
         // 8. 스캔 화면 (시뮬레이터에는 카메라가 없다)
+        app.tabBars.buttons["오늘"].tap()
         tapIfExists(app.buttons["물건 스캔"])
         sleep(2)
         app.tap()
