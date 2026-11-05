@@ -36,14 +36,13 @@ extension HabitPhase {
 
 /// 하루 목표 입력. 세션은 5분 단위, 카운터는 1회 단위. 0이면 목표 없음.
 struct GoalStepper: View {
-    let actionKind: String
+    let counter: Bool
     @Binding var goal: Int
     /// 수치 습관이면 한 번에 더하는 양과 단위. 목표도 그 단위로 늘린다.
     var measureStep = 0
     var measureUnit = ""
 
     var body: some View {
-        let counter = actionKind == "counter"
         let step = counter ? max(measureStep, 1) : 5
         let unit = counter ? (measureStep > 0 ? measureUnit : "회") : "분"
         Stepper(goal == 0 ? "목표 없음 (한 번만 해도 채움)" : "하루 \(goal)\(unit)",
@@ -346,7 +345,7 @@ struct GoalEditor: View {
                 } footer: {
                     Text(HabitCopy.rule(key.schedule))
                 }
-                if key.actionKind == "session" {
+                if key.kind == .session {
                     Section {
                         RoutineEditor(stored: $key.routineSteps)
                     } header: {
@@ -362,7 +361,7 @@ struct GoalEditor: View {
                 } footer: {
                     Text(HabitCopy.healthFooter)
                 }
-                if key.actionKind == "counter" {
+                if key.kind == .counter {
                     Section {
                         MeasureEditor(step: $key.measureStep, unit: $key.measureUnit)
                             // 단위가 바뀌면 예전 목표(예: 2000ml)가 새 단위(2000쪽)로 남지 않게 비운다.
@@ -373,7 +372,7 @@ struct GoalEditor: View {
                         Text(HabitCopy.measureFooter)
                     }
                 }
-                if key.actionKind == "attend" {
+                if key.kind == .attend {
                     Section {
                         AttendEditor(startMinute: $key.attendStartMinute, minutes: $key.attendMinutes)
                     } header: {
@@ -383,7 +382,7 @@ struct GoalEditor: View {
                     }
                 } else {
                     Section {
-                        GoalStepper(actionKind: key.actionKind, goal: $key.dailyGoal,
+                        GoalStepper(counter: key.kind == .counter, goal: $key.dailyGoal,
                                     measureStep: key.measureStep, measureUnit: key.measureUnit)
                     } header: {
                         Text("하루 목표")
@@ -401,7 +400,7 @@ struct GoalEditor: View {
                 }
                 Section {
                     ReminderPicker(minute: $key.reminderMinute,
-                                   defaultMinute: key.actionKind == "attend" ? max(0, key.attendStartMinute - 30) : 9 * 60)
+                                   defaultMinute: key.kind == .attend ? max(0, key.attendStartMinute - 30) : 9 * 60)
                 } footer: {
                     Text(HabitCopy.reminderFooter)
                 }

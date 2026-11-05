@@ -47,7 +47,7 @@ struct KeyDetailView: View {
                     }
                     HStack(spacing: 10) {
                         // 횟수는 잘못 누른 걸 바로 되돌릴 수 있게 −1을 옆에 둔다.
-                        if key.actionKind == "counter" {
+                        if key.kind == .counter {
                             let today = records(on: .now).count
                             Button { removeLatest(on: .now) } label: {
                                 Text(key.measureStep > 0 && !key.isQuit ? "−\(key.measureStep)" : "−1").font(.headline).frame(minWidth: 56).padding(.vertical, 4)
@@ -113,7 +113,7 @@ struct KeyDetailView: View {
                 Button(note(on: day) == nil ? "메모 남기기" : "메모 고치기") { openNote(day) }
                 let count = records(on: day).count
                 if count > 1 {
-                    Button(key.actionKind == "counter" ? "1회 빼기" : "마지막 기록 1회 지우기") { removeLatest(on: day) }
+                    Button(key.kind == .counter ? "1회 빼기" : "마지막 기록 1회 지우기") { removeLatest(on: day) }
                     Button("이날 기록 \(count)회 모두 지우기", role: .destructive) { removeRecords(on: day) }
                 } else if count == 1 {
                     Button("이날 기록 지우기", role: .destructive) { removeRecords(on: day) }
@@ -170,7 +170,7 @@ struct KeyDetailView: View {
 
     /// 참석은 하루 한 번만 기록한다.
     private var attendedToday: Bool {
-        key.actionKind == "attend" && !records(on: .now).isEmpty
+        key.kind == .attend && !records(on: .now).isEmpty
     }
 
     private func run() {
@@ -181,13 +181,13 @@ struct KeyDetailView: View {
 
     /// 세션은 목표 시간만큼(목표가 없으면 10분) 넣어 그날이 채워지게 한다.
     private var addedMinutes: Int {
-        if key.actionKind == "attend" { return key.attendMinutes }
+        if key.kind == .attend { return key.attendMinutes }
         return key.dailyGoal > 0 ? key.dailyGoal : 10
     }
 
     private var addLabel: String {
         if key.isQuit { return "이날 했어요 (기록 추가)" }
-        if key.actionKind == "counter" { return key.measureStep > 0 ? "+\(key.measureStep)\(key.measureUnit) 기록 추가" : "+1 기록 추가" }
+        if key.kind == .counter { return key.measureStep > 0 ? "+\(key.measureStep)\(key.measureUnit) 기록 추가" : "+1 기록 추가" }
         return "\(addedMinutes)분 기록 추가"
     }
 
@@ -198,7 +198,7 @@ struct KeyDetailView: View {
     private func addRecord(on day: Date) {
         // 오늘이면 지금 시각, 지난 날이면 그날 정오로 남긴다.
         let at = calendar.isDateInToday(day) ? Date.now : calendar.date(byAdding: .hour, value: 12, to: calendar.startOfDay(for: day)) ?? day
-        let counter = key.actionKind == "counter"
+        let counter = key.kind == .counter
         context.insert(ActivityLog(keyID: key.id, keyName: key.name, kind: counter ? "counter" : "session",
                                    startedAt: at, duration: counter ? 0 : Double(addedMinutes * 60),
                                    amount: counter ? key.recordAmount : 1))

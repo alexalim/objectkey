@@ -29,10 +29,10 @@ struct RecordPlan: Identifiable {
     var summary: String {
         let day = daysAgo == 0 ? "오늘" : daysAgo == 1 ? "어제" : daysAgo == 2 ? "그저께" : "\(daysAgo)일 전"
         let what: String
-        switch key.actionKind {
-        case "counter": what = "+\(amount)회"
-        case "attend": what = "참석 (\(amount)분)"
-        default: what = "\(amount)분"
+        switch key.kind {
+        case .counter: what = "+\(amount)회"
+        case .attend: what = "참석 (\(amount)분)"
+        case .session, .countdown: what = "\(amount)분"
         }
         return "\(key.name) · \(day) · \(what)"
     }
@@ -204,13 +204,13 @@ struct AskMokiView: View {
             return
         }
         let amount: Int
-        switch key.actionKind {
-        case "counter": amount = min(max(CommandResolver.extractCount(text) ?? c.count ?? 1, 1), 20)
-        case "attend": amount = key.attendMinutes
-        case "countdown":
+        switch key.kind {
+        case .counter: amount = min(max(CommandResolver.extractCount(text) ?? c.count ?? 1, 1), 20)
+        case .attend: amount = key.attendMinutes
+        case .countdown:
             problem = "휴식 타이머는 기록이 남지 않아요."
             return
-        default: amount = min(max(CommandResolver.extractDuration(text) ?? c.minutes ?? (key.dailyGoal > 0 ? key.dailyGoal : 10), 1), 600)
+        case .session: amount = min(max(CommandResolver.extractDuration(text) ?? c.minutes ?? (key.dailyGoal > 0 ? key.dailyGoal : 10), 1), 600)
         }
         plan = RecordPlan(key: key, daysAgo: CommandResolver.extractDaysAgo(text) ?? CommandResolver.recordDaysAgo(c.daysAgo), amount: amount)
     }
@@ -221,12 +221,12 @@ struct AskMokiView: View {
         let day = calendar.date(byAdding: .day, value: -plan.daysAgo, to: calendar.startOfDay(for: .now)) ?? .now
         let at = plan.daysAgo == 0 ? Date.now : day.addingTimeInterval(12 * 3600)
         let key = plan.key
-        if key.actionKind == "attend",
+        if key.kind == .attend,
            logs.contains(where: { $0.keyID == key.id && calendar.isDate($0.startedAt, inSameDayAs: day) }) {
             problem = "\(key.name): 그날은 이미 참석으로 기록돼 있어요."
             return
         }
-        if key.actionKind == "counter" {
+        if key.kind == .counter {
             for _ in 0..<plan.amount {
                 context.insert(ActivityLog(keyID: key.id, keyName: key.name, kind: "counter", startedAt: at, duration: 0))
             }

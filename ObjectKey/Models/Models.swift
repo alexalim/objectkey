@@ -55,7 +55,10 @@ final class KeyObject {
     }
 
     /// 휴식 타이머는 기록이 남지 않으므로 목표·연속 일수를 두지 않는다.
-    var supportsGoal: Bool { actionKind != "countdown" }
+    var supportsGoal: Bool { kind != .countdown }
+
+    /// 저장된 문자열의 동작 종류. 모르는 값이면 시간 기록으로 본다.
+    var kind: ActionKind { ActionKind(rawValue: actionKind) ?? .session }
 
     var schedule: HabitSchedule {
         get {
@@ -77,25 +80,25 @@ final class KeyObject {
     /// Progress 계산에 넘길 목표량. 세션은 초, 카운터는 횟수.
     var goalAmount: Double? {
         // 참석은 다녀오면 그날을 채운 것이다. 끊기는 안 한 날이 채운 날이다. 둘 다 목표량을 두지 않는다.
-        guard supportsGoal, actionKind != "attend", !isQuit, dailyGoal > 0 else { return nil }
-        return actionKind == "counter" ? Double(dailyGoal) : Double(dailyGoal * 60)
+        guard supportsGoal, kind != .attend, !isQuit, dailyGoal > 0 else { return nil }
+        return kind == .counter ? Double(dailyGoal) : Double(dailyGoal * 60)
     }
 
     var action: KeyAction {
         get {
-            switch actionKind {
-            case "countdown": return .countdown(minutes: countdownMinutes)
-            case "counter": return .counter
-            case "attend": return .attend(startMinute: attendStartMinute, minutes: attendMinutes)
-            default: return .session
+            switch kind {
+            case .countdown: return .countdown(minutes: countdownMinutes)
+            case .counter: return .counter
+            case .attend: return .attend(startMinute: attendStartMinute, minutes: attendMinutes)
+            case .session: return .session
             }
         }
         set {
+            actionKind = newValue.kind.rawValue
             switch newValue {
-            case .session: actionKind = "session"
-            case .countdown(let minutes): actionKind = "countdown"; countdownMinutes = minutes
-            case .counter: actionKind = "counter"
-            case .attend(let start, let minutes): actionKind = "attend"; attendStartMinute = start; attendMinutes = minutes
+            case .session, .counter: break
+            case .countdown(let minutes): countdownMinutes = minutes
+            case .attend(let start, let minutes): attendStartMinute = start; attendMinutes = minutes
             }
         }
     }
@@ -106,7 +109,7 @@ final class KeyObject {
     /// "+250ml", "+1", "끊기" 처럼 목록에 보이는 동작 이름.
     var actionTitle: String {
         if isQuit { return "끊기 · 했을 때만 기록" }
-        if actionKind == "counter", measureStep > 0 { return "+\(measureStep)\(measureUnit)" }
+        if kind == .counter, measureStep > 0 { return "+\(measureStep)\(measureUnit)" }
         return action.label
     }
 

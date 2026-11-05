@@ -144,7 +144,7 @@ struct RegisterView: View {
                         if kind == "counter" || kind == "session" { HealthLinkEditor(metric: $healthMetric, target: $healthTarget) }
                         TagPicker(tags: $tags)
                         if kind != "attend" && kind != "quit" {
-                            GoalStepper(actionKind: kind, goal: $goal, measureStep: measureUnit.isEmpty ? 0 : max(measureStep, 1),
+                            GoalStepper(counter: kind == "counter", goal: $goal, measureStep: measureUnit.isEmpty ? 0 : max(measureStep, 1),
                                         measureUnit: measureUnit)
                         }
                         if kind != "quit" {

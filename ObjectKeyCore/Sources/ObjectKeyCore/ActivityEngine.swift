@@ -11,6 +11,21 @@ public enum KeyAction: Codable, Equatable, Sendable {
     /// 수업처럼 시간이 정해진 활동. 한 번 비추면 정해진 시간만큼 바로 기록한다(시작·종료를 따로 하지 않는다).
     /// - startMinute: 시작 시각(자정부터 분). 알림·표시용.
     case attend(startMinute: Int, minutes: Int)
+
+    /// 매개변수를 뺀 동작 종류. 저장·비교에 쓴다.
+    public var kind: ActionKind {
+        switch self {
+        case .session: .session
+        case .countdown: .countdown
+        case .counter: .counter
+        case .attend: .attend
+        }
+    }
+}
+
+/// 동작 종류. 원시값은 저장소(KeyObject.actionKind)와 백업 파일에 그대로 쓰이므로 바꾸지 않는다.
+public enum ActionKind: String, CaseIterable, Codable, Sendable {
+    case session, countdown, counter, attend
 }
 
 /// 일시정지된 세션. 일시정지 시간은 기록 시간에서 빠진다.

@@ -238,7 +238,7 @@ struct KeyRow: View {
     private var subtitle: String {
         if key.isQuit, let progress { return progress.metToday ? "오늘 지키는 중" : "오늘은 했어요" }
         guard let progress, progress.today > 0 || progress.goal != nil else { return key.actionTitle }
-        return "오늘 " + progress.summary(forCounter: key.actionKind == "counter", unit: key.countUnit)
+        return "오늘 " + progress.summary(forCounter: key.kind == .counter, unit: key.countUnit)
     }
 
     /// "월·수·금 · 커피 내린 다음에 · 12일째 1단계 적응". 모두 없으면 nil.
@@ -376,7 +376,7 @@ private struct SwitchConfirmation: ViewModifier {
 extension KeyObject {
     /// 오늘 할 일에서 시간순 정렬·표시에 쓰는 시각. 참석은 시작 시각, 그 밖에는 알림 시각.
     var todoMinute: Int? {
-        if actionKind == "attend" { return attendStartMinute }
+        if kind == .attend { return attendStartMinute }
         return reminderMinute >= 0 ? reminderMinute : nil
     }
 }

@@ -65,7 +65,7 @@ final class ActivityStore {
     private func perform(_ effects: [Effect], keys: [KeyObject], context: ModelContext) {
         guard !effects.isEmpty else { return }
         let names = Dictionary(uniqueKeysWithValues: keys.map { ($0.id, $0.name) })
-        let attendIDs = Set(keys.filter { $0.actionKind == "attend" }.map(\.id))
+        let attendIDs = Set(keys.filter { $0.kind == .attend }.map(\.id))
         let amounts = Dictionary(uniqueKeysWithValues: keys.map { ($0.id, $0.recordAmount) })
         let units = Dictionary(uniqueKeysWithValues: keys.map { ($0.id, $0.measureStep > 0 ? "+\($0.measureStep)\($0.measureUnit)" : "+1") })
         for effect in effects {

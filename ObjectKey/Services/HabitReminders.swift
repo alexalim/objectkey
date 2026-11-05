@@ -45,7 +45,7 @@ enum HabitReminders {
                 content.title = key.name
                 content.body = body(for: key, progress: progress, today: calendar.isDate(date, inSameDayAs: now))
                 content.sound = .default
-                if key.actionKind == "attend" {
+                if key.kind == .attend {
                     content.categoryIdentifier = attendCategory
                     content.userInfo = ["keyID": key.id.uuidString]
                 }

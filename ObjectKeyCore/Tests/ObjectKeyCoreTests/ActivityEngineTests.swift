@@ -9,6 +9,13 @@ final class ActivityEngineTests: XCTestCase {
     private let tally = UUID()
     private let t0 = Date(timeIntervalSince1970: 1_000_000)
 
+    func testActionKindRawValuesStayStable() {
+        // 저장소와 백업 파일이 이 문자열을 쓴다. 바뀌면 기존 물건이 전부 시간 기록으로 바뀐다.
+        XCTAssertEqual(ActionKind.allCases.map(\.rawValue), ["session", "countdown", "counter", "attend"])
+        XCTAssertEqual(KeyAction.countdown(minutes: 5).kind, .countdown)
+        XCTAssertEqual(KeyAction.attend(startMinute: 0, minutes: 90).kind, .attend)
+    }
+
     private var actions: [UUID: KeyAction] {
         [book: .session, brush: .session, mug: .countdown(minutes: 5), tally: .counter]
     }
