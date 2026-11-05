@@ -42,6 +42,11 @@ targets:
       properties:
         NSSupportsLiveActivities: true
         CFBundleDisplayName: MOKI
+        # Siri는 한국어로 "모키"라고 받아 적어 영문 MOKI와 맞지 않는다. 읽는 이름과 다른 이름을 알려 준다.
+        CFBundleSpokenName: 모키
+        INAlternativeAppNames:
+          - INAlternativeAppName: 모키
+            INAlternativeAppNamePronunciationHint: 모키
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         UILaunchScreen: {}
