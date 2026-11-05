@@ -27,13 +27,13 @@ enum HabitReminders {
     /// 기존 습관 알림을 모두 지우고 다시 예약한다. 앱을 열 때, 기록이 생길 때, 설정을 바꿀 때 부른다.
     static func reschedule(keys: [KeyObject], logs: [ActivityLog], state: ActivityState) async {
         let center = UNUserNotificationCenter.current()
-        func category(_ id: String, _ title: String) -> UNNotificationCategory {
+        func withButton(_ id: String, _ title: String) -> UNNotificationCategory {
             UNNotificationCategory(identifier: id, actions: [UNNotificationAction(identifier: recordAction, title: title, options: [])],
                                    intentIdentifiers: [])
         }
         center.setNotificationCategories([
-            category(attendCategory, "참석"), category(sessionCategory, "시작"),
-            category(counterCategory, "+1"), category(measureCategory, "기록 추가"),
+            withButton(attendCategory, "참석"), withButton(sessionCategory, "시작"),
+            withButton(counterCategory, "+1"), withButton(measureCategory, "기록 추가"),
         ])
         let stale = await center.pendingNotificationRequests().map(\.identifier).filter { $0.hasPrefix(prefix) }
         center.removePendingNotificationRequests(withIdentifiers: stale)
