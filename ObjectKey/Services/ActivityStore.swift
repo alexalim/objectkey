@@ -114,7 +114,7 @@ final class ActivityStore {
         lastMessage = nil
         var previous: String?
         if case .needsConfirmation(let pending) = activate(key, keys: keys, context: context) {
-            previous = keys.first { $0.id == pending.from }?.name ?? "진행 중이던 활동"
+            previous = keys.first { $0.id == pending.from }?.name ?? "다른"
             confirm(pending, keys: keys, context: context)
         }
         WidgetBridge.refreshFromStore()

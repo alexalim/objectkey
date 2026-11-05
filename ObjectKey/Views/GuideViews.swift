@@ -134,7 +134,7 @@ struct HelpView: View {
                     ("text.bubble", "\"화요일 밤 9시 아이스하키 수업\""),
                     ("text.bubble", "\"어제 책 30분 읽었어\""),
                     ("text.bubble", "\"이번 달 영양제 몇 번?\""),
-                    ("lock", "기기 안 AI라 문장이 밖으로 나가지 않아요"),
+                    ("lock", "휴대폰 안의 AI가 처리해서 문장을 어디에도 보내지 않아요"),
                     ("gearshape", "설정 → Apple Intelligence를 켜 주세요"),
                 ])
                 guide("백업", "8.circle", [
@@ -150,7 +150,7 @@ struct HelpView: View {
                     ("gearshape", "안 보이면 설정 → MOKI → 실시간 현황 켜기"),
                 ])
                 Section {
-                    Text("사진과 기록은 이 기기 안에만 저장돼요.").font(.footnote).foregroundStyle(.secondary)
+                    Text("사진과 기록은 이 휴대폰에만 저장돼요.").font(.footnote).foregroundStyle(.secondary)
                 }
             }
             .navigationTitle("사용 안내")

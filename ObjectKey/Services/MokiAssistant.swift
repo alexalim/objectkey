@@ -68,13 +68,13 @@ enum MokiAssistant {
         case .unavailable(let reason):
             switch reason {
             case .deviceNotEligible:
-                return "이 기기는 Apple Intelligence를 지원하지 않아 쓸 수 없어요."
+                return "이 휴대폰은 Apple Intelligence가 안 돼서 쓸 수 없어요."
             case .appleIntelligenceNotEnabled:
                 return "설정 → Apple Intelligence 및 Siri에서 Apple Intelligence를 켜 주세요."
             case .modelNotReady:
-                return "기기 안 AI 모델을 준비하는 중이에요. 잠시 뒤 다시 시도해 주세요."
+                return "AI를 준비하고 있어요. 잠시 뒤 다시 해 주세요."
             @unknown default:
-                return "지금은 기기 안 AI를 쓸 수 없어요."
+                return "지금은 AI를 쓸 수 없어요."
             }
         }
     }

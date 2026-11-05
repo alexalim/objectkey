@@ -22,7 +22,7 @@ enum RoutineAlerts {
             for (i, boundary) in Routine.upcomingBoundaries(steps, runStart: runStart, now: .now).prefix(12).enumerated() {
                 let content = UNMutableNotificationContent()
                 content.title = key.name
-                content.body = boundary.next.map { "다음 단계: \($0.name) \($0.minutes)분" } ?? "루틴 끝! 다시 스캔하면 기록돼요."
+                content.body = boundary.next.map { "다음 단계: \($0.name) \($0.minutes)분" } ?? "루틴 끝! MOKI에서 완료를 누르면 기록돼요."
                 content.sound = .default
                 let trigger = UNTimeIntervalNotificationTrigger(timeInterval: max(1, boundary.at.timeIntervalSinceNow), repeats: false)
                 try? await center.add(UNNotificationRequest(identifier: "\(prefix)\(i)", content: content, trigger: trigger))

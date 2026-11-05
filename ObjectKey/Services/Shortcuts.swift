@@ -43,7 +43,7 @@ struct KeyEntityQuery: EntityQuery {
 /// 카메라 없이 물건의 동작을 실행한다. 목록에서 "지금 기록"을 누른 것과 같다.
 struct RecordKeyIntent: AppIntent {
     static let title: LocalizedStringResource = "MOKI 물건 기록"
-    static let description = IntentDescription("등록한 물건의 동작(시간 기록, +1, 참석, 휴식)을 카메라 없이 실행해요.")
+    static let description = IntentDescription("등록한 물건을 카메라 없이 기록해요(시간 기록, +1, 참석, 휴식).")
 
     @Parameter(title: "물건")
     var key: KeyEntity
@@ -64,7 +64,7 @@ struct RecordKeyIntent: AppIntent {
         guard let run = store.runFromOutside(key.id) else {
             return .result(dialog: "물건을 찾을 수 없어요. 앱에서 지워졌을 수 있어요.")
         }
-        let switched = run.finishedPrevious.map { "\($0) 활동을 끝내고 기록했어요. " } ?? ""
+        let switched = run.finishedPrevious.map { "하던 \($0) 기록을 끝내고 저장했어요. " } ?? ""
         return .result(dialog: "\(switched)\(Self.outcome(run.key, store: store))")
     }
 
@@ -74,7 +74,7 @@ struct RecordKeyIntent: AppIntent {
         switch store.state {
         case .session(let id, _, _, _) where id == key.id: return "\(key.name) 시간 기록을 시작했어요."
         case .countdown(let id, _, _) where id == key.id: return "\(key.name) 휴식을 시작했어요."
-        default: return store.lastMessage ?? "\(key.name) 실행했어요."
+        default: return store.lastMessage ?? "\(key.name) 기록했어요."
         }
     }
 }

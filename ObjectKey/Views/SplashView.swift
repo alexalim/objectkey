@@ -13,7 +13,7 @@ struct SplashView: View {
                 Text("MOKI").font(.system(size: 44, weight: .heavy, design: .rounded))
                 Text("물건을 스캔하면 습관이 시작돼요").font(.headline).foregroundStyle(.secondary)
                 Spacer()
-                Text("화면을 눌러 시작하세요")
+                Text("화면을 누르면 시작해요")
                     .font(.subheadline).foregroundStyle(.secondary)
                     .opacity(pulse ? 1 : 0.35)
                     .padding(.bottom, 48)

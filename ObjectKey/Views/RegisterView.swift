@@ -168,7 +168,7 @@ struct RegisterView: View {
                         MeasureEditor(step: $measureStep, unit: $measureUnit)
                     }
                 } header: {
-                    Text("스캔하면 실행할 동작")
+                    Text("기록 방식")
                 } footer: {
                     Text(kind == "attend" ? HabitCopy.attendFooter
                          : kind == "quit" ? HabitCopy.quitFooter
@@ -206,7 +206,7 @@ struct RegisterView: View {
                 } footer: {
                     VStack(alignment: .leading, spacing: 4) {
                         if wantsPhotos {
-                            Text("노란 상자가 물건을 감싸면 각도와 거리를 조금씩 바꿔 \(Self.requiredShots)장 이상 찍어 주세요. 사진은 이 기기에만 저장돼요.")
+                            Text("노란 상자가 물건을 감싸면 각도와 거리를 조금씩 바꿔 \(Self.requiredShots)장 이상 찍어 주세요. 사진은 이 휴대폰에만 저장돼요.")
                         }
                         Text(photoNote).foregroundStyle(shots.isEmpty || shots.count >= Self.requiredShots ? Color.secondary : Color.orange)
                         // 처음 열었을 때부터 잘못한 것처럼 보이지 않게, 이름을 쓰다 지운 경우에만 주황색으로 알린다.
@@ -436,7 +436,7 @@ struct CameraDeniedView: View {
         VStack(spacing: 8) {
             Image(.question).resizable().scaledToFit().frame(height: 96)
             Text("카메라 권한이 꺼져 있어요").font(.headline)
-            Text("스캔으로 기록하려면 카메라가 필요해요. 카메라 없이도 물건을 눌러 상세 화면에서 기록할 수 있어요.")
+            Text("스캔하려면 카메라가 필요해요. 카메라 없이도 오늘 화면에서 습관을 눌러 할 수 있어요.")
                 .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
             if let url = URL(string: UIApplication.openSettingsURLString) {
                 Link("설정에서 허용하기", destination: url)

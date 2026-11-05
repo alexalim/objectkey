@@ -79,7 +79,7 @@ struct QuickAddSheet: View {
                     AskMokiView()
                 } else {
                     ContentUnavailableView("iOS 26 이상에서 쓸 수 있어요", systemImage: "sparkles",
-                                           description: Text("한 문장으로 적기는 기기 안 AI(Apple Intelligence)로 동작해요."))
+                                           description: Text("한 문장으로 적기는 휴대폰의 Apple Intelligence로 처리해요."))
                         .presentationDetents([.medium])
                 }
             }

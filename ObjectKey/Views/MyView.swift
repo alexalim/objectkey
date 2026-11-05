@@ -39,7 +39,7 @@ struct MyView: View {
             } header: {
                 Text("데이터")
             } footer: {
-                Text("사진과 기록은 이 기기 안에만 저장돼요.")
+                Text("사진과 기록은 이 휴대폰에만 저장돼요.")
             }
             Section {
                 LabeledContent("버전", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")

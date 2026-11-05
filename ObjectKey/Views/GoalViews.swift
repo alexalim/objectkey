@@ -302,10 +302,10 @@ enum HabitCopy {
     static let cuePlaceholder = "예: 아침 커피 내린"
     static let cueFooter = "매일 하는 행동 바로 뒤에 붙이면 덜 잊어요."
     static let routineFooter = "시작하면 지금 단계와 남은 시간을 보여 주고, 단계가 바뀔 때 알려 줘요. 예: 세수 3분 → 양치 2분 → 스트레칭 5분."
-    static let healthFooter = "건강 앱의 값이 목표를 넘으면 그날을 자동으로 채워요. 앱을 열 때 최근 7일을 확인해요. 건강 데이터는 읽기만 하고 기기 밖으로 보내지 않아요."
+    static let healthFooter = "건강 앱 기록이 목표를 넘으면 그날을 자동으로 채워요. 앱을 열 때 최근 7일을 확인해요. 건강 기록은 읽기만 하고 어디에도 보내지 않아요."
     static let quitFooter = "했을 때만 기록해요. 기록이 없는 날이 지킨 날이에요. 한 번 했어도 이어지고, 이틀 연속이면 끊겨요."
-    static let measureFooter = "단위를 쓰면 스캔할 때마다 정한 양만큼 더해져요. 예: 물 250ml, 책 10쪽."
-    static let attendFooter = "스캔하거나 알림의 '참석'을 누르면 정한 시간만큼 바로 기록돼요. 시작·종료를 따로 하지 않아도 되고, 진행 중인 다른 기록도 멈추지 않아요."
+    static let measureFooter = "단위를 쓰면 완료할 때마다 정한 양만큼 더해져요. 예: 물 250ml, 책 10쪽."
+    static let attendFooter = "[참석했어요]나 알림의 '참석'을 누르면 정한 시간만큼 바로 기록돼요. 시작·종료를 따로 하지 않아도 되고, 진행 중인 다른 기록도 멈추지 않아요."
     static let reminderFooter = "그날 이미 기록했으면 알림이 오지 않아요. 요일 지정은 정한 요일에만 오고, 주 N회는 그 주를 채우면 멈춰요."
 
     /// 이틀 규칙을 일정에 맞게 풀어 쓴 문구.
@@ -612,7 +612,7 @@ struct MoodHeader: View {
             if let key = r.key {
                 Button { onSelect(key) } label: { card(r, showsChevron: true) }
                     .tint(.primary)
-                    .accessibilityHint("\(key.name) 상세 화면을 엽니다")
+                    .accessibilityHint("\(key.name) 상세 화면을 열어요")
             } else {
                 card(r, showsChevron: false)
             }

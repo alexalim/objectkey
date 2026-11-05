@@ -72,7 +72,7 @@ struct AskMokiView: View {
                     Section {
                         Label(reason, systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
                     } footer: {
-                        Text("이 기능은 기기 안 AI(Apple Intelligence)로만 동작하고, 입력한 문장은 기기 밖으로 나가지 않아요.")
+                        Text("휴대폰 안의 AI(Apple Intelligence)로만 처리해서, 적은 문장을 어디에도 보내지 않아요.")
                     }
                 } else {
                     Section {
@@ -90,7 +90,7 @@ struct AskMokiView: View {
                         .buttonStyle(.borderedProminent)
                         .disabled(busy || input.trimmingCharacters(in: .whitespaces).isEmpty)
                     } footer: {
-                        Text("등록하기, 지난 기록 남기기, 기록 묻기를 한 문장으로 할 수 있어요. 문장은 기기 밖으로 나가지 않아요.")
+                        Text("등록하기, 지난 기록 남기기, 기록 묻기를 한 문장으로 할 수 있어요. 적은 문장은 휴대폰 안에서만 처리해요.")
                     }
                     if let answer {
                         Section("MOKI") { Text(answer) }

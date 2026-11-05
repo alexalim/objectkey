@@ -277,7 +277,7 @@ struct ActiveBanner: View {
                         }
                     }
                 }
-            } footer: { Text("다시 스캔하거나 상세 화면에서 끝내면 기록돼요.") }
+            } footer: { Text("MOKI에서 완료를 누르면 기록돼요.") }
         case .countdown(let id, let endsAt, let paused):
             Section {
                 TimelineView(.periodic(from: .now, by: 1)) { context in
@@ -295,7 +295,7 @@ struct ActiveBanner: View {
         let steps = Routine.steps(key.routineSteps)
         guard !steps.isEmpty else { return nil }
         let p = Routine.progress(steps, elapsed: elapsed)
-        if p.isFinished { return "루틴 끝! 다시 스캔하거나 상세 화면에서 끝내요" }
+        if p.isFinished { return "루틴 끝! MOKI에서 완료를 눌러 주세요" }
         let r = Int(p.remaining)
         return "\(p.index + 1)/\(steps.count) \(steps[p.index].name) · \(r / 60):\(String(format: "%02d", r % 60)) 남음"
     }
