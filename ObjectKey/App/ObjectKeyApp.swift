@@ -6,6 +6,7 @@ import UserNotifications
 struct ObjectKeyApp: App {
     @State private var store = ActivityStore.shared
     @State private var showSplash = true
+    @State private var route = NotificationRoute.shared
     /// 소개를 한 번 끝까지 봤거나 건너뛰었는지.
     @AppStorage("didFinishOnboarding") private var didFinishOnboarding = false
     @Environment(\.scenePhase) private var scenePhase
@@ -33,6 +34,12 @@ struct ObjectKeyApp: App {
             // 제어 센터를 내리는 정도(inactive)로는 다시 띄우지 않는다.
             .onChange(of: scenePhase) { _, phase in
                 if phase == .background { showSplash = true }
+            }
+            // 알림을 눌러 들어오면 시작 화면 없이 그 물건으로 바로 간다.
+            .onChange(of: route.skipSplash, initial: true) { _, skip in
+                guard skip else { return }
+                showSplash = false
+                route.skipSplash = false
             }
         }
         .modelContainer(AppModel.container)

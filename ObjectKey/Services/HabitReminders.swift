@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 import SwiftData
 import UserNotifications
 import ObjectKeyCore
@@ -7,9 +8,14 @@ import ObjectKeyCore
 @MainActor
 enum HabitReminders {
     private static let prefix = "objectkey.habit."
-    /// 참석 알림에 붙는 "참석" 버튼.
+    /// 습관 알림에 붙는 버튼. 동작마다 이름만 다르고, 누르면 모두 위젯·단축어와 같은 길로 실행한다.
     static let attendCategory = "objectkey.attend"
+    static let sessionCategory = "objectkey.session"
+    static let counterCategory = "objectkey.counter"
+    static let measureCategory = "objectkey.measure"
+    /// 버튼 식별자. "attend"는 빌드 48 이전에 예약된 참석 알림이 쓰던 이름이라 그대로 둔다.
     static let attendAction = "attend"
+    static let recordAction = "record"
     /// iOS는 앱당 대기 알림을 64개까지만 둔다. 휴식 타이머 몫을 남긴다.
     /// 휴식 타이머(1)와 단계별 루틴(최대 12)의 몫을 남긴다. 합이 64를 넘으면 iOS가 나중 알림을 버린다.
     private static let budget = 50
@@ -21,10 +27,13 @@ enum HabitReminders {
     /// 기존 습관 알림을 모두 지우고 다시 예약한다. 앱을 열 때, 기록이 생길 때, 설정을 바꿀 때 부른다.
     static func reschedule(keys: [KeyObject], logs: [ActivityLog], state: ActivityState) async {
         let center = UNUserNotificationCenter.current()
+        func category(_ id: String, _ title: String) -> UNNotificationCategory {
+            UNNotificationCategory(identifier: id, actions: [UNNotificationAction(identifier: recordAction, title: title, options: [])],
+                                   intentIdentifiers: [])
+        }
         center.setNotificationCategories([
-            UNNotificationCategory(identifier: attendCategory,
-                                   actions: [UNNotificationAction(identifier: attendAction, title: "참석", options: [])],
-                                   intentIdentifiers: []),
+            category(attendCategory, "참석"), category(sessionCategory, "시작"),
+            category(counterCategory, "+1"), category(measureCategory, "기록 추가"),
         ])
         let stale = await center.pendingNotificationRequests().map(\.identifier).filter { $0.hasPrefix(prefix) }
         center.removePendingNotificationRequests(withIdentifiers: stale)
@@ -45,14 +54,20 @@ enum HabitReminders {
                 content.title = key.name
                 content.body = body(for: key, progress: progress, today: calendar.isDate(date, inSameDayAs: now))
                 content.sound = .default
-                if key.kind == .attend {
-                    content.categoryIdentifier = attendCategory
-                    content.userInfo = ["keyID": key.id.uuidString]
-                }
+                content.categoryIdentifier = category(for: key)
+                content.userInfo = ["keyID": key.id.uuidString]
                 let parts = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: date)
                 try? await center.add(UNNotificationRequest(identifier: "\(prefix)\(key.id.uuidString).\(i)", content: content,
                                                             trigger: UNCalendarNotificationTrigger(dateMatching: parts, repeats: false)))
             }
+        }
+    }
+
+    private static func category(for key: KeyObject) -> String {
+        switch key.kind {
+        case .attend: attendCategory
+        case .counter: key.measureStep > 0 ? measureCategory : counterCategory
+        case .session, .countdown: sessionCategory
         }
     }
 
@@ -81,10 +96,23 @@ enum HabitReminders {
         return cue.isEmpty ? "할 시간이에요. 작게라도 충분해요." : "\(cue) 다음에 할 시간이에요."
     }
 
-    /// 알림의 "참석" 버튼. 위젯·단축어와 같은 길로 실행한다(진행 중이던 활동이 있어도 참석이 남는다).
-    static func recordAttendance(_ id: UUID) {
-        ActivityStore.shared.runFromOutside(id)
+    /// 알림 버튼(참석·시작·+1). 위젯·단축어와 같은 길로 실행한다. 진행 중이던 다른 활동은 기록하고 넘어간다.
+    /// 시간 기록이 이미 그 물건으로 진행 중이면 "시작"을 눌러도 멈추지 않게 그냥 둔다.
+    static func recordFromNotification(_ id: UUID) {
+        let store = ActivityStore.shared
+        if case .session(let running, _, _, _) = store.state, running == id { return }
+        store.runFromOutside(id)
     }
+}
+
+/// 알림 본문을 눌러 앱을 열었을 때 보여 줄 물건. 홈이 받아서 상세 화면을 연다.
+@MainActor
+@Observable
+final class NotificationRoute {
+    static let shared = NotificationRoute()
+    var keyID: UUID?
+    /// 시작 화면을 건너뛸지. 홈이 keyID를 먼저 비워도 앱이 놓치지 않게 따로 둔다.
+    var skipSplash = false
 }
 
 /// 알림 버튼 처리와 앱이 열려 있을 때의 알림 표시.
@@ -96,11 +124,19 @@ final class NotificationHandler: NSObject, UNUserNotificationCenterDelegate {
 
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
-        let isAttend = response.actionIdentifier == HabitReminders.attendAction
+        let action = response.actionIdentifier
         let id = (response.notification.request.content.userInfo["keyID"] as? String).flatMap(UUID.init(uuidString:))
         DispatchQueue.main.async {
-            if isAttend, let id {
-                MainActor.assumeIsolated { HabitReminders.recordAttendance(id) }
+            if let id {
+                MainActor.assumeIsolated {
+                    switch action {
+                    case HabitReminders.recordAction, HabitReminders.attendAction: HabitReminders.recordFromNotification(id)
+                    case UNNotificationDefaultActionIdentifier:
+                        NotificationRoute.shared.skipSplash = true
+                        NotificationRoute.shared.keyID = id
+                    default: break
+                    }
+                }
             }
             completionHandler()
         }

@@ -108,7 +108,8 @@ struct HelpView: View {
                     ("rectangle.and.hand.point.up.left", "상세 화면의 큰 버튼"),
                     ("square.grid.2x2", "홈 화면 위젯의 ○ 버튼"),
                     ("mic", "Siri: \"MOKI에서 영양제 기록\""),
-                    ("bell", "참석 알림을 길게 눌러 '참석'"),
+                    ("bell", "알림을 길게 눌러 시작·+1·참석"),
+                    ("hand.tap", "알림을 누르면 그 습관 화면이 열려요"),
                 ])
                 guide("다른 앱과 함께 쓰기", "link.circle", [
                     ("lightbulb", "예: 단어 앱을 열면 MOKI에 자동으로 기록돼요"),
