@@ -43,6 +43,7 @@ jobs:
             -project ObjectKey.xcodeproj \
             -scheme ObjectKey \
             -destination "id=${{ steps.sim.outputs.udid }}" \
+            -only-testing:ObjectKeyUITests \
             -resultBundlePath "$RUNNER_TEMP/screens.xcresult" \
             CODE_SIGNING_ALLOWED=NO \
             | tee test.log | grep -E "error:|Test Case|failed|TEST (SUCCEEDED|FAILED)" || true

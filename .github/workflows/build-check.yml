@@ -65,9 +65,28 @@ jobs:
           ls "$app/Watch/MOKIWatch.app/PlugIns" 2>/dev/null || echo "(워치 PlugIns 없음)"
           test -d "$app/Watch/MOKIWatch.app/PlugIns/MOKIWatchWidgets.appex" || { echo "::error::워치 컴플리케이션이 워치 앱 안에 없습니다"; exit 1; }
 
+      - name: 앱 저장소 통합 테스트 (시뮬레이터)
+        run: |
+          udid=$(xcrun simctl list devices available -j | python3 -c "
+          import json,sys
+          d=json.load(sys.stdin)['devices']
+          ios=sorted((k,v) for k,v in d.items() if 'iOS' in k)
+          print([x for x in ios[-1][1] if x['name'].startswith('iPhone')][-1]['udid'])")
+          set -o pipefail
+          xcodebuild test \
+            -project ObjectKey.xcodeproj \
+            -scheme ObjectKey \
+            -destination "id=$udid" \
+            -only-testing:ObjectKeyTests \
+            CODE_SIGNING_ALLOWED=NO \
+            | tee test.log | grep -E "error:|Test Case .*(passed|failed)|TEST (SUCCEEDED|FAILED)" || true
+          grep -q "TEST SUCCEEDED" test.log
+
       - name: 실패 시 빌드 로그 보관
         if: failure()
         uses: actions/upload-artifact@v7
         with:
           name: build-log
-          path: build.log
+          path: |
+            build.log
+            test.log

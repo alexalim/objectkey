@@ -172,6 +172,19 @@ targets:
           PROVISIONING_PROFILE_SPECIFIER: "${WATCH_WIDGET_PROFILE_NAME}"
 
   # 화면 점검용 UI 테스트. 데모 데이터로 앱을 띄워 주요 화면 스크린샷을 남긴다 (.github/workflows/ui-screens.yml).
+  ObjectKeyTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: ObjectKeyTests
+    dependencies:
+      - target: ObjectKey
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.aspynlim.moki.tests
+        TARGETED_DEVICE_FAMILY: "1"
+
   ObjectKeyUITests:
     type: bundle.ui-testing
     platform: iOS
@@ -194,6 +207,7 @@ schemes:
     test:
       config: Debug
       targets:
+        - ObjectKeyTests
         - ObjectKeyUITests
     run:
       config: Debug
