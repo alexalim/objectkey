@@ -283,11 +283,24 @@ struct ScheduleEditor: View {
     }
 }
 
+/// 습관 쌓기 신호 입력. "[아침 커피 내린] 다음에"처럼 문장으로 읽히게, 칸 뒤에 "다음에"를 붙여 둔다.
+struct CueField: View {
+    @Binding var cue: String
+
+    var body: some View {
+        HStack(spacing: 6) {
+            TextField(HabitCopy.cuePlaceholder, text: $cue)
+                .submitLabel(.done)
+            Text("다음에").foregroundStyle(.secondary)
+        }
+    }
+}
+
 /// 습관 설정 공통 안내. 등록 화면과 설정 시트가 같은 문구를 쓴다.
 enum HabitCopy {
     static let goalFooter = "실패할 수 없을 만큼 작게 시작해요. 목표가 없으면 한 번만 기록해도 채워져요."
-    static let cuePlaceholder = "예: 아침 커피 내린 (→ 아침 커피 내린 다음에)"
-    static let cueFooter = "매일 하는 행동 바로 뒤에 붙이면 덜 잊어요. 입력한 말 뒤에 '다음에'가 붙어 보여요."
+    static let cuePlaceholder = "예: 아침 커피 내린"
+    static let cueFooter = "매일 하는 행동 바로 뒤에 붙이면 덜 잊어요."
     static let routineFooter = "시작하면 지금 단계와 남은 시간을 보여 주고, 단계가 바뀔 때 알려 줘요. 예: 세수 3분 → 양치 2분 → 스트레칭 5분."
     static let healthFooter = "건강 앱의 값이 목표를 넘으면 그날을 자동으로 채워요. 앱을 열 때 최근 7일을 확인해요. 건강 데이터는 읽기만 하고 기기 밖으로 보내지 않아요."
     static let quitFooter = "했을 때만 기록해요. 기록이 없는 날이 지킨 날이에요. 한 번 했어도 이어지고, 이틀 연속이면 끊겨요."
@@ -391,8 +404,7 @@ struct GoalEditor: View {
                     }
                 }
                 Section {
-                    TextField(HabitCopy.cuePlaceholder, text: $key.cue)
-                        .submitLabel(.done)
+                    CueField(cue: $key.cue)
                 } header: {
                     Text("언제 할까요? (선택)")
                 } footer: {

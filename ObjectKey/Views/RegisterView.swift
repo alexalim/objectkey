@@ -36,6 +36,9 @@ struct RegisterView: View {
     @State private var camera = CameraController()
     @State private var duplicateOf: KeyObject?
     @State private var saveFailed = false
+    /// 처음에는 꼭 필요한 것(이름·아이콘·동작)만 보이고, 이모지 목록과 습관 설정은 펼쳐야 보인다.
+    @State private var showEmojis = false
+    @State private var showHabit = false
     @FocusState private var focus: Field?
 
     private enum Field { case name, emoji, cue }
@@ -52,6 +55,8 @@ struct RegisterView: View {
         self.startWithPhotos = startWithPhotos
         self.sharing = sharing
         if let sharing { _emoji = State(initialValue: sharing.emoji) }
+        // 이미 있는 물건에 습관을 더할 때는 습관을 정하는 게 목적이라 펼쳐 둔다.
+        if sharing != nil { _showHabit = State(initialValue: true) }
         // "MOKI에게 말하기"로 해석한 값을 미리 채운다. 사진은 원하면 직접 찍는다.
         guard let d = draft else { return }
         _name = State(initialValue: d.name)
@@ -65,6 +70,8 @@ struct RegisterView: View {
         _attendStart = State(initialValue: d.attendStart)
         _attendMinutes = State(initialValue: d.attendMinutes)
         _tags = State(initialValue: d.tags)
+        let filled = d.schedule != .daily || d.goal > 0 || d.reminderMinute >= 0 || !d.cue.isEmpty
+        if filled { _showHabit = State(initialValue: true) }
     }
 
     var body: some View {
@@ -107,6 +114,7 @@ struct RegisterView: View {
                             }
                         }
                     }
+                    DisclosureGroup("이모지로 고르기", isExpanded: $showEmojis) {
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 5), spacing: 6) {
                         ForEach(EmojiPreset.all) { preset in
                             Button {
@@ -138,6 +146,7 @@ struct RegisterView: View {
                             .multilineTextAlignment(.trailing)
                             .focused($focus, equals: .emoji)
                     }
+                    }
                 }
                 Section {
                     Picker("동작", selection: $kind) {
@@ -168,6 +177,7 @@ struct RegisterView: View {
                 }
                 if kind != "countdown" {
                     Section {
+                      DisclosureGroup(habitSummary, isExpanded: $showHabit) {
                         // 끊기는 매일 지키는 것이라 일정·목표·알림이 필요 없다.
                         if kind != "quit" { ScheduleEditor(schedule: $schedule) }
                         if kind == "counter" || kind == "session" { HealthLinkEditor(metric: $healthMetric, target: $healthTarget) }
@@ -177,11 +187,11 @@ struct RegisterView: View {
                                         measureUnit: measureUnit)
                         }
                         if kind != "quit" {
-                            TextField(HabitCopy.cuePlaceholder, text: $cue)
+                            CueField(cue: $cue)
                                 .focused($focus, equals: .cue)
-                                .submitLabel(.done)
                             ReminderPicker(minute: $reminderMinute, defaultMinute: kind == "attend" ? max(0, attendStart - 30) : 9 * 60)
                         }
+                      }
                     } header: {
                         Text("습관 (선택)")
                     } footer: {
@@ -336,6 +346,16 @@ struct RegisterView: View {
         }
         .frame(width: 64, height: 64)
         .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    /// 접힌 습관 줄에 보일 요약. 정한 게 없으면 무엇을 정할 수 있는지 보여 준다.
+    private var habitSummary: String {
+        var parts: [String] = []
+        if kind != "quit" { parts.append(schedule.label) }
+        if goal > 0, kind != "attend", kind != "quit" { parts.append("목표 \(goal)\(kind == "counter" ? (measureUnit.isEmpty ? "회" : measureUnit) : "분")") }
+        if reminderMinute >= 0 { parts.append("알림 \(KeyAction.clock(reminderMinute))") }
+        let untouched = schedule == .daily && goal == 0 && reminderMinute < 0
+        return untouched || parts.isEmpty ? "일정·목표·알림 정하기" : parts.joined(separator: " · ")
     }
 
     private var canSave: Bool { saveHint == nil }

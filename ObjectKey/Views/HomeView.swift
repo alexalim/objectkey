@@ -222,8 +222,9 @@ struct KeyRow: View {
                     Text(key.name).font(.headline)
                     if let time { Text(time).font(.caption.monospacedDigit()).foregroundStyle(.secondary) }
                 }
-                Text(subtitle).font(.subheadline).foregroundStyle(.secondary)
-                if let habitLine { Text(habitLine).font(.caption).foregroundStyle(.secondary) }
+                // 두 줄로 끝낸다: 이름 / 오늘 진행 · 일정 · 신호. 습관 단계는 불꽃 숫자와 겹쳐 상세에서만 보여 준다.
+                Text([subtitle, habitLine].compactMap { $0 }.joined(separator: " · "))
+                    .font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
             }
             Spacer()
             if let progress { ProgressMark(progress: progress) }
@@ -239,7 +240,7 @@ struct KeyRow: View {
         return "오늘 " + progress.summary(forCounter: key.kind == .counter, unit: key.countUnit)
     }
 
-    /// "월·수·금 · 커피 내린 다음에 · 12일째 1단계 적응". 모두 없으면 nil.
+    /// "월·수·금 · 커피 내린 다음에". 모두 없으면 nil.
     private var habitLine: String? {
         let cue = key.cue.trimmingCharacters(in: .whitespaces)
         let schedule: String? = switch key.schedule {
@@ -250,7 +251,6 @@ struct KeyRow: View {
         let parts = [
             schedule,
             cue.isEmpty ? nil : "\(cue) 다음에",
-            progress.flatMap { p in p.phase.map { "\(p.streak)일째 \($0.label)" } },
         ].compactMap { $0 }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
