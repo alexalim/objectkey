@@ -158,7 +158,7 @@ final class ScreenTourTests: XCTestCase {
         } else {
             XCTFail("등록 화면이 열려야 한다")
         }
-        tapIfExists(app.buttons["닫기"])
+        closeTop()
 
         // 7a. 내 물건 · 기록 탭
         app.tabBars.buttons["내 물건"].tap()
