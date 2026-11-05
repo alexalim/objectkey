@@ -110,7 +110,7 @@ struct ObjectSheet: View {
                                     Text(habit.actionTitle).font(.subheadline).foregroundStyle(.secondary)
                                 }
                                 Spacer()
-                                Image(systemName: "play.circle.fill").font(.title2).foregroundStyle(.tint)
+                                Image(systemName: "play.circle.fill").font(.title2).foregroundStyle(Color.accentColor)
                             }
                         }
                         .tint(.primary)
