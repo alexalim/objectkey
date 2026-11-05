@@ -13,13 +13,13 @@ struct OnboardingView: View {
 
     private let pages = [
         Page(mood: .key, title: "물건이 열쇠가 돼요",
-             body: "책, 컵, 영양제처럼\n늘 쓰는 물건을 등록해요.\n스캔하면 MOKI가 알아보고 기록해요."),
+             body: "책, 컵, 영양제처럼\n늘 쓰는 물건을 등록해요.\n스캔하면 MOKI가 알아보고 그 습관을 열어요."),
         Page(mood: .scan, title: "등록은 이름 하나면 돼요",
-             body: "동작은 4가지 중에서 골라요.\n사진을 찍어 두면 스캔만으로 기록돼요.\n사진은 없어도 돼요."),
+             body: "동작은 4가지 중에서 골라요.\n사진을 찍어 두면 스캔으로 알아봐요.\n사진은 없어도 돼요."),
         Page(mood: .success, title: "끊기지 않는 습관",
-             body: "오늘 할 일은 홈에서 확인해요.\n한 번 빠져도 괜찮아요.\n평균 66일이면 습관이 돼요."),
+             body: "오늘 할 일은 오늘 화면에서 누르면 돼요.\n한 번 빠져도 괜찮아요.\n평균 66일이면 습관이 돼요."),
         Page(mood: .reading, title: "카메라 없이도 돼요",
-             body: "버튼·위젯·Siri로도 기록해요.\n✨ 버튼에 한 문장으로 말해도 돼요."),
+             body: "위젯·Siri·알림으로도 기록해요.\n가운데 +에서 한 문장으로 등록해도 돼요."),
     ]
 
     var body: some View {
@@ -74,13 +74,15 @@ struct HelpView: View {
                 guide("시작하기", "1.circle", [
                     ("plus.circle", "아래 가운데 + 로 등록해요"),
                     ("character.cursor.ibeam", "이름만 있으면 저장돼요"),
-                    ("camera", "사진 3장을 찍어 두면 스캔으로 기록돼요"),
-                    ("hand.tap", "사진이 없으면 버튼·위젯·Siri로 기록해요"),
+                    ("camera", "사진 3장을 찍어 두면 스캔으로 알아봐요"),
+                    ("hand.tap", "오늘 화면에서 누르면 바로 할 수 있어요"),
+                    ("checkmark.circle", "다 했으면 [완료했어요]를 눌러요"),
                 ])
-                guide("스캔하면 하는 동작", "2.circle", [
-                    ("timer", "시간 기록: 스캔하면 시작, 다시 스캔하면 끝"),
-                    ("plus.square", "횟수 +1: 스캔할 때마다 1회"),
-                    ("calendar.badge.clock", "정해진 시간 참석: 한 번 스캔하면 정한 시간만큼 기록"),
+                guide("습관 종류", "2.circle", [
+                    ("viewfinder", "스캔하면 그 습관 화면이 열려요. 기록은 완료를 눌러야 남아요"),
+                    ("timer", "시간 기록: 바로 완료하거나 타이머로 재요"),
+                    ("plus.square", "횟수 +1: 완료할 때마다 1회"),
+                    ("calendar.badge.clock", "정해진 시간 참석: 하루 한 번, 정한 시간만큼 기록"),
                     ("cup.and.saucer", "휴식 타이머: 쉬는 동안 시간 기록은 잠시 멈춰요"),
                     ("nosign", "끊기: 했을 때만 기록, 안 한 날이 성공"),
                     ("list.number", "시간 기록에 단계를 넣으면 단계마다 알려 줘요 (습관 설정)"),

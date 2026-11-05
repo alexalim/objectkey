@@ -55,8 +55,23 @@ final class ScreenTourTests: XCTestCase {
             XCTFail("태그 필터가 보여야 한다")
         }
 
-        // 2. 물건 상세: 행을 누르면 기록하지 않고 상세가 열린다
+        // 2. 행을 누르면 기록하지 않고 실행 화면이 열린다 → 완료 → 완료 피드백
         row("영양제").tap()
+        if app.buttons["완료했어요"].waitForExistence(timeout: 5) {
+            snap("03-run")
+            app.buttons["완료했어요"].tap()
+            if app.buttons["오늘 화면으로"].waitForExistence(timeout: 5) {
+                snap("03a-done")
+                app.buttons["오늘 화면으로"].tap()
+            } else {
+                XCTFail("완료하면 완료 피드백이 보여야 한다")
+            }
+        } else {
+            XCTFail("행을 누르면 실행 화면이 열려야 한다")
+        }
+
+        // 2b. 실행 화면 → 자세히 → 물건 상세
+        openDetail("영양제")
         XCTAssertTrue(app.navigationBars["영양제"].waitForExistence(timeout: 5), "상세 화면이 열려야 한다")
         snap("03-detail")
         tapIfExists(app.buttons["통계 보기"])
@@ -97,16 +112,16 @@ final class ScreenTourTests: XCTestCase {
         } else {
             XCTFail("습관 설정이 열려야 한다")
         }
-        tapIfExists(app.buttons["닫기"])
+        closeDetail()
 
         // 5. 요일 지정·주 N회 물건 상세
-        row("읽는 책").tap()
+        openDetail("읽는 책")
         if app.navigationBars["읽는 책"].waitForExistence(timeout: 5) { snap("07-detail-weekdays") }
-        tapIfExists(app.buttons["닫기"])
-        row("운동 매트").tap()
+        closeDetail()
+        openDetail("운동 매트")
         if app.navigationBars["운동 매트"].waitForExistence(timeout: 5) { snap("08-detail-perweek") }
-        tapIfExists(app.buttons["닫기"])
-        row("아이스하키").tap()
+        closeDetail()
+        openDetail("아이스하키")
         if app.navigationBars["아이스하키 수업"].waitForExistence(timeout: 5) {
             snap("08b-detail-attend")
             tapIfExists(app.buttons["습관 설정"])
@@ -117,7 +132,7 @@ final class ScreenTourTests: XCTestCase {
         } else {
             XCTFail("참석 물건 상세가 열려야 한다")
         }
-        tapIfExists(app.buttons["닫기"])
+        closeDetail()
 
         // 6. 행 밀기 → 습관 버튼
         row("영양제").swipeRight()
@@ -178,6 +193,18 @@ final class ScreenTourTests: XCTestCase {
         for _ in 0..<4 where !(element.exists && element.isHittable) { app.swipeUp() }
         for _ in 0..<8 where !(element.exists && element.isHittable) { app.swipeDown() }
         return element
+    }
+
+    /// 행 → 실행 화면 → 자세히. 상세는 실행 화면 위에 뜬다.
+    private func openDetail(_ name: String) {
+        row(name).tap()
+        tapIfExists(app.buttons["자세히"])
+    }
+
+    /// 상세와 그 아래 실행 화면을 차례로 닫는다.
+    private func closeDetail() {
+        tapIfExists(app.buttons["닫기"])
+        tapIfExists(app.buttons["닫기"])
     }
 
     private func tapIfExists(_ element: XCUIElement) {

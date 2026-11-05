@@ -12,10 +12,12 @@ struct HomeView: View {
     @State private var showScan = false
     @State private var showRegister = false
     @State private var editingGoal: KeyObject?
-    /// 목록에서 누른 물건. 바로 기록하지 않고 상세 화면을 연다(실수 방지).
+    /// 목록에서 누른 물건. 바로 기록하지 않고 실행 화면을 연다(완료는 그 화면에서 사용자가 누른다).
+    @State private var runKey: KeyObject?
+    /// 상세 화면(달력·통계·메모). 응원 카드나 길게 누르기로 연다.
     @State private var detailKey: KeyObject?
     @State private var route = NotificationRoute.shared
-    /// 상세 화면을 연 횟수. 몇 번 열어 봤으면 사용법 안내 문구를 접는다.
+    /// 물건을 눌러 연 횟수. 몇 번 열어 봤으면 사용법 안내 문구를 접는다.
     @AppStorage("detailOpenCount") private var detailOpenCount = 0
     @State private var showTags = false
     /// 홈에서 고른 태그. 빈 문자열이면 전체.
@@ -72,7 +74,7 @@ struct HomeView: View {
                                     .font(.footnote.weight(.semibold))
                             }
                             if detailOpenCount < 3 {
-                                Text("누르면 상세 화면에서 기록할 수 있어요. 오른쪽으로 밀면 습관 설정, 왼쪽은 삭제예요.")
+                                Text("누르면 바로 할 수 있어요. 길게 누르면 기록·달력, 오른쪽으로 밀면 습관 설정, 왼쪽은 삭제예요.")
                             }
                         }
                     }
@@ -110,7 +112,8 @@ struct HomeView: View {
             .sheet(isPresented: $showRegister, onDismiss: rescheduleReminders) { RegisterView() }
             .sheet(item: $editingGoal, onDismiss: rescheduleReminders) { GoalEditor(key: $0) }
             .sheet(item: $detailKey, onDismiss: rescheduleReminders) { KeyDetailView(key: $0, keys: keys) }
-            .onChange(of: detailKey) { _, key in if key != nil { detailOpenCount += 1 } }
+            .sheet(item: $runKey, onDismiss: rescheduleReminders) { HabitRunView(key: $0) }
+            .onChange(of: runKey) { _, key in if key != nil { detailOpenCount += 1 } }
             .onChange(of: route.keyID, initial: true) { openFromNotification() }
             // 앱을 새로 켜며 들어오면 물건 목록이 늦게 채워질 수 있다.
             .onChange(of: keys.count) { openFromNotification() }
@@ -141,18 +144,18 @@ struct HomeView: View {
         }
     }
 
-    /// 알림 본문을 눌러 들어오면 그 물건의 상세 화면을 연다. 다른 화면이 떠 있으면 닫고 연다.
+    /// 알림 본문을 눌러 들어오면 그 물건의 실행 화면을 연다. 다른 화면이 떠 있으면 닫고 연다.
     private func openFromNotification() {
         guard let id = route.keyID, let key = keys.first(where: { $0.id == id }) else { return }
         route.keyID = nil
-        let covered = showScan || showRegister || showTags || editingGoal != nil || detailKey != nil
+        let covered = showScan || showRegister || showTags || editingGoal != nil || detailKey != nil || runKey != nil
         showScan = false; showRegister = false; showTags = false
-        editingGoal = nil; detailKey = nil
+        editingGoal = nil; detailKey = nil; runKey = nil
         if covered {
             // 닫히는 시트와 겹치면 새 시트가 뜨지 않는다.
-            Task { try? await Task.sleep(for: .milliseconds(600)); detailKey = key }
+            Task { try? await Task.sleep(for: .milliseconds(600)); runKey = key }
         } else {
-            detailKey = key
+            runKey = key
         }
     }
 
@@ -165,13 +168,14 @@ struct HomeView: View {
     /// 목록 한 묶음. 섹션마다 순서가 달라 삭제는 그 묶음 기준으로 처리한다.
     private func rows(_ list: [KeyObject], progress: [UUID: KeyProgress], asTodo: Bool) -> some View {
         ForEach(list) { key in
-            Button { detailKey = key } label: {
+            Button { runKey = key } label: {
                 KeyRow(key: key, active: store.state.activeKeyID == key.id, progress: progress[key.id],
                        done: asTodo ? progress[key.id]?.metToday ?? false : nil,
                        time: asTodo ? key.todoMinute.map(KeyAction.clock) : nil)
             }
             .tint(.primary)
             .contextMenu {
+                Button("기록·달력 보기", systemImage: "calendar") { detailKey = key }
                 if key.supportsGoal { Button("습관 설정…", systemImage: "target") { editingGoal = key } }
             }
             // 오른쪽 밀기는 onDelete가 쓰므로 습관은 왼쪽에서 민다.

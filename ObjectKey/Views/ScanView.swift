@@ -2,7 +2,7 @@ import SwiftData
 import SwiftUI
 import ObjectKeyCore
 
-/// 물건을 비추면 연속 프레임에서 같은 물건이 확인될 때만 실행한다.
+/// 물건을 비추면 연속 프레임에서 같은 물건이 확인될 때만 그 물건의 실행 화면을 연다. 기록은 실행 화면에서 [완료]로.
 struct ScanView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var context
@@ -15,11 +15,14 @@ struct ScanView: View {
     @State private var hint = "네모 칸 안에 물건을 맞춰 주세요"
     @State private var paused = false
     @State private var choices: [KeyObject] = []
-    @State private var pending: PendingSwitch?
+    /// 직접 선택 창에서 고른 물건. 창이 다 닫힌 뒤에 실행 화면을 연다(시트가 겹치면 뜨지 않는다).
+    @State private var manualPick: KeyObject?
     @State private var showManual = false
     @State private var mood: Moki = .scan
     @State private var lastSeen = Date()
     @State private var objectRegion: CGRect?
+    /// 알아본 물건. 바로 기록하지 않고 실행 화면을 연다.
+    @State private var runKey: KeyObject?
 
     private let matcher = ObjectMatcher()
 
@@ -75,17 +78,20 @@ struct ScanView: View {
         .confirmationDialog("어떤 물건인가요?", isPresented: Binding(get: { !choices.isEmpty }, set: { if !$0 { choices = []; paused = false } }),
                             titleVisibility: .visible) {
             ForEach(choices) { key in
-                Button(key.name) { run(store.activate(key, keys: keys, context: context)) }
+                Button(key.name) { open(key) }
             }
         } message: {
             Text("비슷한 물건이 여러 개예요. 고를 때까지 기다릴게요.")
         }
-        .switchConfirmation($pending, keys: keys) { dismiss() }
-        .sheet(isPresented: $showManual, onDismiss: { paused = false }) { manualPicker }
+        .sheet(isPresented: $showManual, onDismiss: {
+            if let key = manualPick { manualPick = nil; open(key) } else { paused = false }
+        }) { manualPicker }
+        // 실행 화면을 닫으면(완료든 나중에든) 스캔도 끝내고 오늘 화면으로 돌아간다.
+        .sheet(item: $runKey, onDismiss: { dismiss() }) { HabitRunView(key: $0) }
     }
 
     private func process(_ frame: CameraController.Frame) {
-        guard !paused, choices.isEmpty, pending == nil else { return }
+        guard !paused, choices.isEmpty, runKey == nil else { return }
         objectRegion = frame.region
         // 가이드 안에 물체가 없으면 비교조차 하지 않는다. 빈 책상에서 실행되는 일을 막는다.
         guard let vector = frame.vector else {
@@ -111,28 +117,27 @@ struct ScanView: View {
         }
         guard let confirmed = filter.feed(outcome) else { return }
         paused = true
-        run(store.handle(confirmed, keys: keys, context: context))
-    }
-
-    private func run(_ resolution: ScanResolution) {
-        switch resolution {
-        case .executed:
-            dismiss()
-        case .needsConfirmation(let p):
-            pending = p
-        case .needsChoice(let ids):
-            choices = keys.filter { ids.contains($0.id) }
-        case .notRecognized:
+        switch confirmed {
+        case .match(let candidate):
+            if let key = keys.first(where: { $0.id == candidate.keyID }) { open(key) } else { paused = false }
+        case .ambiguous(let candidates):
+            choices = keys.filter { key in candidates.contains { $0.keyID == key.id } }
+        case .noMatch:
             paused = false
         }
+    }
+
+    private func open(_ key: KeyObject) {
+        choices = []
+        runKey = key
     }
 
     private var manualPicker: some View {
         NavigationStack {
             List(keys) { key in
                 Button {
+                    manualPick = key
                     showManual = false
-                    run(store.activate(key, keys: keys, context: context))
                 } label: { KeyRow(key: key, active: store.state.activeKeyID == key.id) }
                     .tint(.primary)
             }
