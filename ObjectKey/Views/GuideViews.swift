@@ -100,14 +100,15 @@ struct HelpView: View {
                     ("leaf", "평균 66일이면 습관이 돼요 (사람마다 달라요)"),
                 ])
                 guide("기록 보고 고치기", "4.circle", [
-                    ("hand.tap", "물건을 누르면 달력과 기록이 나와요"),
+                    ("hand.tap", "습관을 길게 누르거나 실행 화면 '자세히'에서 달력이 나와요"),
                     ("minus.circle", "잘못 누른 횟수는 상세 화면의 −1로 되돌려요"),
                     ("calendar", "날짜를 눌러 기록을 더하거나 지워요"),
                     ("note.text", "그날 메모도 남길 수 있어요"),
-                    ("chart.xyaxis.line", "'통계 보기'에서 추이를 봐요"),
+                    ("chart.xyaxis.line", "아래 통계 탭에서 습관별 추이를 봐요"),
+                    ("list.bullet.rectangle", "통계 → 전체 기록 보기에서 날짜별 기록을 봐요"),
                 ])
                 guide("카메라 없이 기록하기", "5.circle", [
-                    ("rectangle.and.hand.point.up.left", "상세 화면의 큰 버튼"),
+                    ("rectangle.and.hand.point.up.left", "오늘 화면에서 습관을 누르고 완료"),
                     ("square.grid.2x2", "홈 화면 위젯의 ○ 버튼"),
                     ("mic", "Siri: \"MOKI에서 영양제 기록\""),
                     ("bell", "알림을 길게 눌러 시작·+1·참석"),

@@ -1,9 +1,9 @@
 import SwiftUI
 
-/// 하단 탭: 오늘 · 내 물건 · (+) · 기록 · 마이.
+/// 하단 탭: 오늘 · 내 물건 · (+) · 통계 · 마이. 기록 목록은 통계 안 "전체 기록 보기"에 있다.
 /// 가운데 +는 화면을 바꾸는 탭이 아니라 "새로 만들기" 시트를 연다. 어느 탭에서든 같은 자리에서 시작한다.
 struct RootView: View {
-    enum Tab: Hashable { case today, objects, add, history, my }
+    enum Tab: Hashable { case today, objects, add, stats, my }
 
     @Environment(ActivityStore.self) private var store
     @State private var tab: Tab = .today
@@ -24,9 +24,9 @@ struct RootView: View {
             Color.clear
                 .tabItem { Label("새로 만들기", systemImage: "plus.circle.fill") }
                 .tag(Tab.add)
-            NavigationStack { HistoryView() }
-                .tabItem { Label("기록", systemImage: "calendar") }
-                .tag(Tab.history)
+            NavigationStack { StatsView() }
+                .tabItem { Label("통계", systemImage: "chart.bar.xaxis") }
+                .tag(Tab.stats)
             NavigationStack { MyView() }
                 .tabItem { Label("마이", systemImage: "person.crop.circle") }
                 .tag(Tab.my)

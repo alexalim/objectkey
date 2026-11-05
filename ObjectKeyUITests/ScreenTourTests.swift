@@ -172,8 +172,15 @@ final class ScreenTourTests: XCTestCase {
         } else {
             XCTFail("물건을 누르면 물건 상세가 열려야 한다")
         }
-        app.tabBars.buttons["기록"].tap()
-        if app.navigationBars["기록"].waitForExistence(timeout: 5) { snap("14-history") } else { XCTFail("기록 탭이 열려야 한다") }
+        app.tabBars.buttons["통계"].tap()
+        if app.navigationBars["통계"].waitForExistence(timeout: 5) { snap("14-stats") } else { XCTFail("통계 탭이 열려야 한다") }
+        tapIfExists(app.buttons["전체 기록 보기"])
+        if app.navigationBars["기록"].waitForExistence(timeout: 5) {
+            snap("14b-history")
+            app.navigationBars.buttons.element(boundBy: 0).tap()
+        } else {
+            XCTFail("통계에서 전체 기록으로 들어갈 수 있어야 한다")
+        }
 
         // 7b. 마이 → 사용 안내
         app.tabBars.buttons["마이"].tap()
