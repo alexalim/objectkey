@@ -30,7 +30,7 @@ struct HistoryView: View {
                 }
                 .onDelete { offsets in
                     for i in offsets { context.delete(logs[i]) }
-                    try? context.save()
+                    context.saveOrReport()
                 }
             }
         }
@@ -123,7 +123,7 @@ struct HistoryView: View {
         try? context.delete(model: DayNote.self)
         try? context.delete(model: ReferenceShot.self)
         try? context.delete(model: KeyObject.self)
-        try? context.save()
+        context.saveOrReport()
         store.reset()
     }
 }

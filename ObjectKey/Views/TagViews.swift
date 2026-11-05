@@ -128,11 +128,11 @@ struct TagManagerView: View {
 
     private func rename(_ old: String, to new: String) {
         for key in keys where key.tags.contains(old) { key.tags = TagRules.rename(key.tags, from: old, to: new) }
-        try? context.save()
+        context.saveOrReport()
     }
 
     private func remove(_ tag: String) {
         for key in keys where key.tags.contains(tag) { key.tags.removeAll { $0 == tag } }
-        try? context.save()
+        context.saveOrReport()
     }
 }

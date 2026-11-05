@@ -198,7 +198,7 @@ struct HomeView: View {
             try? context.delete(model: DayNote.self, where: #Predicate { $0.keyID == id })
             context.delete(key)
         }
-        try? context.save()
+        context.saveOrReport()
     }
 }
 

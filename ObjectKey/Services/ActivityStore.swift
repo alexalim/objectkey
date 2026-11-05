@@ -91,9 +91,62 @@ final class ActivityStore {
                 play(feedback)
             }
         }
-        try? context.save()
+        context.saveOrReport()
         persist()
         syncLiveActivity(keys: keys)
+    }
+
+    // MARK: - 화면 밖에서 실행
+
+    struct OutsideRun {
+        let key: KeyObject
+        /// 확인 없이 끝내고 기록한 이전 활동 이름.
+        let finishedPrevious: String?
+    }
+
+    /// 위젯 버튼·워치·단축어·알림 버튼이 모두 이 길로 실행한다. 확인 창을 띄울 곳이 없으니
+    /// 진행 중이던 다른 활동은 기록하고 넘어간다. 끝나면 위젯·워치 요약을 새로 쓴다.
+    @discardableResult
+    func runFromOutside(_ id: UUID) -> OutsideRun? {
+        let context = AppModel.container.mainContext
+        guard let keys = try? context.fetch(FetchDescriptor<KeyObject>()),
+              let key = keys.first(where: { $0.id == id }) else { return nil }
+        lastMessage = nil
+        var previous: String?
+        if case .needsConfirmation(let pending) = activate(key, keys: keys, context: context) {
+            previous = keys.first { $0.id == pending.from }?.name ?? "진행 중이던 활동"
+            confirm(pending, keys: keys, context: context)
+        }
+        WidgetBridge.refreshFromStore()
+        return OutsideRun(key: key, finishedPrevious: previous)
+    }
+
+    // MARK: - 날을 정해 직접 기록
+
+    /// 상세 화면의 "기록 추가"와 모키에게 말하기가 같이 쓴다. 오늘이면 지금, 지난 날이면 그날 정오로 남긴다.
+    /// 횟수 물건은 count번(한 번에 recordAmount씩), 시간 물건은 minutes분. 참석은 하루 한 번만.
+    /// - Returns: 기록하지 않은 이유. 기록했으면 nil.
+    func addRecord(_ key: KeyObject, on day: Date, count: Int = 1, minutes: Int, context: ModelContext) -> String? {
+        let calendar = Calendar.current
+        let at = calendar.isDateInToday(day)
+            ? Date.now : calendar.date(byAdding: .hour, value: 12, to: calendar.startOfDay(for: day)) ?? day
+        switch key.kind {
+        case .countdown:
+            return "휴식 타이머는 기록이 남지 않아요."
+        case .attend where Self.hasRecord(key.id, on: day, context: context):
+            return "\(key.name): 그날은 이미 참석으로 기록돼 있어요."
+        case .counter:
+            for _ in 0..<max(count, 1) {
+                context.insert(ActivityLog(keyID: key.id, keyName: key.name, kind: "counter",
+                                           startedAt: at, duration: 0, amount: key.recordAmount))
+            }
+        case .session, .attend:
+            context.insert(ActivityLog(keyID: key.id, keyName: key.name, kind: "session",
+                                       startedAt: at, duration: Double(minutes * 60)))
+        }
+        guard context.saveOrReport() else { return "저장하지 못했어요." }
+        WidgetBridge.refreshFromStore()
+        return nil
     }
 
     /// 잠금 화면 실시간 현황을 지금 상태에 맞춘다. 앱으로 돌아올 때도 부른다(밖에서 끝났을 수 있다).

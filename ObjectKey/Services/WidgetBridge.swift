@@ -33,13 +33,6 @@ enum WidgetBridge {
     /// 위젯 체크 버튼. 단축어와 같은 규칙으로 실행한다.
     static func record(_ rawID: String) {
         guard let id = UUID(uuidString: rawID) else { return }
-        let context = AppModel.container.mainContext
-        guard let keys = try? context.fetch(FetchDescriptor<KeyObject>()),
-              let key = keys.first(where: { $0.id == id }) else { return }
-        let store = ActivityStore.shared
-        if case .needsConfirmation(let pending) = store.activate(key, keys: keys, context: context) {
-            store.confirm(pending, keys: keys, context: context)
-        }
-        refreshFromStore()
+        ActivityStore.shared.runFromOutside(id)
     }
 }

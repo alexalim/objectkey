@@ -60,22 +60,12 @@ struct RecordKeyIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        let context = AppModel.container.mainContext
-        let keys = try context.fetch(FetchDescriptor<KeyObject>())
-        guard let target = keys.first(where: { $0.id == key.id }) else {
+        let store = ActivityStore.shared
+        guard let run = store.runFromOutside(key.id) else {
             return .result(dialog: "물건을 찾을 수 없어요. 앱에서 지워졌을 수 있어요.")
         }
-        let store = ActivityStore.shared
-        store.lastMessage = nil
-        var switched = ""
-        // 단축어에는 확인 창을 띄울 곳이 없다. 직접 실행했으니 진행 중이던 활동은 기록하고 넘어간다.
-        if case .needsConfirmation(let pending) = store.activate(target, keys: keys, context: context) {
-            let previous = keys.first { $0.id == pending.from }?.name ?? "진행 중이던 활동"
-            store.confirm(pending, keys: keys, context: context)
-            switched = "\(previous) 활동을 끝내고 기록했어요. "
-        }
-        WidgetBridge.refreshFromStore()
-        return .result(dialog: "\(switched)\(Self.outcome(target, store: store))")
+        let switched = run.finishedPrevious.map { "\($0) 활동을 끝내고 기록했어요. " } ?? ""
+        return .result(dialog: "\(switched)\(Self.outcome(run.key, store: store))")
     }
 
     /// 실행 뒤 상태로 무슨 일이 있었는지 말한다. 시작은 기록이 남지 않아 store 메시지가 없거나 이전 활동의 것이다.

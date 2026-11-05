@@ -89,7 +89,7 @@ enum HealthSync {
         }
         UserDefaults.standard.set(noData, forKey: noDataKey)
         if added {
-            try? context.save()
+            context.saveOrReport()
             WidgetBridge.refreshFromStore()
         }
     }

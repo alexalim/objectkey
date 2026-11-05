@@ -122,7 +122,7 @@ struct CalibrationView: View {
                     Spacer()
                     Button("적용") {
                         key.threshold = value
-                        try? context.save()
+                        context.saveOrReport()
                         applied = "\(key.name) 기준을 \(fmt(value))로 바꿨어요."
                     }
                     .buttonStyle(.bordered)

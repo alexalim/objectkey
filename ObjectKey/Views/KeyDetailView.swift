@@ -196,13 +196,9 @@ struct KeyDetailView: View {
     }
 
     private func addRecord(on day: Date) {
-        // 오늘이면 지금 시각, 지난 날이면 그날 정오로 남긴다.
-        let at = calendar.isDateInToday(day) ? Date.now : calendar.date(byAdding: .hour, value: 12, to: calendar.startOfDay(for: day)) ?? day
-        let counter = key.kind == .counter
-        context.insert(ActivityLog(keyID: key.id, keyName: key.name, kind: counter ? "counter" : "session",
-                                   startedAt: at, duration: counter ? 0 : Double(addedMinutes * 60),
-                                   amount: counter ? key.recordAmount : 1))
-        try? context.save()
+        if let problem = store.addRecord(key, on: day, minutes: addedMinutes, context: context) {
+            AppAlert.show("기록하지 않았어요", message: problem)
+        }
     }
 
     /// 이번 달 1일과 처음 시작한 날(등록일·가장 이른 기록) 중 늦은 날부터 센다. 시작 전 날을 놓친 것으로 치지 않기 위해서다.
@@ -232,18 +228,18 @@ struct KeyDetailView: View {
         } else if !text.isEmpty {
             context.insert(DayNote(keyID: key.id, day: calendar.startOfDay(for: day), text: text))
         }
-        try? context.save()
+        context.saveOrReport()
     }
 
     /// 그날 가장 나중 기록 하나만 지운다. 횟수는 −1, 시간 기록은 마지막 한 번.
     private func removeLatest(on day: Date) {
         guard let last = records(on: day).max(by: { $0.startedAt < $1.startedAt }) else { return }
         context.delete(last)
-        try? context.save()
+        context.saveOrReport()
     }
 
     private func removeRecords(on day: Date) {
         records(on: day).forEach { context.delete($0) }
-        try? context.save()
+        context.saveOrReport()
     }
 }

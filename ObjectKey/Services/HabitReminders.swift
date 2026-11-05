@@ -81,13 +81,9 @@ enum HabitReminders {
         return cue.isEmpty ? "할 시간이에요. 작게라도 충분해요." : "\(cue) 다음에 할 시간이에요."
     }
 
-    /// 알림의 "참석" 버튼. 앱 화면 없이 실행되므로 공용 저장소와 진행 상태를 쓴다.
+    /// 알림의 "참석" 버튼. 위젯·단축어와 같은 길로 실행한다(진행 중이던 활동이 있어도 참석이 남는다).
     static func recordAttendance(_ id: UUID) {
-        let context = AppModel.container.mainContext
-        guard let keys = try? context.fetch(FetchDescriptor<KeyObject>()),
-              let key = keys.first(where: { $0.id == id }) else { return }
-        _ = ActivityStore.shared.activate(key, keys: keys, context: context)
-        WidgetBridge.refreshFromStore()
+        ActivityStore.shared.runFromOutside(id)
     }
 }
 

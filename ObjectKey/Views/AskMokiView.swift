@@ -219,21 +219,10 @@ struct AskMokiView: View {
     private func record(_ plan: RecordPlan) {
         let calendar = Calendar.current
         let day = calendar.date(byAdding: .day, value: -plan.daysAgo, to: calendar.startOfDay(for: .now)) ?? .now
-        let at = plan.daysAgo == 0 ? Date.now : day.addingTimeInterval(12 * 3600)
-        let key = plan.key
-        if key.kind == .attend,
-           logs.contains(where: { $0.keyID == key.id && calendar.isDate($0.startedAt, inSameDayAs: day) }) {
-            problem = "\(key.name): 그날은 이미 참석으로 기록돼 있어요."
+        if let reason = store.addRecord(plan.key, on: day, count: plan.amount, minutes: plan.amount, context: context) {
+            problem = reason
             return
         }
-        if key.kind == .counter {
-            for _ in 0..<plan.amount {
-                context.insert(ActivityLog(keyID: key.id, keyName: key.name, kind: "counter", startedAt: at, duration: 0))
-            }
-        } else {
-            context.insert(ActivityLog(keyID: key.id, keyName: key.name, kind: "session", startedAt: at, duration: Double(plan.amount * 60)))
-        }
-        try? context.save()
         recorded = "\(plan.summary) 기록했어요"
         input = ""
     }
