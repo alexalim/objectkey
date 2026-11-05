@@ -19,7 +19,7 @@ struct OnboardingView: View {
         Page(mood: .success, title: "끊기지 않는 습관",
              body: "오늘 할 일은 오늘 화면에서 누르면 돼요.\n한 번 빠져도 괜찮아요.\n평균 66일이면 습관이 돼요."),
         Page(mood: .reading, title: "카메라 없이도 돼요",
-             body: "위젯·Siri·알림으로도 기록해요.\n가운데 +에서 한 문장으로 등록해도 돼요."),
+             body: "위젯·Siri·알림으로도 기록해요.\n가운데 +에서 한 문장으로 적어도 돼요."),
     ]
 
     var body: some View {
@@ -127,8 +127,9 @@ struct HelpView: View {
                     ("line.3.horizontal.decrease", "홈 위 칩을 눌러 태그별로 봐요"),
                     ("slider.horizontal.3", "칩 끝 아이콘에서 이름 바꾸기·지우기"),
                 ])
-                guide("MOKI에게 말하기 ✨", "7.circle", [
-                    ("sparkles", "✨ 버튼에 한 문장으로 말해요"),
+                guide("한 문장으로 적기 ✨", "7.circle", [
+                    ("sparkles", "가운데 + → 한 문장으로 적기"),
+                    ("keyboard", "음성이 아니라 글로 적어요"),
                     ("text.bubble", "\"화요일 밤 9시 아이스하키 수업\""),
                     ("text.bubble", "\"어제 책 30분 읽었어\""),
                     ("text.bubble", "\"이번 달 영양제 몇 번?\""),

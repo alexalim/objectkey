@@ -123,7 +123,7 @@ final class ActivityStore {
 
     // MARK: - 날을 정해 직접 기록
 
-    /// 상세 화면의 "기록 추가"와 모키에게 말하기가 같이 쓴다. 오늘이면 지금, 지난 날이면 그날 정오로 남긴다.
+    /// 상세 화면의 "기록 추가"와 한 문장으로 적기가 같이 쓴다. 오늘이면 지금, 지난 날이면 그날 정오로 남긴다.
     /// 횟수 물건은 count번(한 번에 recordAmount씩), 시간 물건은 minutes분. 참석은 하루 한 번만.
     /// - Returns: 기록하지 않은 이유. 기록했으면 nil.
     func addRecord(_ key: KeyObject, on day: Date, count: Int = 1, minutes: Int, context: ModelContext) -> String? {

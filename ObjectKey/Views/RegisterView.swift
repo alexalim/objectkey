@@ -43,7 +43,7 @@ struct RegisterView: View {
 
     private enum Field { case name, emoji, cue }
 
-    /// 저장이 끝나면 부른다. "MOKI에게 말하기"나 + 시트에서 열었을 때 그 창까지 닫고 홈으로 가기 위해서다.
+    /// 저장이 끝나면 부른다. "한 문장으로 적기"나 + 시트에서 열었을 때 그 창까지 닫고 홈으로 가기 위해서다.
     var onSaved: (() -> Void)?
     /// + 시트의 "사진 찍어 등록"으로 열면 사진 칸으로 내려가 카메라를 바로 켠다.
     private let startWithPhotos: Bool
@@ -57,7 +57,7 @@ struct RegisterView: View {
         if let sharing { _emoji = State(initialValue: sharing.emoji) }
         // 이미 있는 물건에 습관을 더할 때는 습관을 정하는 게 목적이라 펼쳐 둔다.
         if sharing != nil { _showHabit = State(initialValue: true) }
-        // "MOKI에게 말하기"로 해석한 값을 미리 채운다. 사진은 원하면 직접 찍는다.
+        // "한 문장으로 적기"로 해석한 값을 미리 채운다. 사진은 원하면 직접 찍는다.
         guard let d = draft else { return }
         _name = State(initialValue: d.name)
         _emoji = State(initialValue: d.emoji)

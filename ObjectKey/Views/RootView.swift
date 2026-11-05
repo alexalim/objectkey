@@ -39,7 +39,7 @@ struct RootView: View {
     }
 }
 
-/// 가운데 + 시트. 사진 등록 · 이름만 등록 · 말로 등록 세 길을 같은 무게로 보여 준다.
+/// 가운데 + 시트. 사진 등록 · 이름만 등록 · 한 문장으로 적기 세 길을 같은 무게로 보여 준다.
 /// 카메라 권한은 여기서 묻지 않는다. "사진 찍어 등록"을 고른 뒤에 묻는다.
 struct QuickAddSheet: View {
     private enum Route: Identifiable {
@@ -60,7 +60,8 @@ struct QuickAddSheet: View {
             VStack(alignment: .leading, spacing: 12) {
                 option("camera", "사진 찍어 등록", "물건을 찍어 두면 스캔으로 알아봐요") { route = .register(photos: true) }
                 option("square.and.pencil", "이름만 적어 등록", "카메라 없이 바로 시작해요") { route = .register(photos: false) }
-                option("sparkles", "말로 등록", "\"화요일 9시 아이스하키 90분\"처럼 한 문장으로") { route = .ask }
+                // "말"은 음성 인식으로 오해하기 쉬워 "적기"라고 쓴다. 등록뿐 아니라 기록·질문도 된다.
+                option("sparkles", "한 문장으로 적기", "\"화요일 9시 아이스하키 90분\", \"어제 책 30분 읽었어\"") { route = .ask }
                 Spacer(minLength: 0)
             }
             .padding()
@@ -78,7 +79,7 @@ struct QuickAddSheet: View {
                     AskMokiView()
                 } else {
                     ContentUnavailableView("iOS 26 이상에서 쓸 수 있어요", systemImage: "sparkles",
-                                           description: Text("말로 등록은 기기 안 AI(Apple Intelligence)로 동작해요."))
+                                           description: Text("한 문장으로 적기는 기기 안 AI(Apple Intelligence)로 동작해요."))
                         .presentationDetents([.medium])
                 }
             }

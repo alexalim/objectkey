@@ -38,7 +38,7 @@ struct RecordPlan: Identifiable {
     }
 }
 
-/// "MOKI에게 말하기": 한 문장으로 등록·기록·질문. 기기 안 AI만 쓴다.
+/// "한 문장으로 적기": 한 문장으로 등록·기록·질문. 기기 안 AI만 쓴다.
 @available(iOS 26.0, *)
 struct AskMokiView: View {
     @Environment(\.dismiss) private var dismiss
@@ -101,14 +101,14 @@ struct AskMokiView: View {
                     if let problem {
                         Section { Label(problem, systemImage: "questionmark.circle").foregroundStyle(.orange) }
                     }
-                    Section("이렇게 말해 보세요") {
+                    Section("이렇게 적어 보세요") {
                         ForEach(examples, id: \.self) { example in
                             Button(example) { input = example }.tint(.primary)
                         }
                     }
                 }
             }
-            .navigationTitle("MOKI에게 말하기")
+            .navigationTitle("한 문장으로 적기")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } } }
             .sheet(item: $draft, onDismiss: { if registered { dismiss() } }) {
@@ -144,7 +144,7 @@ struct AskMokiView: View {
                 answer = try await MokiAssistant.answer(text, facts: facts)
             }
         } catch {
-            problem = "이해하지 못했어요. 조금 다르게 말해 주세요."
+            problem = "이해하지 못했어요. 조금 다르게 적어 주세요."
         }
     }
 
@@ -200,7 +200,7 @@ struct AskMokiView: View {
         // 모델이 고른 이름이 안 맞으면 원문 전체로 다시 찾는다.
         guard let id = c.name.flatMap({ CommandResolver.matchKey($0, among: pairs) }) ?? CommandResolver.matchKey(text, among: pairs),
               let key = keys.first(where: { $0.id == id }) else {
-            problem = "어떤 물건인지 찾지 못했어요. 등록한 이름으로 말해 주세요."
+            problem = "어떤 물건인지 찾지 못했어요. 등록한 이름으로 적어 주세요."
             return
         }
         let amount: Int
