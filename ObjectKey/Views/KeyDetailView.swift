@@ -81,7 +81,7 @@ struct KeyDetailView: View {
                             }
                             stat("\(logs.count)회", "전체 기록")
                         }
-                        NavigationLink("통계 보기") { KeyStatsView(key: key) }
+                        NavigationLink("통계 보기") { PlusLocked(title: "자세한 통계") { KeyStatsView(key: key) } }
                     }
                     Section {
                         HabitCalendar(days: days, schedule: key.schedule, noted: Set(notes.map(\.day)),

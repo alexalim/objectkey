@@ -18,6 +18,8 @@ struct ObjectKeyApp: App {
         WidgetActions.record = { WidgetBridge.record($0) }
         // 워치에서 누른 기록도 앱이 뒤에서 깨어나 받는다.
         WatchBridge.shared.activate()
+        // 플러스 구매 여부 확인과, 다른 기기·환불로 바뀐 거래 듣기.
+        PlusStore.shared.start()
     }
 
     var body: some Scene {

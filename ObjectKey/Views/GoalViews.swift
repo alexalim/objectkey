@@ -82,8 +82,15 @@ struct RoutineEditor: View {
     @Binding var stored: [String]
     @State private var name = ""
     @State private var minutes = 3
+    @State private var plus = PlusStore.shared
 
     var body: some View {
+        // 플러스 기능. 이미 만들어 둔 루틴은 무료여도 그대로 고칠 수 있다.
+        if plus.isPlus || !stored.isEmpty { editor } else { PlusLockRow(title: "단계별 루틴") }
+    }
+
+    @ViewBuilder
+    private var editor: some View {
         let steps = Routine.steps(stored)
         ForEach(Array(steps.enumerated()), id: \.offset) { i, step in
             LabeledContent("\(i + 1). \(step.name)", value: "\(step.minutes)분")
@@ -117,8 +124,15 @@ struct HealthLinkEditor: View {
     /// nil이면 아직 확인 전. true면 권한 창을 띄울 수 있고, false면 이미 물어봤다.
     @State private var canAsk: Bool?
     @Environment(\.openURL) private var openURL
+    @State private var plus = PlusStore.shared
 
     var body: some View {
+        // 플러스 기능. 이미 연결해 둔 건 무료여도 그대로 둔다.
+        if plus.isPlus || !metric.isEmpty { editor } else { PlusLockRow(title: "건강 앱 자동 완료") }
+    }
+
+    @ViewBuilder
+    private var editor: some View {
         Picker("건강 앱", selection: Binding(get: { metric }, set: { new in
             metric = new
             if let m = HealthMetric(rawValue: new) { target = m.defaultTarget }

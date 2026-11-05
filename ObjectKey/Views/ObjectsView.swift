@@ -85,6 +85,8 @@ struct ObjectSheet: View {
     @State private var detailKey: KeyObject?
     @State private var runKey: KeyObject?
     @State private var addingHabit = false
+    @State private var plus = PlusStore.shared
+    @State private var showPaywall = false
 
     var body: some View {
         let habits = owner.objectMembers(in: keys)
@@ -117,7 +119,9 @@ struct ObjectSheet: View {
                         .swipeActions { Button("기록·달력", systemImage: "calendar") { detailKey = habit }.tint(.orange) }
                         .contextMenu { Button("기록·달력 보기", systemImage: "calendar") { detailKey = habit } }
                     }
-                    Button("이 물건에 습관 추가", systemImage: "plus") { addingHabit = true }
+                    Button("이 물건에 습관 추가", systemImage: plus.isPlus ? "plus" : "lock.fill") {
+                        if plus.isPlus { addingHabit = true } else { showPaywall = true }
+                    }
                 } header: {
                     Text("연결된 습관")
                 } footer: {
@@ -130,6 +134,7 @@ struct ObjectSheet: View {
             .sheet(item: $detailKey) { KeyDetailView(key: $0, keys: keys) }
             .sheet(item: $runKey) { HabitRunView(key: $0) }
             .sheet(isPresented: $addingHabit) { RegisterView(sharing: owner) }
+            .sheet(isPresented: $showPaywall) { PlusPaywall(reason: "물건 하나에 습관 여러 개는 플러스에서 쓸 수 있어요.") }
         }
     }
 }

@@ -19,7 +19,13 @@ struct TodayView: View {
     var body: some View {
         NavigationStack {
             Group {
-                if let today = store.today, !today.items.isEmpty {
+                if store.today?.locked == true {
+                    VStack(spacing: 6) {
+                        Text("MOKI").font(.headline)
+                        Text("워치는 MOKI 플러스에서 쓸 수 있어요. 아이폰 MOKI → 마이에서 열 수 있어요.")
+                            .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                    }
+                } else if let today = store.today, !today.items.isEmpty {
                     List {
                         Section {
                             ForEach(today.items) { item in

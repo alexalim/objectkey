@@ -20,6 +20,11 @@ struct WidgetSnapshot: Codable {
     /// 쓴 날의 0시.
     var day: Date
     var items: [Item]
+    /// MOKI 플러스 여부. 위젯·워치는 플러스에서만 열린다. 옛 파일에는 없어 nil이면 열어 둔다.
+    var plus: Bool? = nil
+
+    /// 위젯·워치를 잠가야 하는지.
+    var locked: Bool { plus == false }
 
     static let groupID = "group.com.aspynlim.moki"
 
@@ -40,7 +45,7 @@ struct WidgetSnapshot: Codable {
     /// 앱을 열지 않은 채 날이 바뀌었으면 완료 표시를 지운다. 연속 일수는 앱이 다시 계산할 때까지 그대로 둔다.
     func current(now: Date = .now, calendar: Calendar = .current) -> WidgetSnapshot {
         guard !calendar.isDate(day, inSameDayAs: now) else { return self }
-        return WidgetSnapshot(day: calendar.startOfDay(for: now), items: items.map { var i = $0; i.done = false; return i })
+        return WidgetSnapshot(day: calendar.startOfDay(for: now), items: items.map { var i = $0; i.done = false; return i }, plus: plus)
     }
 
     var doneCount: Int { items.filter(\.done).count }

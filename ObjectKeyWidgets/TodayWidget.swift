@@ -43,7 +43,12 @@ struct TodayWidgetView: View {
     @Environment(\.widgetFamily) private var family
 
     var body: some View {
-        if let snapshot = entry.snapshot, !snapshot.items.isEmpty {
+        if entry.snapshot?.locked == true {
+            VStack(spacing: 4) {
+                Text("MOKI").font(.headline)
+                Text("위젯은 MOKI 플러스에서 쓸 수 있어요").font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center)
+            }
+        } else if let snapshot = entry.snapshot, !snapshot.items.isEmpty {
             switch family {
             case .systemMedium: MediumView(snapshot: snapshot)
             case .accessoryCircular: CircularView(snapshot: snapshot)

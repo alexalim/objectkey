@@ -44,6 +44,9 @@ struct ComplicationView: View {
         let done = entry.snapshot?.doneCount ?? 0
         let total = entry.snapshot?.items.count ?? 0
         let next = entry.snapshot?.items.first { !$0.done && $0.quit != true }
+        if entry.snapshot?.locked == true {
+            Text("MOKI 플러스")
+        } else {
         switch family {
         case .accessoryCircular:
             Gauge(value: Double(done), in: 0...Double(max(total, 1))) {
@@ -66,6 +69,7 @@ struct ComplicationView: View {
                 .widgetLabel { Gauge(value: Double(done), in: 0...Double(max(total, 1))) { Text("MOKI") } }
         default:
             Text("MOKI \(done)/\(total)")
+        }
         }
     }
 }

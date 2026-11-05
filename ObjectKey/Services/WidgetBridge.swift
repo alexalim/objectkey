@@ -16,7 +16,7 @@ enum WidgetBridge {
                                        time: key.todoMinute.map(KeyAction.clock), quit: key.isQuit ? true : nil)
         }
         .sorted { ($0.time ?? "99", $0.name) < ($1.time ?? "99", $1.name) }
-        let snapshot = WidgetSnapshot(day: Calendar.current.startOfDay(for: now), items: items)
+        let snapshot = WidgetSnapshot(day: Calendar.current.startOfDay(for: now), items: items, plus: PlusStore.shared.isPlus)
         snapshot.save()
         WidgetCenter.shared.reloadAllTimelines()
         WatchBridge.shared.push(snapshot)

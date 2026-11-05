@@ -7,6 +7,9 @@ struct MyView: View {
     @Environment(\.modelContext) private var context
     @Environment(ActivityStore.self) private var store
     @Environment(\.openURL) private var openURL
+    @State private var plus = PlusStore.shared
+    @State private var showPaywall = false
+    @State private var restoreMessage: String?
     @State private var showHelp = false
     @State private var showTags = false
     @State private var confirmWipe = false
@@ -16,6 +19,22 @@ struct MyView: View {
 
     var body: some View {
         List {
+            Section {
+                Button { showPaywall = true } label: {
+                    HStack {
+                        Label(plus.isPlus ? "MOKI 플러스 사용 중" : "MOKI 플러스", systemImage: plus.isPlus ? "checkmark.seal.fill" : "sparkles")
+                        Spacer()
+                        if !plus.isPlus, let price = plus.product?.displayPrice { Text(price).foregroundStyle(.secondary) }
+                    }
+                }
+                if !plus.isPlus {
+                    Button("구매 복원", systemImage: "arrow.clockwise") {
+                        Task { restoreMessage = await plus.restore() }
+                    }
+                }
+            } footer: {
+                Text(plus.isPlus ? "습관 무제한, 위젯·워치, 자세한 통계를 쓸 수 있어요." : "한 번 결제로 평생 써요. 습관 무제한, 위젯·워치, 자세한 통계.")
+            }
             Section {
                 Button("사용 안내", systemImage: "questionmark.circle") { showHelp = true }
             }
@@ -48,6 +67,10 @@ struct MyView: View {
         .tint(.primary)
         .navigationTitle("마이")
         .sheet(isPresented: $showHelp) { HelpView() }
+        .sheet(isPresented: $showPaywall) { PlusPaywall() }
+        .alert("구매 복원", isPresented: Binding(get: { restoreMessage != nil }, set: { if !$0 { restoreMessage = nil } })) {
+            Button("확인", role: .cancel) {}
+        } message: { Text(restoreMessage ?? "") }
         .sheet(isPresented: $showTags) { TagManagerView() }
         .fileExporter(isPresented: Binding(get: { exportDoc != nil }, set: { if !$0 { exportDoc = nil } }),
                       document: exportDoc, contentType: .json,

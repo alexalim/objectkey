@@ -37,7 +37,7 @@ struct StatsView: View {
             if !rows.isEmpty {
                 Section {
                     ForEach(rows) { r in
-                        NavigationLink { KeyStatsView(key: r.key) } label: {
+                        NavigationLink { PlusLocked(title: "자세한 통계") { KeyStatsView(key: r.key) } } label: {
                             HStack(spacing: 12) {
                                 KeyBadge(symbol: r.key.emoji, size: 40)
                                 VStack(alignment: .leading, spacing: 2) {

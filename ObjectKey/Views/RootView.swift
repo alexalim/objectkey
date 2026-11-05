@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 /// 하단 탭: 오늘 · 내 물건 · (+) · 통계 · 마이. 기록 목록은 통계 안 "전체 기록 보기"에 있다.
@@ -53,15 +54,19 @@ struct QuickAddSheet: View {
     }
 
     @Environment(\.dismiss) private var dismiss
+    @Query private var keys: [KeyObject]
     @State private var route: Route?
+    @State private var plus = PlusStore.shared
+    /// 무료 범위를 넘을 때 보여 줄 플러스 안내 이유.
+    @State private var paywallReason: String?
 
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 12) {
-                option("camera", "사진 찍어 등록", "물건을 찍어 두면 스캔으로 알아봐요") { route = .register(photos: true) }
-                option("square.and.pencil", "이름만 적어 등록", "카메라 없이 바로 시작해요") { route = .register(photos: false) }
+                option("camera", "사진 찍어 등록", "물건을 찍어 두면 스캔으로 알아봐요") { open(.register(photos: true)) }
+                option("square.and.pencil", "이름만 적어 등록", "카메라 없이 바로 시작해요") { open(.register(photos: false)) }
                 // "말"은 음성 인식으로 오해하기 쉬워 "적기"라고 쓴다. 등록뿐 아니라 기록·질문도 된다.
-                option("sparkles", "한 문장으로 적기", "\"화요일 9시 아이스하키 90분\", \"어제 책 30분 읽었어\"") { route = .ask }
+                option("sparkles", "한 문장으로 적기", "\"화요일 9시 아이스하키 90분\", \"어제 책 30분 읽었어\"") { open(.ask) }
                 Spacer(minLength: 0)
             }
             .padding()
@@ -70,6 +75,9 @@ struct QuickAddSheet: View {
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } } }
         }
         .presentationDetents([.medium])
+        .sheet(isPresented: Binding(get: { paywallReason != nil }, set: { if !$0 { paywallReason = nil } })) {
+            PlusPaywall(reason: paywallReason)
+        }
         .sheet(item: $route) { r in
             switch r {
             case .register(let photos):
@@ -83,6 +91,18 @@ struct QuickAddSheet: View {
                         .presentationDetents([.medium])
                 }
             }
+        }
+    }
+
+    /// 무료는 습관 3개까지, 한 문장으로 적기는 플러스. 넘으면 플러스 안내를 연다.
+    private func open(_ r: Route) {
+        switch r {
+        case .register where !plus.canAddHabit(currentCount: keys.count):
+            paywallReason = "무료로는 습관을 \(PlusStore.freeHabitLimit)개까지 만들 수 있어요."
+        case .ask where !plus.isPlus:
+            paywallReason = "한 문장으로 적기는 플러스에서 쓸 수 있어요."
+        default:
+            route = r
         }
     }
 
