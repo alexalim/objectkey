@@ -105,14 +105,14 @@ public enum DailyProgress {
     ///
     /// 기록이 있는 날마다 "그날이 오늘이었다면" 계산해 가장 큰 값을 고른다. evaluate와 같은 규칙을 그대로 쓰기 위해서다.
     public static func bestStreak(_ entries: [ProgressEntry], goal: Double?, schedule: HabitSchedule = .daily,
-                                  now: Date, calendar: Calendar) -> Int {
+                                  skipped: Set<Date> = [], now: Date, calendar: Calendar) -> Int {
         let days = dailyTotals(entries, calendar: calendar).keys
-        let current = evaluate(entries, goal: goal, schedule: schedule, now: now, calendar: calendar).streak
+        let current = evaluate(entries, goal: goal, schedule: schedule, skipped: skipped, now: now, calendar: calendar).streak
         return days.reduce(current) { best, day in
             guard day < calendar.startOfDay(for: now),
                   let endOfDay = calendar.date(byAdding: DateComponents(day: 1, second: -1), to: day) else { return best }
             let past = entries.filter { $0.date <= endOfDay }
-            return max(best, evaluate(past, goal: goal, schedule: schedule, now: endOfDay, calendar: calendar).streak)
+            return max(best, evaluate(past, goal: goal, schedule: schedule, skipped: skipped, now: endOfDay, calendar: calendar).streak)
         }
     }
 
@@ -120,9 +120,10 @@ public enum DailyProgress {
     ///
     /// 매일·요일 지정은 해야 하는 날, 주 N회는 한 주가 한 번의 기회다. 진행 중인 오늘(이번 주)은
     /// 채웠을 때만 넣는다. 아직 하루가 남았는데 못 한 것으로 치면 비율이 아침마다 떨어지기 때문이다.
+    /// 건너뛴 날(skipped, 그날 0시)은 해야 하는 날에서 빠진다. 주 N회는 그 주 목표가 건너뛴 날만큼 줄고, 0이 되면 그 주는 따지지 않는다.
     /// - Parameter since: 이 날부터 센다. 보통 이번 달 1일과 물건을 등록한 날 중 늦은 날.
     public static func completionRate(_ entries: [ProgressEntry], goal: Double?, schedule: HabitSchedule = .daily,
-                                      since: Date, now: Date, calendar: Calendar) -> Double? {
+                                      skipped: Set<Date> = [], since: Date, now: Date, calendar: Calendar) -> Double? {
         let goal = goal.flatMap { $0 > 0 ? $0 : nil }
         let totals = dailyTotals(entries, calendar: calendar)
         func met(_ day: Date) -> Bool {
@@ -135,10 +136,14 @@ public enum DailyProgress {
         var hits = 0
 
         if case .perWeek(let times) = schedule {
-            let target = max(1, times)
             var start = calendar.dateInterval(of: .weekOfYear, for: day)?.start
             while let s = start, s <= today, let week = calendar.dateInterval(of: .weekOfYear, for: s) {
+                let target = weekTarget(times, week: week, skipped: skipped)
                 let done = totals.keys.filter { week.contains($0) && $0 >= day && met($0) }.count
+                if target == 0 {
+                    start = week.end
+                    continue
+                }
                 if week.end <= today || done >= target {
                     chances += 1
                     if done >= target { hits += 1 }
@@ -146,7 +151,7 @@ public enum DailyProgress {
                 start = week.end
             }
         } else {
-            let due = dueCheck(schedule, calendar: calendar)
+            let due = dueCheck(schedule, skipped: skipped, calendar: calendar)
             while day <= today {
                 if due(day), day < today || met(day) {
                     chances += 1
@@ -164,13 +169,13 @@ public enum DailyProgress {
     /// 주별 완료율. 주마다 completionRate를 그 주 범위로 계산한다(진행 중인 이번 주 규칙도 같다).
     /// 따질 기회가 없는 주는 rate가 nil이다.
     public static func weeklyRates(_ entries: [ProgressEntry], goal: Double?, schedule: HabitSchedule = .daily,
-                                   since: Date, now: Date, calendar: Calendar) -> [(weekStart: Date, rate: Double?)] {
+                                   skipped: Set<Date> = [], since: Date, now: Date, calendar: Calendar) -> [(weekStart: Date, rate: Double?)] {
         var result: [(Date, Double?)] = []
         var start = calendar.dateInterval(of: .weekOfYear, for: since)?.start
         while let s = start, s <= now, let week = calendar.dateInterval(of: .weekOfYear, for: s) {
             let from = max(week.start, calendar.startOfDay(for: since))
             let to = min(week.end.addingTimeInterval(-1), now)
-            result.append((week.start, completionRate(entries, goal: goal, schedule: schedule, since: from, now: to, calendar: calendar)))
+            result.append((week.start, completionRate(entries, goal: goal, schedule: schedule, skipped: skipped, since: from, now: to, calendar: calendar)))
             start = week.end
         }
         return result
@@ -195,15 +200,20 @@ public enum DailyProgress {
         return counts
     }
 
-    /// 그날이 해야 하는 날인지. 요일 지정이 아니면 매일이다.
-    private static func dueCheck(_ schedule: HabitSchedule, calendar: Calendar) -> (Date) -> Bool {
+    /// 그날이 해야 하는 날인지. 요일 지정이 아니면 매일이다. 건너뛴 날은 해야 하는 날이 아니다.
+    static func dueCheck(_ schedule: HabitSchedule, skipped: Set<Date> = [], calendar: Calendar) -> (Date) -> Bool {
         if case .weekdays(let days) = schedule, !days.isEmpty {
-            return { days.contains(calendar.component(.weekday, from: $0)) }
+            return { days.contains(calendar.component(.weekday, from: $0)) && !skipped.contains($0) }
         }
-        return { _ in true }
+        return { !skipped.contains($0) }
     }
 
-    private static func dailyTotals(_ entries: [ProgressEntry], calendar: Calendar) -> [Date: Double] {
+    /// 주 N회의 그 주 목표. 건너뛴 날만큼 줄인다.
+    static func weekTarget(_ times: Int, week: DateInterval, skipped: Set<Date>) -> Int {
+        max(0, max(1, times) - skipped.filter { week.contains($0) }.count)
+    }
+
+    static func dailyTotals(_ entries: [ProgressEntry], calendar: Calendar) -> [Date: Double] {
         var totals: [Date: Double] = [:]
         for entry in entries {
             totals[calendar.startOfDay(for: entry.date), default: 0] += entry.amount
@@ -217,8 +227,9 @@ public enum DailyProgress {
     /// - 매일: 하루가 한 번. 요일 지정: 정한 요일만 한 번으로 보고, 다른 날에 한 것은 세되 빠져도 탓하지 않는다.
     /// - 주 N회: 한 주가 한 번. N일을 못 채운 주가 두 주 이어지면 끊는다.
     /// 일수는 어느 경우든 채운 날 수다. 진행 중인 오늘(이번 주)은 빠진 것으로 보지 않는다.
+    /// 건너뛴 날(skipped)은 해야 하는 날로 치지 않는다. 연속을 끊지도 늘리지도 않는다.
     public static func evaluate(_ entries: [ProgressEntry], goal: Double?, schedule: HabitSchedule = .daily,
-                                now: Date, calendar: Calendar) -> KeyProgress {
+                                skipped: Set<Date> = [], now: Date, calendar: Calendar) -> KeyProgress {
         let goal = goal.flatMap { $0 > 0 ? $0 : nil }
         let totals = dailyTotals(entries, calendar: calendar)
         func met(_ day: Date) -> Bool {
@@ -237,7 +248,7 @@ public enum DailyProgress {
 
         switch schedule {
         case .perWeek(let times):
-            let target = max(1, times)
+            let target = week.map { weekTarget(times, week: $0, skipped: skipped) } ?? max(1, times)
             // 이번 주는 채운 만큼 세되 빠진 것으로 보지 않고, 지난주부터 한 주씩 거슬러 간다.
             var streak = weekDone
             var misses = 0
@@ -247,7 +258,7 @@ public enum DailyProgress {
             var start = week.flatMap { calendar.date(byAdding: .weekOfYear, value: -1, to: $0.start) }
             while let s = start, let w = calendar.dateInterval(of: .weekOfYear, for: s), w.end > earliest {
                 let done = totals.keys.filter { w.contains($0) && met($0) }.count
-                if done >= target {
+                if done >= weekTarget(times, week: w, skipped: skipped) {
                     misses = 0
                     missedDone = 0
                 } else {
@@ -268,7 +279,7 @@ public enum DailyProgress {
             return KeyProgress(today: todayTotal, goal: goal, streak: streak, atRisk: atRisk, weekDone: weekDone)
 
         case .daily, .weekdays:
-            let due = dueCheck(schedule, calendar: calendar)
+            let due = dueCheck(schedule, skipped: skipped, calendar: calendar)
             var streak = met(today) ? 1 : 0
             var misses = 0
             var day = previous(today)
