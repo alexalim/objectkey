@@ -160,9 +160,9 @@ final class ScreenTourTests: XCTestCase {
         }
         closeTop()
 
-        // 7a. 내 물건 · 기록 탭
-        app.tabBars.buttons["내 물건"].tap()
-        if app.navigationBars["내 물건"].waitForExistence(timeout: 5) { snap("13-objects") } else { XCTFail("내 물건 탭이 열려야 한다") }
+        // 7a. 습관 탭
+        app.tabBars.buttons["습관"].tap()
+        if app.navigationBars["습관"].waitForExistence(timeout: 5) { snap("13-objects") } else { XCTFail("습관 탭이 열려야 한다") }
         // 운동 매트에는 습관이 둘(운동 매트, 아침 스트레칭) 걸려 있다.
         row("운동 매트").tap()
         if app.navigationBars["물건"].waitForExistence(timeout: 5) {

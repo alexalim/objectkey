@@ -2,7 +2,7 @@ import SwiftData
 import SwiftUI
 import ObjectKeyCore
 
-/// 내 물건. 같은 물건을 쓰는 습관끼리 묶어 2열 카드로 보고, 누르면 그 물건의 습관 목록을 연다.
+/// 습관 탭. 같은 물건을 쓰는 습관끼리 묶어 2열 카드로 보고, 누르면 그 물건의 습관 목록을 연다.
 struct ObjectsView: View {
     @Environment(ActivityStore.self) private var store
     @Query(sort: \KeyObject.createdAt) private var keys: [KeyObject]
@@ -34,7 +34,7 @@ struct ObjectsView: View {
             .padding()
         }
         .background(Color(.systemGroupedBackground))
-        .navigationTitle("내 물건")
+        .navigationTitle("습관")
         .searchable(text: $search, prompt: "이름이나 태그")
         .overlay {
             if keys.isEmpty {
