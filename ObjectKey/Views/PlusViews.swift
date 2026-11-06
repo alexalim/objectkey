@@ -56,8 +56,12 @@ struct PlusPaywall: View {
                             }
                         } label: {
                             Group {
+                                // 누르는 동안 버튼이 흐려져 흰 표시가 묻혔다. 글자와 함께, 배경과 대비되는 색으로 보여 준다.
                                 if busy {
-                                    ProgressView().tint(.white)
+                                    HStack(spacing: 8) {
+                                        ProgressView()
+                                        Text("결제 창을 여는 중…")
+                                    }
                                 } else {
                                     Text(plus.product.map { "\($0.displayPrice) · 한 번 결제로 평생" } ?? "다시 불러오기")
                                 }

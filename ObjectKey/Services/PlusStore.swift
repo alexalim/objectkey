@@ -76,12 +76,13 @@ final class PlusStore {
             case .pending:
                 return "승인을 기다리고 있어요. 승인되면 자동으로 열려요."
             case .userCancelled:
-                return ""
+                // 처음 결제할 때 Apple 계정 로그인을 거치면 취소로 끝나기도 한다. 조용히 넘기면 아무 일도 안 일어난 것처럼 보인다.
+                return "결제가 끝나지 않았어요. 로그인했다면 한 번 더 눌러 주세요."
             @unknown default:
-                return ""
+                return "결제가 끝나지 않았어요. 한 번 더 눌러 주세요."
             }
         } catch {
-            return "결제하지 못했어요. 잠시 뒤 다시 해 주세요."
+            return "결제하지 못했어요(\(error.localizedDescription)). 잠시 뒤 다시 해 주세요."
         }
     }
 
