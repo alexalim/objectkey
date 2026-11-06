@@ -23,6 +23,8 @@ struct HomeView: View {
     /// 홈에서 고른 태그. 빈 문자열이면 전체.
     /// 앱을 열 때마다 전체로 시작한다. 예전에는 마지막 태그를 기억해, 새로 등록한 물건이 안 보이는 혼란이 있었다.
     @State private var tagFilter = ""
+    /// 밀어서 지우려는 습관. 기록과 연속 일수가 함께 사라지므로 한 번 묻는다.
+    @State private var deleting: [KeyObject] = []
 
     private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -89,17 +91,18 @@ struct HomeView: View {
                 if keys.isEmpty {
                     ContentUnavailableView {
                         Image(.peek).resizable().scaledToFit().frame(height: 140)
-                        Text("아직 등록한 물건이 없어요")
+                        Text("아직 습관이 없어요")
                     } description: {
                         Text("책, 컵, 영양제처럼 늘 쓰는 물건을 등록해 보세요.")
                     } actions: {
-                        Button("첫 물건 등록하기") { showRegister = true }.buttonStyle(.borderedProminent)
+                        Button("첫 습관 만들기") { showRegister = true }.buttonStyle(.borderedProminent)
                     }
                 }
             }
             .navigationTitle("오늘")
             .safeAreaInset(edge: .bottom) {
-                if !keys.isEmpty {
+                // 사진을 찍어 둔 물건이 없으면 스캔할 것도 없다. 이때는 버튼을 숨겨 막다른 길을 만들지 않는다.
+                if keys.contains(where: { !$0.shots.isEmpty }) {
                     Button { showScan = true } label: {
                         Label("물건 스캔", systemImage: "viewfinder").frame(maxWidth: .infinity).padding(.vertical, 6)
                     }
@@ -117,6 +120,14 @@ struct HomeView: View {
             // 앱을 새로 켜며 들어오면 물건 목록이 늦게 채워질 수 있다.
             .onChange(of: keys.count) { openFromNotification() }
             .sheet(isPresented: $showTags) { TagManagerView() }
+            .confirmationDialog(deleting.count == 1 ? "'\(deleting[0].name)' 습관을 지울까요?" : "습관 \(deleting.count)개를 지울까요?",
+                                isPresented: Binding(get: { !deleting.isEmpty }, set: { if !$0 { deleting = [] } }),
+                                titleVisibility: .visible) {
+                Button("지우기", role: .destructive) { delete(deleting); deleting = [] }
+                Button("취소", role: .cancel) { deleting = [] }
+            } message: {
+                Text("기록 \(logs.filter { log in deleting.contains { $0.id == log.keyID } }.count)회와 메모도 함께 지워져요. 되돌릴 수 없어요.")
+            }
             .fullScreenCover(isPresented: $showScan) { ScanView() }
             .resultToast(message: Binding(get: { store.lastMessage }, set: { store.lastMessage = $0 }))
             .onReceive(ticker) { _ in store.tick(keys: keys, context: context) }
@@ -180,7 +191,7 @@ struct HomeView: View {
                 }
             }
         }
-        .onDelete { offsets in delete(offsets.map { list[$0] }) }
+        .onDelete { offsets in deleting = offsets.map { list[$0] } }
     }
 
     private func delete(_ targets: [KeyObject]) {

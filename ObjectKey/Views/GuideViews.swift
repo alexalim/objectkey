@@ -3,6 +3,8 @@ import SwiftUI
 /// 처음 설치했을 때 넘겨 보는 소개. 안내 화면에서 다시 볼 수 있다.
 struct OnboardingView: View {
     let onFinish: () -> Void
+    /// 처음 설치했을 때만 넘긴다. 있으면 마지막 버튼이 "첫 습관 만들기"가 되어 바로 등록으로 간다.
+    var onCreateFirst: (() -> Void)? = nil
     @State private var page = 0
 
     private struct Page {
@@ -13,9 +15,9 @@ struct OnboardingView: View {
 
     private let pages = [
         Page(mood: .key, title: "물건이 열쇠가 돼요",
-             body: "책, 컵, 영양제처럼\n늘 쓰는 물건을 등록해요.\n스캔하면 MOKI가 알아보고 그 습관을 열어요."),
+             body: "책, 컵, 영양제처럼\n늘 쓰는 물건에 습관을 붙여요.\n누르기만 해도 되고, 스캔은 원할 때만."),
         Page(mood: .scan, title: "등록은 이름 하나면 돼요",
-             body: "동작은 4가지 중에서 골라요.\n사진을 찍어 두면 스캔으로 알아봐요.\n사진은 없어도 돼요."),
+             body: "시간 기록, 횟수, 참석, 끊기 중에서 골라요.\n사진을 찍어 두면 스캔으로 알아봐요.\n무료로 습관 3개까지 만들 수 있어요."),
         Page(mood: .success, title: "끊기지 않는 습관",
              body: "오늘 할 일은 오늘 화면에서 누르면 돼요.\n한 번 빠져도 괜찮아요.\n평균 66일이면 습관이 돼요."),
         Page(mood: .reading, title: "카메라 없이도 돼요",
@@ -47,9 +49,9 @@ struct OnboardingView: View {
             .tabViewStyle(.page(indexDisplayMode: .always))
             .indexViewStyle(.page(backgroundDisplayMode: .always))
             Button {
-                if page < pages.count - 1 { withAnimation { page += 1 } } else { onFinish() }
+                if page < pages.count - 1 { withAnimation { page += 1 } } else { (onCreateFirst ?? onFinish)() }
             } label: {
-                Text(page < pages.count - 1 ? "다음" : "시작하기").font(.headline).frame(maxWidth: .infinity).padding(.vertical, 6)
+                Text(page < pages.count - 1 ? "다음" : (onCreateFirst == nil ? "시작하기" : "첫 습관 만들기")).font(.headline).frame(maxWidth: .infinity).padding(.vertical, 6)
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)

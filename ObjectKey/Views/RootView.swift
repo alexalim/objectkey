@@ -9,6 +9,7 @@ struct RootView: View {
     @Environment(ActivityStore.self) private var store
     @State private var tab: Tab = .today
     @State private var showAdd = false
+    @State private var showFirstRegister = false
     @State private var route = NotificationRoute.shared
 
     var body: some View {
@@ -36,6 +37,14 @@ struct RootView: View {
         // 알림을 눌러 들어오면 오늘 탭에서 그 물건을 연다(홈이 route를 받아 상세를 띄운다).
         .onChange(of: route.keyID, initial: true) { _, id in
             if id != nil { showAdd = false; tab = .today }
+        }
+        .sheet(isPresented: $showFirstRegister) { RegisterView() }
+        .onChange(of: route.openRegister) { _, open in
+            guard open else { return }
+            route.openRegister = false
+            tab = .today
+            // 소개 화면이 닫히는 중이라 잠깐 기다렸다가 연다.
+            Task { try? await Task.sleep(for: .milliseconds(500)); showFirstRegister = true }
         }
         .onChange(of: route.openStats, initial: true) { _, open in
             guard open else { return }

@@ -40,11 +40,11 @@ struct ObjectsView: View {
             if keys.isEmpty {
                 ContentUnavailableView {
                     Image(.peek).resizable().scaledToFit().frame(height: 140)
-                    Text("아직 등록한 물건이 없어요")
+                    Text("아직 습관이 없어요")
                 } description: {
                     Text("카메라 없이 이름만 적어도 괜찮아요.")
                 } actions: {
-                    Button("첫 물건 등록하기") { showRegister = true }.buttonStyle(.borderedProminent)
+                    Button("첫 습관 만들기") { showRegister = true }.buttonStyle(.borderedProminent)
                 }
             } else if shown.isEmpty {
                 ContentUnavailableView.search(text: search)

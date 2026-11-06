@@ -45,7 +45,7 @@ struct MyView: View {
             } footer: {
                 Text("일요일 저녁 8시에 한 주를 돌아보라고 알려 드려요. 누르면 통계가 열려요.")
             }
-            Section("물건") {
+            Section("모으기·정리") {
                 NavigationLink { StickerBookView() } label: { Label("스티커 모음", systemImage: "star.square.on.square") }
                 Button("태그 관리", systemImage: "tag") { showTags = true }
                 NavigationLink { CalibrationView() } label: { Label("인식 점검", systemImage: "viewfinder") }
@@ -69,6 +69,13 @@ struct MyView: View {
                 Text("사진과 기록은 이 휴대폰에만 저장돼요.")
             }
             Section {
+                // 카메라·건강 앱을 쓰므로 처리방침을 앱 안에서도 열 수 있어야 한다(심사 지침 5.1.1).
+                Link(destination: URL(string: "https://alexalim.github.io/objectkey/privacy.html")!) {
+                    Label("개인정보 처리방침", systemImage: "hand.raised")
+                }
+                Link(destination: URL(string: "mailto:esl2dev@gmail.com")!) {
+                    Label("문의하기", systemImage: "envelope")
+                }
                 LabeledContent("버전", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")
             }
         }

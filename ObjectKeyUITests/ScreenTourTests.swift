@@ -39,7 +39,14 @@ final class ScreenTourTests: XCTestCase {
                 if i == 3 { snap("01c-onboarding-3") }
             }
             snap("01d-onboarding-4")
-            app.buttons["시작하기"].tap()
+            // 처음 설치면 마지막 버튼이 첫 습관 등록으로 바로 보낸다.
+            app.buttons["첫 습관 만들기"].tap()
+            if app.navigationBars["새 습관"].waitForExistence(timeout: 5) {
+                snap("01e-first-register")
+                app.buttons["취소"].tap()
+            } else {
+                XCTFail("소개 마지막 버튼은 첫 습관 등록을 열어야 한다")
+            }
         } else {
             // 결제 화면 테스트(test_paywall)가 먼저 돌면 같은 시뮬레이터에서 소개를 이미 넘겼다. 그때는 소개 확인을 건너뛴다.
             print("소개가 보이지 않음: 다른 테스트가 먼저 넘긴 것으로 본다")
@@ -151,7 +158,7 @@ final class ScreenTourTests: XCTestCase {
         }
         // 버튼 이름에 설명까지 붙어 읽히므로 앞부분으로 찾는다.
         tapIfExists(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "이름만 적어 등록")).firstMatch)
-        if app.navigationBars["새 물건 등록"].waitForExistence(timeout: 5) {
+        if app.navigationBars["새 습관"].waitForExistence(timeout: 5) {
             snap("10-register")
             app.swipeUp()
             snap("11-register-scrolled")

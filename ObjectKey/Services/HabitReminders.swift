@@ -155,6 +155,8 @@ final class NotificationRoute {
     var keyID: UUID?
     /// 통계 탭을 열지(주간 돌아보기 알림).
     var openStats = false
+    /// 첫 습관 등록을 열지(소개 마지막 버튼).
+    var openRegister = false
     /// 시작 화면을 건너뛸지. 홈이 keyID를 먼저 비워도 앱이 놓치지 않게 따로 둔다.
     var skipSplash = false
 }

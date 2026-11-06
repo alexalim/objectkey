@@ -217,7 +217,7 @@ struct RegisterView: View {
                 }
             }
             .scrollDismissesKeyboard(.immediately)
-            .navigationTitle(sharing == nil ? "새 물건 등록" : "습관 추가")
+            .navigationTitle(sharing == nil ? "새 습관" : "습관 추가")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("취소") { dismiss() } }

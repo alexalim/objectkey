@@ -30,7 +30,8 @@ struct ObjectKeyApp: App {
                 // 처음 설치하면 시작 화면을 누른 뒤 소개를 한 번 보여 준다.
                 .fullScreenCover(isPresented: Binding(get: { !showSplash && !didFinishOnboarding },
                                                       set: { if !$0 { didFinishOnboarding = true } })) {
-                    OnboardingView { didFinishOnboarding = true }
+                    OnboardingView(onFinish: { didFinishOnboarding = true },
+                                   onCreateFirst: { didFinishOnboarding = true; NotificationRoute.shared.openRegister = true })
                 }
             // 앱을 완전히 새로 켤 때만이 아니라, 홈 화면으로 나갔다가 다시 열 때도 보여 준다.
             // 제어 센터를 내리는 정도(inactive)로는 다시 띄우지 않는다.
