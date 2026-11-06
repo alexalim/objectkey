@@ -109,12 +109,35 @@ enum HabitReminders {
     }
 }
 
+/// 일요일 저녁 "이번 주 돌아보기" 알림. 켜고 끌 수 있고, 누르면 통계 탭이 열린다.
+enum WeeklyRecap {
+    static let id = "objectkey.weekly-recap"
+    static let enabledKey = "weeklyRecapEnabled"
+
+    static func set(_ on: Bool) async {
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: [id])
+        guard on, await HabitReminders.requestPermission() else { return }
+        let content = UNMutableNotificationContent()
+        content.title = "이번 주 돌아보기"
+        content.body = "한 주 동안 쌓은 기록을 볼 시간이에요. 잘한 것부터 보여 드릴게요."
+        content.sound = .default
+        var when = DateComponents()
+        when.weekday = 1
+        when.hour = 20
+        try? await center.add(UNNotificationRequest(identifier: id, content: content,
+                                                    trigger: UNCalendarNotificationTrigger(dateMatching: when, repeats: true)))
+    }
+}
+
 /// 알림 본문을 눌러 앱을 열었을 때 보여 줄 물건. 홈이 받아서 상세 화면을 연다.
 @MainActor
 @Observable
 final class NotificationRoute {
     static let shared = NotificationRoute()
     var keyID: UUID?
+    /// 통계 탭을 열지(주간 돌아보기 알림).
+    var openStats = false
     /// 시작 화면을 건너뛸지. 홈이 keyID를 먼저 비워도 앱이 놓치지 않게 따로 둔다.
     var skipSplash = false
 }
@@ -130,7 +153,14 @@ final class NotificationHandler: NSObject, UNUserNotificationCenterDelegate {
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
         let action = response.actionIdentifier
         let id = (response.notification.request.content.userInfo["keyID"] as? String).flatMap(UUID.init(uuidString:))
+        let isRecap = response.notification.request.identifier == WeeklyRecap.id
         DispatchQueue.main.async {
+            if isRecap {
+                MainActor.assumeIsolated {
+                    NotificationRoute.shared.skipSplash = true
+                    NotificationRoute.shared.openStats = true
+                }
+            }
             if let id {
                 MainActor.assumeIsolated {
                     switch action {

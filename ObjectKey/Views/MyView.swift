@@ -11,6 +11,7 @@ struct MyView: View {
     @State private var showPaywall = false
     @State private var restoreMessage: String?
     @State private var showHelp = false
+    @AppStorage(WeeklyRecap.enabledKey) private var weeklyRecap = false
     @State private var showTags = false
     @State private var confirmWipe = false
     @State private var exportDoc: BackupDocument?
@@ -37,6 +38,12 @@ struct MyView: View {
             }
             Section {
                 Button("사용 안내", systemImage: "questionmark.circle") { showHelp = true }
+            }
+            Section {
+                Toggle(isOn: $weeklyRecap) { Label("일요일 저녁 돌아보기 알림", systemImage: "calendar.badge.checkmark") }
+                    .onChange(of: weeklyRecap) { _, on in Task { await WeeklyRecap.set(on) } }
+            } footer: {
+                Text("일요일 저녁 8시에 한 주를 돌아보라고 알려 드려요. 누르면 통계가 열려요.")
             }
             Section("물건") {
                 Button("태그 관리", systemImage: "tag") { showTags = true }

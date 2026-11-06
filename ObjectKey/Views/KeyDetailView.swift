@@ -81,6 +81,7 @@ struct KeyDetailView: View {
                             }
                             stat("\(logs.count)회", "전체 기록")
                         }
+                        if let strength = strength(entries, logs: logs) { StrengthRow(score: strength) }
                         NavigationLink("통계 보기") { PlusLocked(title: "자세한 통계") { KeyStatsView(key: key) } }
                     }
                     Section {
@@ -89,7 +90,10 @@ struct KeyDetailView: View {
                     } header: {
                         Text("기록 달력")
                     } footer: {
-                        Text("날짜를 누르면 깜빡한 기록을 더하거나 지우고, 그날 메모를 남길 수 있어요.")
+                        Text("날짜를 누르면 깜빡한 기록을 더하거나 지우고, 그날 메모를 남기거나 건너뛸 수 있어요.")
+                    }
+                    Section("최근 1년") {
+                        YearHeatmap(days: days, skipped: key.skipped)
                     }
                     if !notes.isEmpty {
                         Section("메모") {
@@ -219,6 +223,13 @@ struct KeyDetailView: View {
     }
 
     /// 이번 달 1일과 처음 시작한 날(등록일·가장 이른 기록) 중 늦은 날부터 센다. 시작 전 날을 놓친 것으로 치지 않기 위해서다.
+    /// 지금 습관 힘(0...1). 처음 시작한 날부터 센다.
+    private func strength(_ entries: [ProgressEntry], logs: [ActivityLog]) -> Double? {
+        let began = min(key.createdAt, logs.map(\.startedAt).min() ?? key.createdAt)
+        return HabitStrength.series(entries, goal: key.goalAmount, schedule: key.schedule, skipped: key.skipped,
+                                    since: began, now: .now, calendar: calendar).last?.score
+    }
+
     private func monthRate(_ entries: [ProgressEntry], logs: [ActivityLog]) -> Double? {
         guard let monthStart = calendar.dateInterval(of: .month, for: .now)?.start else { return nil }
         let began = min(key.createdAt, logs.map(\.startedAt).min() ?? key.createdAt)

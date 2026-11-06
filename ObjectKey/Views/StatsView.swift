@@ -36,6 +36,16 @@ struct StatsView: View {
             }
             if !rows.isEmpty {
                 Section {
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(weekReview, id: \.self) { line in
+                            Text(line).font(.subheadline)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                } header: {
+                    Text("이번 주 돌아보기")
+                }
+                Section {
                     ForEach(rows) { r in
                         NavigationLink { PlusLocked(title: "자세한 통계") { KeyStatsView(key: r.key) } } label: {
                             HStack(spacing: 12) {
@@ -90,6 +100,33 @@ struct StatsView: View {
         let rate = DailyProgress.completionRate(entries, goal: key.goalAmount, schedule: key.schedule, skipped: key.skipped,
                                                 since: max(monthStart, began), now: .now, calendar: calendar)
         return Row(key: key, streak: progress.streak, monthRate: rate, weekDone: progress.weekDone)
+    }
+
+    /// 이번 주 잘한 것만 골라 말한다. 못 한 것을 세지 않는다.
+    private var weekReview: [String] {
+        let tracked = keys.filter(\.supportsGoal)
+        guard let week = calendar.dateInterval(of: .weekOfYear, for: .now),
+              let fourWeeksAgo = calendar.date(byAdding: .day, value: -27, to: calendar.startOfDay(for: .now)) else { return [] }
+        var total = 0
+        var top: (name: String, days: Int)?
+        var byWeekday: [Int: Int] = [:]
+        for key in tracked {
+            let entries = KeyProgress.entries(key, logs: logs.filter { $0.keyID == key.id }, state: store.state)
+            let met = DailyProgress.days(entries, goal: key.goalAmount, calendar: calendar).filter { $0.value == .met }.keys
+            let thisWeek = met.filter { week.contains($0) }.count
+            total += thisWeek
+            if thisWeek > (top?.days ?? 0) { top = (key.name, thisWeek) }
+            for (weekday, n) in DailyProgress.metDaysByWeekday(entries, goal: key.goalAmount, since: fourWeeksAgo, calendar: calendar) {
+                byWeekday[weekday, default: 0] += n
+            }
+        }
+        var lines = [total == 0 ? "이번 주는 이제 시작이에요. 한 번이면 충분해요." : "이번 주에 모두 \(total)번 채웠어요."]
+        // 이름 끝 받침에 따라 조사가 달라지므로 조사 없이 쓴다.
+        if let top { lines.append("가장 많이 한 습관: \(top.name) · 이번 주 \(top.days)일") }
+        if let best = byWeekday.max(by: { $0.value < $1.value }), best.value > 0 {
+            lines.append("요즘 가장 잘 지키는 요일은 \(calendar.weekdaySymbols[best.key - 1])이에요.")
+        }
+        return lines
     }
 
     private func value(_ r: Row) -> String {

@@ -37,6 +37,11 @@ struct KeyStatsView: View {
         let byWeekday = DailyProgress.metDaysByWeekday(entries, goal: key.goalAmount, since: since, calendar: calendar)
         // 시간대는 실제 기록 시각으로 본다(끊기 습관의 지킨 날은 만든 기록이라 시각이 없다).
         let byHour = DailyProgress.entriesByHour(logs.map { ProgressEntry(date: $0.startedAt, amount: 1) }, since: since, calendar: calendar)
+        let compareDays = period.days ?? 30
+        let compare = PeriodCompare.metDays(entries, goal: key.goalAmount, days: compareDays, now: .now, calendar: calendar)
+        let strength = HabitStrength.series(entries, goal: key.goalAmount, schedule: key.schedule, skipped: key.skipped,
+                                            since: start(logs: logs, ignoringPeriod: true), now: .now, calendar: calendar)
+            .filter { $0.day >= since }
 
         List {
             Section {
@@ -50,7 +55,19 @@ struct KeyStatsView: View {
                     stat("\(count)회", "기록")
                 }
             } footer: {
-                Text("\(since.formatted(.dateTime.year().month().day()))부터 · 완료율은 해야 했던 날(주) 중 채운 비율이에요.")
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(PeriodCompare.sentence(recent: compare.recent, previous: compare.previous, days: compareDays))
+                        .font(.subheadline).foregroundStyle(.primary)
+                    Text("\(since.formatted(.dateTime.year().month().day()))부터 · 완료율은 해야 했던 날(주) 중 채운 비율이에요.")
+                }
+            }
+
+            Section {
+                if strength.count > 1 { StrengthChart(points: strength) } else { empty }
+            } header: {
+                Text("습관 힘 추이")
+            } footer: {
+                Text("채운 날마다 조금씩 오르고, 놓친 날에도 조금만 내려가요. 쉬는 날과 건너뛴 날은 그대로예요.")
             }
 
             Section("주별 완료율") {
@@ -118,9 +135,10 @@ struct KeyStatsView: View {
     }
 
     /// 기간 시작. 처음 시작한 날(등록일·가장 이른 기록)보다 앞으로는 가지 않는다.
-    private func start(logs: [ActivityLog]) -> Date {
+    /// ignoringPeriod면 고른 기간과 상관없이 처음 시작한 날. 습관 힘은 처음부터 쌓아야 맞는 값이 나온다.
+    private func start(logs: [ActivityLog], ignoringPeriod: Bool = false) -> Date {
         let began = calendar.startOfDay(for: min(key.createdAt, logs.map(\.startedAt).min() ?? key.createdAt))
-        guard let days = period.days,
+        guard !ignoringPeriod, let days = period.days,
               let from = calendar.date(byAdding: .day, value: -(days - 1), to: calendar.startOfDay(for: .now)) else { return began }
         return max(began, from)
     }

@@ -37,6 +37,12 @@ struct RootView: View {
         .onChange(of: route.keyID, initial: true) { _, id in
             if id != nil { showAdd = false; tab = .today }
         }
+        .onChange(of: route.openStats, initial: true) { _, open in
+            guard open else { return }
+            showAdd = false
+            tab = .stats
+            route.openStats = false
+        }
     }
 }
 
