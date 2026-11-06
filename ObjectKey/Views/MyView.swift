@@ -70,7 +70,7 @@ struct MyView: View {
             }
             Section {
                 // 카메라·건강 앱을 쓰므로 처리방침을 앱 안에서도 열 수 있어야 한다(심사 지침 5.1.1).
-                Link(destination: URL(string: "https://alexalim.github.io/objectkey/privacy.html")!) {
+                Link(destination: URL(string: "https://alexalim.github.io/moki-privacy/")!) {
                     Label("개인정보 처리방침", systemImage: "hand.raised")
                 }
                 Link(destination: URL(string: "mailto:esl2dev@gmail.com")!) {
