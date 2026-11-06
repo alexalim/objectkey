@@ -17,8 +17,9 @@ extension KeyProgress {
             return QuitHabit.cleanDays(slips: mine.map(\.startedAt), since: start, now: now, calendar: .current)
         }
         var entries = mine.map {
-            // 시간 기록은 길이, 횟수·건강 자동 기록은 양으로 센다.
-            ProgressEntry(date: $0.startedAt, amount: $0.kind == "session" ? $0.duration : $0.amount)
+            // 시간 기록은 길이, 횟수는 양으로 센다. 건강 앱 자동 완료는 "그날을 채웠다"는 뜻이라 목표만큼으로 친다.
+            ProgressEntry(date: $0.startedAt, amount: $0.kind == "session" ? $0.duration
+                                                      : $0.kind == "health" ? (key.goalAmount ?? 1) : $0.amount)
         }
         switch state {
         case .session(let id, _, let segmentStart, let accumulated) where id == key.id:

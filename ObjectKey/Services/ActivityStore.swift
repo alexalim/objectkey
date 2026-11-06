@@ -104,16 +104,24 @@ final class ActivityStore {
         let finishedPrevious: String?
     }
 
-    /// 위젯 버튼·워치·단축어·알림 버튼이 모두 이 길로 실행한다. 확인 창을 띄울 곳이 없으니
-    /// 진행 중이던 다른 활동은 기록하고 넘어간다. 끝나면 위젯·워치 요약을 새로 쓴다.
+    /// 위젯 버튼·워치·단축어·알림 버튼이 모두 이 길로 실행한다. 완료를 누른 것으로 보고 바로 기록한다.
+    /// 시간 기록은 화면 밖에서 타이머를 켜면 보이지 않은 채 몇 시간씩 돌 수 있어, 실행 화면의 [완료했어요]처럼
+    /// 목표 시간(없으면 10분)만큼 남긴다. 이미 그 물건 타이머가 돌고 있으면 끝내고 기록한다.
+    /// - Parameter tapped: 누른 때. 워치에서 쌓였다가 늦게 도착한 기록도 누른 날로 남긴다.
     @discardableResult
-    func runFromOutside(_ id: UUID) -> OutsideRun? {
+    func runFromOutside(_ id: UUID, at tapped: Date = .now) -> OutsideRun? {
         let context = AppModel.container.mainContext
         guard let keys = try? context.fetch(FetchDescriptor<KeyObject>()),
               let key = keys.first(where: { $0.id == id }) else { return nil }
         lastMessage = nil
         var previous: String?
-        if case .needsConfirmation(let pending) = activate(key, keys: keys, context: context) {
+        let runningThis: Bool = if case .session(let running, _, _, _) = engine.state { running == key.id } else { false }
+        let recordsNow = key.kind == .counter || key.kind == .attend || (key.kind == .session && !runningThis)
+        if recordsNow {
+            let minutes = key.kind == .attend ? key.attendMinutes : (key.dailyGoal > 0 ? key.dailyGoal : 10)
+            lastMessage = addRecord(key, on: tapped, minutes: minutes, context: context) ?? "\(key.name) 기록했어요."
+        } else if case .needsConfirmation(let pending) = activate(key, keys: keys, context: context) {
+            // 휴식 타이머, 또는 돌고 있던 그 물건 타이머 끝내기.
             previous = keys.first { $0.id == pending.from }?.name ?? "다른"
             confirm(pending, keys: keys, context: context)
         }

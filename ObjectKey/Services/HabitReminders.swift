@@ -32,7 +32,7 @@ enum HabitReminders {
                                    intentIdentifiers: [])
         }
         center.setNotificationCategories([
-            withButton(attendCategory, "참석"), withButton(sessionCategory, "시작"),
+            withButton(attendCategory, "참석"), withButton(sessionCategory, "완료"),
             withButton(counterCategory, "+1"), withButton(measureCategory, "기록 추가"),
         ])
         let stale = await center.pendingNotificationRequests().map(\.identifier).filter { $0.hasPrefix(prefix) }
@@ -41,7 +41,8 @@ enum HabitReminders {
         // 끊기 습관은 "할 시간"이 없으므로 알리지 않는다.
         let targets = keys.filter { $0.supportsGoal && !$0.isQuit && $0.reminderMinute >= 0 }
         guard !targets.isEmpty, await center.notificationSettings().authorizationStatus == .authorized else { return }
-        let days = min(7, budget / targets.count)
+        // 알림 습관이 아주 많아도 적어도 오늘 치는 예약한다.
+        let days = max(1, min(7, budget / targets.count))
         let calendar = Calendar.current
         let now = Date.now
         for key in targets {
@@ -117,12 +118,9 @@ enum HabitReminders {
         return nudges[abs(variant) % nudges.count]
     }
 
-    /// 알림 버튼(참석·시작·+1). 위젯·단축어와 같은 길로 실행한다. 진행 중이던 다른 활동은 기록하고 넘어간다.
-    /// 시간 기록이 이미 그 물건으로 진행 중이면 "시작"을 눌러도 멈추지 않게 그냥 둔다.
+    /// 알림 버튼(참석·완료·+1). 위젯·단축어와 같은 길로 바로 기록한다.
     static func recordFromNotification(_ id: UUID) {
-        let store = ActivityStore.shared
-        if case .session(let running, _, _, _) = store.state, running == id { return }
-        store.runFromOutside(id)
+        ActivityStore.shared.runFromOutside(id)
     }
 }
 

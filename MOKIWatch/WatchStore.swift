@@ -27,7 +27,8 @@ final class WatchStore: NSObject, ObservableObject {
 
     /// 기록 요청. 아이폰 앱이 꺼져 있어도 transferUserInfo는 쌓였다가 전달된다.
     func record(_ id: UUID) {
-        let payload = ["record": id.uuidString]
+        // 누른 때를 같이 보낸다. 아이폰과 떨어져 있다가 나중에 전달돼도 누른 날로 기록된다.
+        let payload: [String: Any] = ["record": id.uuidString, "at": Date.now.timeIntervalSince1970]
         let session = WCSession.default
         if session.isReachable {
             session.sendMessage(payload, replyHandler: nil) { _ in session.transferUserInfo(payload) }

@@ -69,7 +69,13 @@ enum HealthSync {
     }
 
     /// 건강 앱과 이어 둔 물건마다, 목표를 넘은 날 중 아직 기록 없는 날을 채운다. 앱이 앞으로 올 때 부른다.
+    /// 앱이 앞으로 올 때마다 불리므로(제어 센터·Face ID 뒤에도) 겹쳐 돌면 같은 날을 두 번 채울 수 있다.
+    private static var syncing = false
+
     static func sync(context: ModelContext) async {
+        guard !syncing else { return }
+        syncing = true
+        defer { syncing = false }
         guard isAvailable, let keys = try? context.fetch(FetchDescriptor<KeyObject>()) else { return }
         let linked = keys.filter { HealthMetric(rawValue: $0.healthMetric) != nil && $0.healthTarget > 0 }
         guard !linked.isEmpty, let logs = try? context.fetch(FetchDescriptor<ActivityLog>()) else { return }

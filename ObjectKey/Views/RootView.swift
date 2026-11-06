@@ -115,7 +115,8 @@ struct QuickAddSheet: View {
     /// 무료는 습관 3개까지, 한 문장으로 적기는 플러스. 넘으면 플러스 안내를 연다.
     private func open(_ r: Route) {
         switch r {
-        case .register where !plus.canAddHabit(currentCount: keys.count):
+        // 휴식 타이머는 습관이 아니라 세지 않는다.
+        case .register where !plus.canAddHabit(currentCount: keys.filter(\.supportsGoal).count):
             paywallReason = "무료로는 습관을 \(PlusStore.freeHabitLimit)개까지 만들 수 있어요."
         case .ask where !plus.isPlus:
             paywallReason = "한 문장으로 적기는 플러스에서 쓸 수 있어요."

@@ -60,6 +60,8 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.aspynlim.moki
         PRODUCT_NAME: MOKI
+        # 기기 안 AI(FoundationModels)는 iOS 26부터 있다. 약하게 연결해야 iOS 17~25에서 실행하자마자 죽지 않는다.
+        OTHER_LDFLAGS: ["$(inherited)", "-weak_framework", "FoundationModels"]
         GENERATE_INFOPLIST_FILE: NO
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor

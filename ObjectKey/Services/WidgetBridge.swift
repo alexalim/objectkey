@@ -28,11 +28,13 @@ enum WidgetBridge {
         guard let keys = try? context.fetch(FetchDescriptor<KeyObject>()),
               let logs = try? context.fetch(FetchDescriptor<ActivityLog>()) else { return }
         refresh(keys: keys, logs: logs, state: ActivityStore.shared.state)
+        // 밖에서 기록하면 홈 화면이 없을 수 있다. 오늘 이미 한 습관의 알림이 울리지 않게 여기서도 다시 예약한다.
+        Task { await HabitReminders.reschedule(keys: keys, logs: logs, state: ActivityStore.shared.state) }
     }
 
     /// 위젯 체크 버튼. 단축어와 같은 규칙으로 실행한다.
-    static func record(_ rawID: String) {
+    static func record(_ rawID: String, at tapped: Date = .now) {
         guard let id = UUID(uuidString: rawID) else { return }
-        ActivityStore.shared.runFromOutside(id)
+        ActivityStore.shared.runFromOutside(id, at: tapped)
     }
 }

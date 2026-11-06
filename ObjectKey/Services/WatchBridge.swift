@@ -31,7 +31,9 @@ final class WatchBridge: NSObject, WCSessionDelegate {
             return
         }
         guard let id = message["record"] as? String else { return }
-        Task { @MainActor in WidgetBridge.record(id) }
+        // 워치에서 누른 때. 아이폰이 멀리 있다가 다음 날 받아도 누른 날로 남긴다(옛 워치 앱은 없어서 지금으로).
+        let tapped = (message["at"] as? Double).map(Date.init(timeIntervalSince1970:)) ?? .now
+        Task { @MainActor in WidgetBridge.record(id, at: min(tapped, .now)) }
     }
 
     /// 워치 앱이 설치되거나 짝이 바뀌면 바로 요약을 보낸다. 안 그러면 아이폰 앱을 다시 켤 때까지 워치가 비어 있다.

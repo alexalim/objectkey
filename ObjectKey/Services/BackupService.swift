@@ -68,7 +68,13 @@ enum BackupService {
                                        duration: l.duration, amount: l.amount ?? 1))
         }
         for n in plan.notes { context.insert(DayNote(keyID: n.keyID, day: n.day, text: n.text)) }
-        try context.save()
+        do {
+            try context.save()
+        } catch {
+            // 실패한 가져오기가 화면에 남았다가 다른 저장 때 같이 저장되지 않게 되돌린다.
+            context.rollback()
+            throw error
+        }
         WidgetBridge.refreshFromStore()
         MokiShortcuts.updateAppShortcutParameters()
         return (plan.keys.count, plan.logs.count, plan.notes.count)
