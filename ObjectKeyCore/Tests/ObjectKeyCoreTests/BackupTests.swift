@@ -38,6 +38,7 @@ final class BackupTests: XCTestCase {
         file.keys[0].measureUnit = "ml"
         file.logs[0].amount = 250
         file.keys[0].photoSourceID = UUID()
+        file.keys[0].skippedDays = [Date(timeIntervalSince1970: 1_800_000_000)]
         XCTAssertEqual(try Backup.decode(try Backup.encode(file)), file)
     }
 

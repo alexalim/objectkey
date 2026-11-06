@@ -17,10 +17,10 @@ enum HabitFacts {
                 continue
             }
             let entries = KeyProgress.entries(key, logs: mine, state: state, now: now)
-            let p = DailyProgress.evaluate(entries, goal: key.goalAmount, schedule: key.schedule, now: now, calendar: calendar)
-            let best = DailyProgress.bestStreak(entries, goal: key.goalAmount, schedule: key.schedule, now: now, calendar: calendar)
+            let p = DailyProgress.evaluate(entries, goal: key.goalAmount, schedule: key.schedule, skipped: key.skipped, now: now, calendar: calendar)
+            let best = DailyProgress.bestStreak(entries, goal: key.goalAmount, schedule: key.schedule, skipped: key.skipped, now: now, calendar: calendar)
             let began = min(key.createdAt, mine.map(\.startedAt).min() ?? key.createdAt)
-            let rate = DailyProgress.completionRate(entries, goal: key.goalAmount, schedule: key.schedule,
+            let rate = DailyProgress.completionRate(entries, goal: key.goalAmount, schedule: key.schedule, skipped: key.skipped,
                                                     since: max(monthStart, began), now: now, calendar: calendar)
             let days = DailyProgress.days(entries, goal: key.goalAmount, calendar: calendar)
             let monthLogs = mine.filter { $0.startedAt >= monthStart }

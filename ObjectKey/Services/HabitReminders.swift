@@ -48,7 +48,11 @@ enum HabitReminders {
             let progress = KeyProgress.of(key, logs: logs, state: state, now: now)
             let dates = ReminderPlan.fireDates(minuteOfDay: key.reminderMinute, metToday: progress.metToday,
                                                days: days, now: now, calendar: calendar,
-                                               isDue: isDue(key.schedule, progress: progress, now: now, calendar: calendar))
+                                               isDue: { day in
+                                                   // 건너뛰기로 한 날은 알리지 않는다.
+                                                   !key.isSkipped(day, calendar: calendar)
+                                                       && isDue(key.schedule, progress: progress, now: now, calendar: calendar)(day)
+                                               })
             for (i, date) in dates.enumerated() {
                 let content = UNMutableNotificationContent()
                 content.title = key.name

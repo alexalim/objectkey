@@ -92,7 +92,20 @@ struct HabitRunView: View {
                     primary("휴식 시작 (\(key.countdownMinutes)분)") { startTimer(); dismiss() }
                 }
             }
-            Button("나중에 하기") { dismiss() }.padding(.top, 4)
+            HStack(spacing: 20) {
+                Button("나중에 하기") { dismiss() }
+                // 사정이 있는 날은 쉬어도 놓친 날로 치지 않는다.
+                if key.supportsGoal, !key.isQuit, !key.isSkipped(.now), runningSince == nil {
+                    Button("오늘은 쉴게요") {
+                        key.toggleSkip(.now)
+                        context.saveOrReport()
+                        WidgetBridge.refreshFromStore()
+                        dismiss()
+                    }
+                    .foregroundStyle(.secondary)
+                }
+            }
+            .padding(.top, 4)
         }
     }
 
@@ -199,8 +212,10 @@ struct HabitDoneView: View {
 
 /// 오늘 할 일 셈. 홈 "오늘 할 일" 머리글과 같은 기준이다(일정상 오늘이거나 오늘 이미 한 습관).
 enum TodayPlan {
+    /// 오늘 건너뛰기로 한 습관은 (이미 채웠으면 빼고) 쉬는 날로 내려간다.
     static func isTodo(_ key: KeyObject, _ progress: KeyProgress) -> Bool {
-        key.schedule.isDue(on: .now, metToday: progress.metToday, weekDone: progress.weekDone, calendar: .current)
+        if key.isSkipped(.now), !progress.metToday { return false }
+        return key.schedule.isDue(on: .now, metToday: progress.metToday, weekDone: progress.weekDone, calendar: .current)
     }
 
     static func counts(keys: [KeyObject], logs: [ActivityLog], state: ActivityState) -> (done: Int, total: Int) {

@@ -23,7 +23,7 @@ struct KeyDetailView: View {
     var body: some View {
         let logs = allLogs.filter { $0.keyID == key.id }
         let entries = KeyProgress.entries(key, logs: logs, state: store.state)
-        let progress = DailyProgress.evaluate(entries, goal: key.goalAmount, schedule: key.schedule, now: .now, calendar: calendar)
+        let progress = DailyProgress.evaluate(entries, goal: key.goalAmount, schedule: key.schedule, skipped: key.skipped, now: .now, calendar: calendar)
         let days = DailyProgress.days(entries, goal: key.goalAmount, calendar: calendar)
         let notes = allNotes.filter { $0.keyID == key.id }
         NavigationStack {
@@ -72,7 +72,7 @@ struct KeyDetailView: View {
                     Section {
                         HStack {
                             stat("\(progress.streak)일", "연속", tint: progress.atRisk ? .red : .orange)
-                            stat("\(DailyProgress.bestStreak(entries, goal: key.goalAmount, schedule: key.schedule, now: .now, calendar: calendar))일", "최고 기록")
+                            stat("\(DailyProgress.bestStreak(entries, goal: key.goalAmount, schedule: key.schedule, skipped: key.skipped, now: .now, calendar: calendar))일", "최고 기록")
                             // 주 N회는 달 완료율이 주가 끝나야 정해져 비어 보이므로, 이번 주 진행을 보여 준다.
                             if case .perWeek(let n) = key.schedule {
                                 stat("\(progress.weekDone)/\(n)회", "이번 주")
@@ -84,7 +84,7 @@ struct KeyDetailView: View {
                         NavigationLink("통계 보기") { PlusLocked(title: "자세한 통계") { KeyStatsView(key: key) } }
                     }
                     Section {
-                        HabitCalendar(days: days, schedule: key.schedule, noted: Set(notes.map(\.day)),
+                        HabitCalendar(days: days, schedule: key.schedule, skipped: key.skipped, noted: Set(notes.map(\.day)),
                                       slips: key.isQuit ? Set(logs.map { calendar.startOfDay(for: $0.startedAt) }) : []) { selectedDay = $0 }
                     } header: {
                         Text("기록 달력")
@@ -119,6 +119,14 @@ struct KeyDetailView: View {
                                 isPresented: Binding(get: { selectedDay != nil }, set: { if !$0 { selectedDay = nil } }),
                                 titleVisibility: .visible, presenting: selectedDay) { day in
                 Button(addLabel) { addRecord(on: day) }
+                // 끊기 습관은 안 한 날이 지킨 날이라 건너뛸 게 없다.
+                if !key.isQuit {
+                    Button(key.isSkipped(day) ? "건너뛰기 취소" : "이날은 건너뛰기 (쉰 날로)") {
+                        key.toggleSkip(day)
+                        context.saveOrReport()
+                        WidgetBridge.refreshFromStore()
+                    }
+                }
                 Button(note(on: day) == nil ? "메모 남기기" : "메모 고치기") { openNote(day) }
                 let count = records(on: day).count
                 if count > 1 {
@@ -214,7 +222,7 @@ struct KeyDetailView: View {
     private func monthRate(_ entries: [ProgressEntry], logs: [ActivityLog]) -> Double? {
         guard let monthStart = calendar.dateInterval(of: .month, for: .now)?.start else { return nil }
         let began = min(key.createdAt, logs.map(\.startedAt).min() ?? key.createdAt)
-        return DailyProgress.completionRate(entries, goal: key.goalAmount, schedule: key.schedule,
+        return DailyProgress.completionRate(entries, goal: key.goalAmount, schedule: key.schedule, skipped: key.skipped,
                                             since: max(monthStart, began), now: .now, calendar: calendar)
     }
 

@@ -28,11 +28,11 @@ struct KeyStatsView: View {
         let logs = allLogs.filter { $0.keyID == key.id }
         let entries = KeyProgress.entries(key, logs: logs, state: store.state)
         let since = start(logs: logs)
-        let rate = DailyProgress.completionRate(entries, goal: key.goalAmount, schedule: key.schedule,
+        let rate = DailyProgress.completionRate(entries, goal: key.goalAmount, schedule: key.schedule, skipped: key.skipped,
                                                 since: since, now: .now, calendar: calendar)
-        let best = DailyProgress.bestStreak(entries, goal: key.goalAmount, schedule: key.schedule, now: .now, calendar: calendar)
+        let best = DailyProgress.bestStreak(entries, goal: key.goalAmount, schedule: key.schedule, skipped: key.skipped, now: .now, calendar: calendar)
         let count = logs.filter { $0.startedAt >= since }.count
-        let weekly = DailyProgress.weeklyRates(entries, goal: key.goalAmount, schedule: key.schedule,
+        let weekly = DailyProgress.weeklyRates(entries, goal: key.goalAmount, schedule: key.schedule, skipped: key.skipped,
                                                since: since, now: .now, calendar: calendar)
         let byWeekday = DailyProgress.metDaysByWeekday(entries, goal: key.goalAmount, since: since, calendar: calendar)
         // 시간대는 실제 기록 시각으로 본다(끊기 습관의 지킨 날은 만든 기록이라 시각이 없다).

@@ -10,7 +10,7 @@ enum WidgetBridge {
         let now = Date.now
         let items = keys.filter(\.supportsGoal).compactMap { key -> WidgetSnapshot.Item? in
             let progress = KeyProgress.of(key, logs: logs, state: state, now: now)
-            guard key.schedule.isDue(on: now, metToday: progress.metToday, weekDone: progress.weekDone, calendar: .current) else { return nil }
+            guard TodayPlan.isTodo(key, progress) else { return nil }
             return WidgetSnapshot.Item(id: key.id, name: key.name, emoji: key.emoji.hasPrefix("moki-") ? "" : key.emoji,
                                        done: progress.metToday, streak: progress.streak, atRisk: progress.atRisk,
                                        time: key.todoMinute.map(KeyAction.clock), quit: key.isQuit ? true : nil)

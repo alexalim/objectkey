@@ -445,6 +445,8 @@ struct GoalEditor: View {
 struct HabitCalendar: View {
     let days: [Date: DayStatus]
     var schedule: HabitSchedule = .daily
+    /// 건너뛴 날(0시). 점선 테로 표시한다. 놓친 날이 아니라 쉰 날이다.
+    var skipped: Set<Date> = []
     /// 메모가 있는 날(0시). 숫자 아래 작은 점으로 표시한다.
     var noted: Set<Date> = []
     /// 끊기 습관에서 저지른 날(0시). 빨간 테로 표시한다.
@@ -490,6 +492,7 @@ struct HabitCalendar: View {
                 legend(Color.orange.opacity(0.25), "목표 미달")
                 if !noted.isEmpty { legend(Color.accentColor, "메모") }
                 if !slips.isEmpty { legend(Color.red.opacity(0.7), "한 날") }
+                if !skipped.isEmpty { legend(Color.secondary, "건너뜀") }
             }
             .font(.caption2).foregroundStyle(.secondary)
         }
@@ -516,8 +519,10 @@ struct HabitCalendar: View {
             }
             .overlay {
                 if slips.contains(day) { Circle().stroke(Color.red.opacity(0.7), lineWidth: 1.5) }
+                if skipped.contains(day) { Circle().stroke(Color.secondary, style: StrokeStyle(lineWidth: 1.2, dash: [3, 2])) }
             }
-            .accessibilityLabel(Text(day, format: .dateTime.month().day()) + Text(status == .met ? ", 채움" : status == .partial ? ", 목표 미달" : "") + Text(noted.contains(day) ? ", 메모 있음" : ""))
+            .accessibilityLabel(Text(day, format: .dateTime.month().day()) + Text(status == .met ? ", 채움" : status == .partial ? ", 목표 미달" : "")
+                                + Text(skipped.contains(day) ? ", 건너뜀" : "") + Text(noted.contains(day) ? ", 메모 있음" : ""))
     }
 
     /// 요일 지정일 때 정한 요일이 아닌 날은 흐리게 보인다.

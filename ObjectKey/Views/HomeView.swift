@@ -35,8 +35,7 @@ struct HomeView: View {
             let tracked = visible.filter(\.supportsGoal).map { (key: $0, progress: KeyProgress.of($0, logs: logs, state: store.state)) }
             let progressByID = Dictionary(uniqueKeysWithValues: tracked.map { ($0.key.id, $0.progress) })
             // 오늘 할 일: 일정상 오늘 해야 하거나 오늘 이미 한 습관. 시간이 정해진 것부터 시간순.
-            let todo = tracked.filter { $0.key.schedule.isDue(on: .now, metToday: $0.progress.metToday,
-                                                              weekDone: $0.progress.weekDone, calendar: .current) }
+            let todo = tracked.filter { TodayPlan.isTodo($0.key, $0.progress) }
                 .map(\.key)
                 .sorted { ($0.todoMinute ?? Int.max, $0.createdAt) < ($1.todoMinute ?? Int.max, $1.createdAt) }
             let resting = tracked.map(\.key).filter { key in !todo.contains { $0.id == key.id } }

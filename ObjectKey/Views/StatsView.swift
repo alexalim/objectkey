@@ -83,11 +83,11 @@ struct StatsView: View {
     private func row(_ key: KeyObject) -> Row {
         let mine = logs.filter { $0.keyID == key.id }
         let entries = KeyProgress.entries(key, logs: mine, state: store.state)
-        let progress = DailyProgress.evaluate(entries, goal: key.goalAmount, schedule: key.schedule, now: .now, calendar: calendar)
+        let progress = DailyProgress.evaluate(entries, goal: key.goalAmount, schedule: key.schedule, skipped: key.skipped, now: .now, calendar: calendar)
         // 상세 화면과 같은 기준: 이번 달 1일과 처음 시작한 날 중 늦은 날부터.
         let monthStart = calendar.dateInterval(of: .month, for: .now)?.start ?? .now
         let began = min(key.createdAt, mine.map(\.startedAt).min() ?? key.createdAt)
-        let rate = DailyProgress.completionRate(entries, goal: key.goalAmount, schedule: key.schedule,
+        let rate = DailyProgress.completionRate(entries, goal: key.goalAmount, schedule: key.schedule, skipped: key.skipped,
                                                 since: max(monthStart, began), now: .now, calendar: calendar)
         return Row(key: key, streak: progress.streak, monthRate: rate, weekDone: progress.weekDone)
     }

@@ -41,6 +41,8 @@ final class KeyObject {
     var routineSteps: [String] = []
     /// 같은 물건을 쓰는 다른 습관(물건 주인). 그 사진으로 스캔한다. nil이면 자기 사진을 쓴다. (v0.5)
     var photoSourceID: UUID?
+    /// 건너뛴 날(그날 0시). 사정이 있어 쉰 날로, 놓친 날로 치지 않는다. (v0.5)
+    var skippedDays: [Date] = []
     @Relationship(deleteRule: .cascade, inverse: \ReferenceShot.key)
     var shots: [ReferenceShot] = []
 
@@ -147,6 +149,16 @@ final class KeyObject {
     }
 
     var sharedHabit: SharedObject.Habit { .init(id: id, source: photoSourceID) }
+
+    var skipped: Set<Date> { Set(skippedDays) }
+
+    func isSkipped(_ day: Date, calendar: Calendar = .current) -> Bool { skippedDays.contains(calendar.startOfDay(for: day)) }
+
+    /// 그날 건너뛰기를 켜거나 끈다.
+    func toggleSkip(_ day: Date, calendar: Calendar = .current) {
+        let start = calendar.startOfDay(for: day)
+        if let i = skippedDays.firstIndex(of: start) { skippedDays.remove(at: i) } else { skippedDays.append(start) }
+    }
 }
 
 /// 물건 등록 시 찍은 참조 이미지 한 장의 특징값.
