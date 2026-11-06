@@ -2,6 +2,7 @@ import Foundation
 import Observation
 import OSLog
 import StoreKit
+import SwiftUI
 
 /// MOKI 플러스(평생 이용권, 비소모성 인앱 구매). 무료는 습관 3개까지, 플러스는 제한 없음과 편의 기능.
 /// 구매 여부는 StoreKit의 현재 권한(Transaction.currentEntitlements)이 기준이고, 위젯·워치가 볼 수 있게 스냅숏에도 적는다.
