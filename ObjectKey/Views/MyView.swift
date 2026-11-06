@@ -46,6 +46,7 @@ struct MyView: View {
                 Text("일요일 저녁 8시에 한 주를 돌아보라고 알려 드려요. 누르면 통계가 열려요.")
             }
             Section("물건") {
+                NavigationLink { StickerBookView() } label: { Label("스티커 모음", systemImage: "star.square.on.square") }
                 Button("태그 관리", systemImage: "tag") { showTags = true }
                 NavigationLink { CalibrationView() } label: { Label("인식 점검", systemImage: "viewfinder") }
             }

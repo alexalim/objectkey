@@ -21,4 +21,15 @@ public enum ReminderPlan {
             return fire
         }
     }
+
+    /// 한동안 기록이 없으면 알림을 스스로 줄인다. 반응 없는 알림을 계속 보내면 알림을 끄거나 앱을 지우게 된다.
+    /// - 7일 미만: 그대로. 7~13일: 이틀에 한 번. 14일 이상: 앞으로 한 번만.
+    /// - Parameter idleDays: 마지막 기록(또는 등록) 뒤 지난 날 수.
+    public static func thin(_ dates: [Date], idleDays: Int) -> [Date] {
+        switch idleDays {
+        case ..<7: return dates
+        case 7..<14: return dates.enumerated().filter { $0.offset % 2 == 0 }.map(\.element)
+        default: return Array(dates.prefix(1))
+        }
+    }
 }

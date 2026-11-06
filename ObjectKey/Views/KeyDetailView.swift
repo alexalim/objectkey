@@ -17,6 +17,7 @@ struct KeyDetailView: View {
     /// 메모를 쓰는 날과 입력 중인 내용.
     @State private var noteDay: Date?
     @State private var noteText = ""
+    @State private var card: CardImage?
 
     private let calendar = Calendar.current
 
@@ -82,6 +83,16 @@ struct KeyDetailView: View {
                             stat("\(logs.count)회", "전체 기록")
                         }
                         if let strength = strength(entries, logs: logs) { StrengthRow(score: strength) }
+                        Button("기록 카드 공유", systemImage: "square.and.arrow.up") {
+                            let image = ShareCard.render(HabitShareCard(
+                                name: key.name, emoji: key.emoji,
+                                metDays: days.values.filter { $0 == .met }.count,
+                                bestStreak: DailyProgress.bestStreak(entries, goal: key.goalAmount, schedule: key.schedule, skipped: key.skipped, now: .now, calendar: calendar),
+                                strength: strength(entries, logs: logs),
+                                phase: progress.phase.map { "\(progress.streak)일째 · \($0.label)" },
+                                days: days))
+                            card = image.map { CardImage(image: $0) }
+                        }
                         NavigationLink("통계 보기") { PlusLocked(title: "자세한 통계") { KeyStatsView(key: key) } }
                     }
                     Section {
@@ -119,6 +130,7 @@ struct KeyDetailView: View {
                 }
             }
             .sheet(isPresented: $editingGoal) { GoalEditor(key: key) }
+            .sheet(item: $card) { ShareCardSheet(image: $0.image) }
             .confirmationDialog(selectedDay.map { $0.formatted(.dateTime.month().day().weekday()) } ?? "",
                                 isPresented: Binding(get: { selectedDay != nil }, set: { if !$0 { selectedDay = nil } }),
                                 titleVisibility: .visible, presenting: selectedDay) { day in

@@ -334,13 +334,14 @@ enum HabitCopy {
     /// 끊기기 직전 안내. 홈 상단·알림·상세가 같이 쓴다.
     /// 무엇이 잘못됐는지보다 "무엇을 하면 이어지는지"를 먼저 말한다.
     static func risk(_ schedule: HabitSchedule, streak: Int, weekDone: Int = 0, quit: Bool = false) -> String {
-        if quit { return "오늘 참으면 \(streak)일이 이어져요. 어제 했으니 오늘은 꼭!" }
+        // 다그치지 않는다. 한 번 놓친 건 괜찮다는 말을 먼저 하고, 무엇을 하면 이어지는지 알려 준다.
+        if quit { return "어제 한 번은 괜찮아요. 오늘 참으면 \(streak)일이 그대로 이어져요." }
         switch schedule {
-        case .daily: return "오늘 한 번 하면 \(streak)일이 이어져요. 어제 빠졌으니 오늘은 꼭!"
-        case .weekdays: return "오늘 하면 \(streak)일이 이어져요. 지난번 정한 날을 놓쳤어요."
+        case .daily: return "어제 쉬었어도 괜찮아요. 오늘 한 번이면 \(streak)일이 그대로 이어져요."
+        case .weekdays: return "지난번은 쉬었어도 괜찮아요. 오늘 하면 \(streak)일이 그대로 이어져요."
         case .perWeek(let n):
             let remaining = max(1, n - weekDone)
-            return "이번 주 \(remaining)회 더 하면 \(streak)일이 이어져요. (이번 주 \(weekDone)/\(n)회)"
+            return "지난주는 괜찮아요. 이번 주 \(remaining)번만 더 하면 \(streak)일이 이어져요. (이번 주 \(weekDone)/\(n)번)"
         }
     }
 }

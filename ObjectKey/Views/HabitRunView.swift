@@ -14,6 +14,8 @@ struct HabitRunView: View {
     @Query private var logs: [ActivityLog]
     @State private var pending: PendingSwitch?
     @State private var finished: String?
+    /// 이번 완료로 새로 받은 스티커.
+    @State private var newSticker: Moki?
     @State private var showDetail = false
     @State private var problem: String?
 
@@ -21,7 +23,8 @@ struct HabitRunView: View {
         NavigationStack {
             Group {
                 if let finished {
-                    HabitDoneView(key: key, message: finished, progress: TodayPlan.counts(keys: keys, logs: logs, state: store.state)) {
+                    HabitDoneView(key: key, message: finished, progress: TodayPlan.counts(keys: keys, logs: logs, state: store.state),
+                                  sticker: newSticker) {
                         dismiss()
                     }
                 } else {
@@ -151,6 +154,13 @@ struct HabitRunView: View {
             return
         }
         finished = key.isQuit ? "기록했어요. 내일 다시 지켜 봐요." : "좋아요! 오늘의 작은 약속 하나 완료."
+        checkSticker()
+    }
+
+    /// 방금 기록으로 새 스티커를 받았는지. 기록이 저장소에 반영된 뒤 다시 센다.
+    private func checkSticker() {
+        let all = (try? context.fetch(FetchDescriptor<ActivityLog>())) ?? logs
+        newSticker = Stickers.claimNew(bestStreak: Stickers.bestStreak(keys: keys, logs: all, state: store.state))
     }
 
     private func startTimer() {
@@ -161,6 +171,7 @@ struct HabitRunView: View {
     private func stopTimer() {
         _ = store.activate(key, keys: keys, context: context)
         finished = "좋아요! 오늘의 작은 약속 하나 완료."
+        checkSticker()
     }
 }
 
@@ -169,6 +180,7 @@ struct HabitDoneView: View {
     let key: KeyObject
     let message: String
     let progress: (done: Int, total: Int)
+    var sticker: Moki? = nil
     let onClose: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -182,6 +194,18 @@ struct HabitDoneView: View {
                 .opacity(shown || reduceMotion ? 1 : 0)
             Text(message).font(.title3.bold()).multilineTextAlignment(.center)
             Text(key.name).foregroundStyle(.secondary)
+            if let sticker {
+                HStack(spacing: 12) {
+                    Image(sticker).resizable().scaledToFit().frame(width: 56, height: 56)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("새 스티커를 받았어요!").font(.headline)
+                        Text("마이 → 스티커 모음에서 볼 수 있어요.").font(.caption).foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding()
+                .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 16))
+            }
             if progress.total > 0 {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {

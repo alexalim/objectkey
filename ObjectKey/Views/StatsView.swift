@@ -8,6 +8,7 @@ struct StatsView: View {
     @Environment(ActivityStore.self) private var store
     @Query(sort: \KeyObject.createdAt) private var keys: [KeyObject]
     @Query private var logs: [ActivityLog]
+    @State private var card: CardImage?
 
     private let calendar = Calendar.current
 
@@ -72,12 +73,14 @@ struct StatsView: View {
                 }
             }
             Section {
+                Button("올해 결산 카드", systemImage: "sparkles.rectangle.stack") { card = yearCard().map { CardImage(image: $0) } }
                 NavigationLink { HistoryView() } label: { Label("전체 기록 보기", systemImage: "list.bullet.rectangle") }
             } footer: {
                 Text("날짜별 기록을 보고, 밀어서 지울 수 있어요.")
             }
         }
         .navigationTitle("통계")
+        .sheet(item: $card) { ShareCardSheet(image: $0.image) }
         .overlay {
             if keys.isEmpty {
                 ContentUnavailableView {
@@ -127,6 +130,24 @@ struct StatsView: View {
             lines.append("요즘 가장 잘 지키는 요일은 \(calendar.weekdaySymbols[best.key - 1])이에요.")
         }
         return lines
+    }
+
+    /// 올해 1월 1일부터 오늘까지의 결산.
+    private func yearCard() -> UIImage? {
+        let year = calendar.component(.year, from: .now)
+        guard let yearStart = calendar.date(from: DateComponents(year: year, month: 1, day: 1)) else { return nil }
+        var total = 0
+        var top: (name: String, days: Int)?
+        let tracked = keys.filter(\.supportsGoal)
+        for key in tracked {
+            let entries = KeyProgress.entries(key, logs: logs.filter { $0.keyID == key.id }, state: store.state)
+            let met = DailyProgress.days(entries, goal: key.goalAmount, calendar: calendar).filter { $0.value == .met && $0.key >= yearStart }.count
+            total += met
+            if met > (top?.days ?? 0) { top = (key.name, met) }
+        }
+        let best = Stickers.bestStreak(keys: keys, logs: logs, state: store.state)
+        return ShareCard.render(YearShareCard(year: year, metDays: total, habits: tracked.count, bestStreak: best,
+                                              topHabit: top?.name, stickers: Milestones.unlocked(bestStreak: best)))
     }
 
     private func value(_ r: Row) -> String {

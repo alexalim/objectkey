@@ -46,17 +46,22 @@ enum HabitReminders {
         let now = Date.now
         for key in targets {
             let progress = KeyProgress.of(key, logs: logs, state: state, now: now)
-            let dates = ReminderPlan.fireDates(minuteOfDay: key.reminderMinute, metToday: progress.metToday,
+            // 마지막 기록(없으면 등록) 뒤 며칠이 지났는지. 오래 반응이 없으면 알림을 줄인다.
+            let last = logs.filter { $0.keyID == key.id }.map(\.startedAt).max() ?? key.createdAt
+            let idleDays = calendar.dateComponents([.day], from: calendar.startOfDay(for: last), to: calendar.startOfDay(for: now)).day ?? 0
+            let planned = ReminderPlan.fireDates(minuteOfDay: key.reminderMinute, metToday: progress.metToday,
                                                days: days, now: now, calendar: calendar,
                                                isDue: { day in
                                                    // 건너뛰기로 한 날은 알리지 않는다.
                                                    !key.isSkipped(day, calendar: calendar)
                                                        && isDue(key.schedule, progress: progress, now: now, calendar: calendar)(day)
                                                })
+            let dates = ReminderPlan.thin(planned, idleDays: idleDays)
             for (i, date) in dates.enumerated() {
                 let content = UNMutableNotificationContent()
                 content.title = key.name
-                content.body = body(for: key, progress: progress, today: calendar.isDate(date, inSameDayAs: now))
+                content.body = body(for: key, progress: progress, today: calendar.isDate(date, inSameDayAs: now),
+                                    variant: calendar.ordinality(of: .day, in: .era, for: date) ?? i, idle: idleDays >= 7)
                 content.sound = .default
                 content.categoryIdentifier = category(for: key)
                 content.userInfo = ["keyID": key.id.uuidString]
@@ -89,15 +94,27 @@ enum HabitReminders {
     }
 
     /// 오늘 알림만 현재 연속 일수를 안다. 이후 날짜는 그날 상태를 모르므로 일반 문구를 쓴다.
-    private static func body(for key: KeyObject, progress: KeyProgress, today: Bool) -> String {
+    /// 매일 같은 말이면 읽지 않게 된다. 날마다 돌려 쓴다.
+    private static let nudges = [
+        "할 시간이에요. 작게라도 충분해요.",
+        "딱 한 번이면 돼요.",
+        "오늘 몫을 하러 가 볼까요?",
+        "짧게 해도 오늘로 쳐요.",
+        "기다리고 있었어요. 가볍게 시작해요.",
+    ]
+
+    private static func body(for key: KeyObject, progress: KeyProgress, today: Bool, variant: Int, idle: Bool) -> String {
         if today, progress.atRisk { return HabitCopy.risk(key.schedule, streak: progress.streak, weekDone: progress.weekDone, quit: key.isQuit) }
         if case .attend(let start, _) = key.action {
             let ahead = start - key.reminderMinute
             let when = ahead > 0 ? "\(ahead)분 뒤 \(KeyAction.clock(start))에 시작해요." : "\(KeyAction.clock(start))에 시작해요."
             return when + " 다녀와서 알림을 길게 누르고 '참석'을 눌러 주세요."
         }
+        // 한동안 쉬었으면 탓하지 않고 다시 시작해도 된다고만 말한다.
+        if idle { return "언제든 다시 시작해도 돼요. 오늘 한 번이면 충분해요." }
         let cue = key.cue.trimmingCharacters(in: .whitespaces)
-        return cue.isEmpty ? "할 시간이에요. 작게라도 충분해요." : "\(cue) 다음에 할 시간이에요."
+        if !cue.isEmpty, variant % 2 == 0 { return "\(cue) 다음에 할 시간이에요." }
+        return nudges[abs(variant) % nudges.count]
     }
 
     /// 알림 버튼(참석·시작·+1). 위젯·단축어와 같은 길로 실행한다. 진행 중이던 다른 활동은 기록하고 넘어간다.
