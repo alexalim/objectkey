@@ -341,7 +341,8 @@ enum HabitCopy {
         case .weekdays: return "지난번은 쉬었어도 괜찮아요. 오늘 하면 \(streak)일이 그대로 이어져요."
         case .perWeek(let n):
             let remaining = max(1, n - weekDone)
-            return "지난주는 괜찮아요. 이번 주 \(remaining)번만 더 하면 \(streak)일이 이어져요. (이번 주 \(weekDone)/\(n)번)"
+            // 숫자는 한 가지만. 횟수·일·주가 섞이면 읽기 어렵다.
+            return "지난주는 괜찮아요. 이번 주 \(remaining)번만 더 하면 이어져요."
         }
     }
 }
