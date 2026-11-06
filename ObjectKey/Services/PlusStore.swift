@@ -56,7 +56,7 @@ final class PlusStore {
     func loadProduct() async {
         do {
             product = try await Product.products(for: [Self.productID]).first
-            loadProblem = product == nil ? "지금은 상품 정보를 불러오지 못했어요. 잠시 뒤 다시 열어 주세요." : nil
+            loadProblem = product == nil ? "지금은 App Store에서 상품을 받아 오지 못했어요. 잠시 뒤 [다시 불러오기]를 눌러 주세요." : nil
         } catch {
             loadProblem = "지금은 상품 정보를 불러오지 못했어요. 인터넷 연결을 확인해 주세요."
         }

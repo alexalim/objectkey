@@ -37,11 +37,28 @@ struct PlusPaywall: View {
                     if plus.isPlus {
                         Label("플러스를 쓰고 있어요", systemImage: "checkmark.seal.fill").font(.headline).foregroundStyle(.green)
                     } else {
+                        // 상품 정보가 없으면 결제를 시도해도 아무 일도 안 일어난다. 그때는 다시 불러오기로 바꾼다.
                         Button {
-                            Task { busy = true; message = await plus.purchase(); busy = false; if plus.isPlus { dismiss() } }
+                            Task {
+                                busy = true
+                                if plus.product == nil {
+                                    await plus.loadProduct()
+                                    message = nil
+                                } else {
+                                    message = await plus.purchase()
+                                }
+                                busy = false
+                                if plus.isPlus { dismiss() }
+                            }
                         } label: {
-                            Text(plus.product.map { "\($0.displayPrice) · 한 번 결제로 평생" } ?? "플러스 열기")
-                                .font(.headline).frame(maxWidth: .infinity).padding(.vertical, 6)
+                            Group {
+                                if busy {
+                                    ProgressView().tint(.white)
+                                } else {
+                                    Text(plus.product.map { "\($0.displayPrice) · 한 번 결제로 평생" } ?? "다시 불러오기")
+                                }
+                            }
+                            .font(.headline).frame(maxWidth: .infinity).padding(.vertical, 6)
                         }
                         .buttonStyle(.borderedProminent).controlSize(.large).disabled(busy)
                         Button("구매 복원") {
