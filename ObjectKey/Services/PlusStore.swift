@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import OSLog
 import StoreKit
 
 /// MOKI 플러스(평생 이용권, 비소모성 인앱 구매). 무료는 습관 3개까지, 플러스는 제한 없음과 편의 기능.
@@ -63,11 +64,21 @@ final class PlusStore {
     }
 
     /// 결제. 끝나면 결과 문구를 돌려준다(성공이면 nil).
-    func purchase() async -> String? {
+    /// 결제. SwiftUI의 구매 동작(PurchaseAction)을 받아 쓴다. 이 동작은 결제 창을 띄울 화면을 알아서 찾는다.
+    /// product.purchase()를 화면 없이 부르면, 시트 위에서 연 결제 화면에서는 결제 창이 뜨지 못하고 바로 끝날 수 있다.
+    /// 끝나면 결과 문구를 돌려준다(성공이면 nil). 실패는 종류마다 문구를 달리해 원인을 알 수 있게 한다.
+    func purchase(using purchaseAction: PurchaseAction) async -> String? {
+        let log = Logger(subsystem: "com.aspynlim.moki", category: "plus")
+        guard AppStore.canMakePayments else {
+            log.error("purchase blocked: canMakePayments false")
+            return "이 기기에서 앱 내 구입이 막혀 있어요. 설정 → 스크린 타임 → 콘텐츠 및 개인정보 보호 제한에서 확인해 주세요."
+        }
         if product == nil { await loadProduct() }
         guard let product else { return loadProblem }
         do {
-            switch try await product.purchase() {
+            let outcome = try await purchaseAction(product)
+            log.info("purchase result: \(String(describing: outcome), privacy: .public)")
+            switch outcome {
             case .success(let result):
                 guard case .verified(let transaction) = result else { return "구매를 확인하지 못했어요. 구매 복원을 눌러 주세요." }
                 await transaction.finish()
@@ -76,13 +87,14 @@ final class PlusStore {
             case .pending:
                 return "승인을 기다리고 있어요. 승인되면 자동으로 열려요."
             case .userCancelled:
-                // 처음 결제할 때 Apple 계정 로그인을 거치면 취소로 끝나기도 한다. 조용히 넘기면 아무 일도 안 일어난 것처럼 보인다.
-                return "결제가 끝나지 않았어요. 로그인했다면 한 번 더 눌러 주세요."
+                // 결제 창을 닫았거나, 계정 로그인을 거치며 취소로 끝난 경우.
+                return "결제를 취소했어요. 다시 누르면 결제 창이 떠요. (취소됨)"
             @unknown default:
-                return "결제가 끝나지 않았어요. 한 번 더 눌러 주세요."
+                return "결제 결과를 알 수 없어요. 구매 복원을 눌러 확인해 주세요. (알 수 없음)"
             }
         } catch {
-            return "결제하지 못했어요(\(error.localizedDescription)). 잠시 뒤 다시 해 주세요."
+            log.error("purchase error: \(String(describing: error), privacy: .public)")
+            return "결제하지 못했어요. (\(error.localizedDescription))"
         }
     }
 

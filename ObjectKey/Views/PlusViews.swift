@@ -10,6 +10,8 @@ struct PlusPaywall: View {
     @State private var plus = PlusStore.shared
     @State private var busy = false
     @State private var message: String?
+    /// SwiftUI가 주는 구매 동작. 결제 창을 이 화면 위에 띄운다.
+    @Environment(\.purchase) private var purchaseAction
 
     var body: some View {
         NavigationStack {
@@ -49,7 +51,7 @@ struct PlusPaywall: View {
                                     await plus.loadProduct()
                                     message = nil
                                 } else {
-                                    message = await plus.purchase()
+                                    message = await plus.purchase(using: purchaseAction)
                                 }
                                 busy = false
                                 if plus.isPlus { dismiss() }
