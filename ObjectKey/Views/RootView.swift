@@ -72,7 +72,10 @@ struct QuickAddSheet: View {
                 option("camera", "사진 찍어 등록", "물건을 찍어 두면 스캔으로 알아봐요") { open(.register(photos: true)) }
                 option("square.and.pencil", "이름만 적어 등록", "카메라 없이 바로 시작해요") { open(.register(photos: false)) }
                 // "말"은 음성 인식으로 오해하기 쉬워 "적기"라고 쓴다. 등록뿐 아니라 기록·질문도 된다.
+                // 기기 안 AI가 필요해 iOS 26 이상에서만 보여 준다.
+                if #available(iOS 26.0, *) {
                 option("sparkles", "한 문장으로 적기", "\"화요일 9시 아이스하키 90분\", \"어제 책 30분 읽었어\"") { open(.ask) }
+                }
                 Spacer(minLength: 0)
             }
             .padding()

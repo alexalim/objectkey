@@ -45,7 +45,7 @@ struct KeyDetailView: View {
                                 Label("'\(owner.name)' 물건을 함께 써요", systemImage: "link")
                                     .font(.caption2).foregroundStyle(.secondary)
                             } else if key.shots.isEmpty {
-                                Label("사진 없음 · 아래 버튼·위젯·Siri로 기록", systemImage: "camera.badge.ellipsis")
+                                Label("사진 없음 · 아래 버튼이나 Siri로 기록", systemImage: "camera.badge.ellipsis")
                                     .font(.caption2).foregroundStyle(.secondary)
                             }
                         }
@@ -101,7 +101,8 @@ struct KeyDetailView: View {
                     } header: {
                         Text("기록 달력")
                     } footer: {
-                        Text("날짜를 누르면 깜빡한 기록을 더하거나 지우고, 그날 메모를 남기거나 건너뛸 수 있어요.")
+                        Text(key.isQuit ? "날짜를 누르면 깜빡한 기록을 더하거나 지우고, 그날 메모를 남길 수 있어요."
+                                        : "날짜를 누르면 깜빡한 기록을 더하거나 지우고, 그날 메모를 남기거나 건너뛸 수 있어요.")
                     }
                     Section("최근 1년") {
                         YearHeatmap(days: days, skipped: key.skipped)
@@ -191,6 +192,7 @@ struct KeyDetailView: View {
     private var actionLabel: String {
         if case .session(let id, _, _, _) = store.state, id == key.id { return "종료하고 기록" }
         if case .countdown(_, _, let paused?) = store.state, paused.keyID == key.id { return "휴식 끝내고 이어가기" }
+        if case .countdown(let id, _, _) = store.state, id == key.id { return "휴식 끝내기" }
         switch key.action {
         case .session: return "시간 기록 시작"
         case .countdown(let minutes): return "\(minutes)분 휴식 시작"

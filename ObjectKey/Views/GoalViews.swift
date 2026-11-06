@@ -652,7 +652,12 @@ struct MoodHeader: View {
         if let risky = items.filter(\.progress.atRisk).max(by: { $0.progress.streak < $1.progress.streak }) {
             return (.question, "\(risky.key.name), " + HabitCopy.risk(risky.key.schedule, streak: risky.progress.streak, weekDone: risky.progress.weekDone, quit: risky.key.isQuit), risky.key)
         }
-        let goals = items.filter { $0.progress.goal != nil }
+        // 오늘 할 일만 본다. 쉬는 날·건너뛴 습관까지 넣으면 다 해도 "남은 것"이 있다고 말하게 된다.
+        let todo = items.filter { TodayPlan.isTodo($0.key, $0.progress) }
+        if !todo.isEmpty, todo.allSatisfy(\.progress.metToday) {
+            return (.success, "오늘 할 일을 모두 했어요!", nil)
+        }
+        let goals = todo.filter { $0.progress.goal != nil }
         let metGoals = goals.filter { $0.progress.metToday }.count
         let activeToday = items.filter { $0.progress.today > 0 }.count
         if !goals.isEmpty, metGoals == goals.count {

@@ -89,6 +89,9 @@ struct StatsView: View {
                 } description: {
                     Text("습관을 등록하고 기록하면 여기에 쌓여요.")
                 }
+                // 뒤의 빈 요약 칸이 비쳐 보이지 않게 덮는다.
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color(.systemGroupedBackground))
             }
         }
     }
@@ -127,7 +130,7 @@ struct StatsView: View {
         // 이름 끝 받침에 따라 조사가 달라지므로 조사 없이 쓴다.
         if let top { lines.append("가장 많이 한 습관: \(top.name) · 이번 주 \(top.days)일") }
         if let best = byWeekday.max(by: { $0.value < $1.value }), best.value > 0 {
-            lines.append("요즘 가장 잘 지키는 요일은 \(calendar.weekdaySymbols[best.key - 1])이에요.")
+            lines.append("요즘 가장 잘 지키는 요일은 \(Self.koreanWeekdays[best.key - 1])이에요.")
         }
         return lines
     }
@@ -149,6 +152,13 @@ struct StatsView: View {
         return ShareCard.render(YearShareCard(year: year, metDays: total, habits: tracked.count, bestStreak: best,
                                               topHabit: top?.name, stickers: Milestones.unlocked(bestStreak: best)))
     }
+
+    /// 기기 언어와 상관없이 한국어 요일. 문장 안에 들어가므로 "Monday이에요"가 되지 않게 고정한다.
+    private static let koreanWeekdays: [String] = {
+        var c = Calendar(identifier: .gregorian)
+        c.locale = Locale(identifier: "ko_KR")
+        return c.weekdaySymbols
+    }()
 
     private func value(_ r: Row) -> String {
         if case .perWeek(let n) = r.key.schedule { return "이번 주 \(r.weekDone)/\(n)" }

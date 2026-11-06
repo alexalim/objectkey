@@ -24,16 +24,20 @@ struct PlusPaywall: View {
                         feature("square.grid.2x2", "위젯 · 잠금 화면 · Apple Watch", "앱을 열지 않고 확인하고 기록")
                         feature("chart.xyaxis.line", "자세한 통계", "주별 · 요일별 · 시간대")
                         feature("heart", "건강 앱 자동 완료 · 단계별 루틴", "걸음 수로 채우기, 세수 → 양치 → 스트레칭")
-                        feature("sparkles", "한 문장으로 적기", "\"어제 책 30분 읽었어\"")
+                        // 기기 안 AI가 있는 iOS 26 이상에서만 쓸 수 있으니, 그 아래에서는 팔지 않는다.
+                        if #available(iOS 26.0, *) {
+                            feature("sparkles", "한 문장으로 적기", "\"어제 책 30분 읽었어\"")
+                        }
                     }
                     .padding()
                     .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 20))
-                    Text("기록·스캔·알림·기본 통계·백업은 계속 무료예요.").font(.footnote).foregroundStyle(.secondary)
                 }
                 .padding()
             }
             .safeAreaInset(edge: .bottom) {
                 VStack(spacing: 8) {
+                    // 무료 범위는 처음부터 보이게 하단 바 안에 둔다(스크롤 끝에 두면 가려졌다).
+                    Text("기록·스캔·알림·기본 통계·백업은 계속 무료예요.").font(.footnote).foregroundStyle(.secondary)
                     if plus.isPlus {
                         Label("플러스를 쓰고 있어요", systemImage: "checkmark.seal.fill").font(.headline).foregroundStyle(.green)
                     } else {

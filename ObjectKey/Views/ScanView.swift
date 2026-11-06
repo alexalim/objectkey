@@ -150,8 +150,14 @@ struct ScanView: View {
 
     private func picked(_ key: KeyObject) {
         if pickingHabit {
+            // 고르는 창이 닫히는 중에 바로 띄우면 실행 화면이 안 뜰 수 있다. 물건을 고를 때와 같이 잠깐 기다린다.
             pickingHabit = false
-            runKey = key
+            reopening = true
+            Task {
+                try? await Task.sleep(for: .milliseconds(400))
+                reopening = false
+                runKey = key
+            }
             return
         }
         // 물건을 골랐다. 창이 닫힌 뒤에 습관 고르는 창(또는 실행 화면)을 연다.

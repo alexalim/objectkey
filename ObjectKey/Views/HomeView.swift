@@ -150,12 +150,8 @@ struct HomeView: View {
         let covered = showScan || showRegister || showTags || editingGoal != nil || detailKey != nil || runKey != nil
         showScan = false; showRegister = false; showTags = false
         editingGoal = nil; detailKey = nil; runKey = nil
-        if covered {
-            // 닫히는 시트와 겹치면 새 시트가 뜨지 않는다.
-            Task { try? await Task.sleep(for: .milliseconds(600)); runKey = key }
-        } else {
-            runKey = key
-        }
+        // 닫히는 시트와 겹치면 새 시트가 뜨지 않는다. 다른 탭(+ 시트, 물건 시트)이 닫히는 중일 수도 있어 늘 잠깐 기다린다.
+        Task { try? await Task.sleep(for: .milliseconds(covered ? 600 : 400)); runKey = key }
     }
 
     /// 기록·설정이 바뀌면 알림과 홈 화면 위젯을 같이 맞춘다.

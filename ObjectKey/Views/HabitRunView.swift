@@ -46,7 +46,9 @@ struct HabitRunView: View {
         }
     }
 
+    /// 작은 화면·큰 글씨에서도 주 버튼이 밀려나지 않게, 내용은 스크롤하고 버튼은 아래에 고정한다.
     private var run: some View {
+        ScrollView {
         VStack(spacing: 16) {
             Text("지금 할 습관").font(.subheadline).foregroundStyle(.secondary)
             KeyBadge(symbol: key.emoji, size: 140)
@@ -61,11 +63,18 @@ struct HabitRunView: View {
                 }
                 Text("다 했으면 완료를 눌러 주세요. 시간이 기록돼요.").font(.footnote).foregroundStyle(.secondary)
             }
-            Spacer(minLength: 0)
-            actions
+            if let ends = countdownEnds {
+                Text(timerInterval: Date.now...max(ends, .now), countsDown: true)
+                    .font(.largeTitle.monospacedDigit().bold())
+                Text("쉬는 중이에요. 끝나면 멈춰 둔 기록이 이어져요.").font(.footnote).foregroundStyle(.secondary)
+            }
         }
         .padding()
         .frame(maxWidth: .infinity)
+        }
+        .safeAreaInset(edge: .bottom) {
+            actions.padding(.horizontal).padding(.bottom, 8).background(.bar)
+        }
     }
 
     /// 한 손으로 누를 수 있게 주 버튼을 아래에 둔다.
@@ -74,6 +83,9 @@ struct HabitRunView: View {
         VStack(spacing: 10) {
             if runningSince != nil {
                 primary("완료했어요") { stopTimer() }
+            } else if countdownEnds != nil {
+                // 같은 물건으로 다시 실행하면 휴식이 끝난다.
+                primary("휴식 끝내기") { _ = store.activate(key, keys: keys, context: context); dismiss() }
             } else {
                 switch key.kind {
                 case .session:
@@ -92,13 +104,17 @@ struct HabitRunView: View {
                         primary("참석했어요 (\(key.attendMinutes)분)") { record(minutes: key.attendMinutes) }
                     }
                 case .countdown:
-                    primary("휴식 시작 (\(key.countdownMinutes)분)") { startTimer(); dismiss() }
+                    primary("휴식 시작 (\(key.countdownMinutes)분)") {
+                        startTimer()
+                        // 다른 휴식을 바꿀지 묻는 창이 떴으면 닫지 않는다.
+                        if pending == nil { dismiss() }
+                    }
                 }
             }
             HStack(spacing: 20) {
                 Button("나중에 하기") { dismiss() }
                 // 사정이 있는 날은 쉬어도 놓친 날로 치지 않는다.
-                if key.supportsGoal, !key.isQuit, !key.isSkipped(.now), runningSince == nil {
+                if key.supportsGoal, !key.isQuit, !key.isSkipped(.now), runningSince == nil, countdownEnds == nil {
                     Button("오늘은 쉴게요") {
                         key.toggleSkip(.now)
                         context.saveOrReport()
@@ -139,6 +155,11 @@ struct HabitRunView: View {
         if case .session(let id, _, let segmentStart, let accumulated) = store.state, id == key.id {
             return (segmentStart, accumulated)
         }
+        return nil
+    }
+
+    private var countdownEnds: Date? {
+        if case .countdown(let id, let endsAt, _) = store.state, id == key.id { return endsAt }
         return nil
     }
 

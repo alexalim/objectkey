@@ -101,7 +101,7 @@ struct HelpView: View {
                 ])
                 guide("기록 보고 고치기", "4.circle", [
                     ("hand.tap", "습관을 길게 누르거나 실행 화면 '자세히'에서 달력이 나와요"),
-                    ("minus.circle", "잘못 누른 횟수는 상세 화면의 −1로 되돌려요"),
+                    ("minus.circle", "잘못 누른 횟수는 '자세히'의 −1로 되돌려요"),
                     ("calendar", "날짜를 눌러 기록을 더하거나 지워요"),
                     ("note.text", "그날 메모도 남길 수 있어요"),
                     ("chart.xyaxis.line", "아래 통계 탭에서 습관별 추이를 봐요"),
@@ -109,7 +109,7 @@ struct HelpView: View {
                 ])
                 guide("카메라 없이 기록하기", "5.circle", [
                     ("rectangle.and.hand.point.up.left", "오늘 화면에서 습관을 누르고 완료"),
-                    ("square.grid.2x2", "홈 화면 위젯의 ○ 버튼"),
+                    ("square.grid.2x2", "홈 화면 위젯의 ○ 버튼 (플러스)"),
                     ("mic", "Siri: \"모키에서 영양제 기록\" (모키라고 말해요)"),
                     ("bell", "알림을 길게 눌러 시작·+1·참석"),
                     ("hand.tap", "알림을 누르면 그 습관 화면이 열려요"),
@@ -128,7 +128,7 @@ struct HelpView: View {
                     ("line.3.horizontal.decrease", "홈 위 칩을 눌러 태그별로 봐요"),
                     ("slider.horizontal.3", "칩 끝 아이콘에서 이름 바꾸기·지우기"),
                 ])
-                guide("한 문장으로 적기 ✨", "7.circle", [
+                guide("한 문장으로 적기 (플러스 · iOS 26)", "7.circle", [
                     ("sparkles", "가운데 + → 한 문장으로 적기"),
                     ("keyboard", "음성이 아니라 글로 적어요"),
                     ("text.bubble", "\"화요일 밤 9시 아이스하키 수업\""),
