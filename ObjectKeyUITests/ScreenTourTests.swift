@@ -174,7 +174,8 @@ final class ScreenTourTests: XCTestCase {
         }
         app.tabBars.buttons["통계"].tap()
         if app.navigationBars["통계"].waitForExistence(timeout: 5) { snap("14-stats") } else { XCTFail("통계 탭이 열려야 한다") }
-        tapIfExists(app.buttons["전체 기록 보기"])
+        // 이번 주 돌아보기·습관 목록 아래에 있어 화면 밖일 수 있다. 넘겨 가며 찾는다.
+        row("전체 기록 보기").tap()
         if app.navigationBars["기록"].waitForExistence(timeout: 5) {
             snap("14b-history")
             app.navigationBars.buttons.element(boundBy: 0).tap()
