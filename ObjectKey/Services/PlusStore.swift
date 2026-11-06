@@ -24,8 +24,8 @@ final class PlusStore {
         // 실행 직후 권한을 다시 확인하기 전까지는 마지막으로 확인한 값을 쓴다(위젯 깜빡임 방지).
         isPlus = UserDefaults.standard.bool(forKey: Self.cacheKey)
         #if DEBUG
-        // UI 테스트는 결제 없이 모든 화면을 돈다.
-        if ProcessInfo.processInfo.arguments.contains("-ui-demo") { isPlus = true }
+        // UI 테스트는 결제 없이 모든 화면을 돈다. -ui-free면 무료 상태(결제 화면 확인용).
+        if Self.demoPlus { isPlus = true }
         #endif
     }
 
@@ -43,6 +43,13 @@ final class PlusStore {
             await loadProduct()
         }
     }
+
+    #if DEBUG
+    private static var demoPlus: Bool {
+        let args = ProcessInfo.processInfo.arguments
+        return args.contains("-ui-demo") && !args.contains("-ui-free")
+    }
+    #endif
 
     func canAddHabit(currentCount: Int) -> Bool { isPlus || currentCount < Self.freeHabitLimit }
 
@@ -91,7 +98,7 @@ final class PlusStore {
             if case .verified(let t) = entitlement, t.productID == Self.productID, t.revocationDate == nil { owned = true }
         }
         #if DEBUG
-        if ProcessInfo.processInfo.arguments.contains("-ui-demo") { owned = true }
+        if Self.demoPlus { owned = true }
         #endif
         let changed = owned != isPlus
         isPlus = owned

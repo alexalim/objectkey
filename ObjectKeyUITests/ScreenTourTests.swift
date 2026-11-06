@@ -204,6 +204,23 @@ final class ScreenTourTests: XCTestCase {
         snap("12-scan")
     }
 
+    /// 무료 상태의 결제 화면. App Store 인앱 구입 심사용 스크린샷으로도 쓴다.
+    func test_paywall() {
+        app.terminate()
+        app.launchArguments += ["-ui-free"]
+        app.launch()
+        let start = app.buttons["MOKI 시작하기"]
+        if start.waitForExistence(timeout: 10) { start.tap() }
+        if app.buttons["건너뛰기"].waitForExistence(timeout: 3) { app.buttons["건너뛰기"].tap() }
+        app.tabBars.buttons["마이"].tap()
+        let plus = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "MOKI 플러스")).firstMatch
+        XCTAssertTrue(plus.waitForExistence(timeout: 5), "마이에 플러스 줄이 보여야 한다")
+        plus.tap()
+        XCTAssertTrue(app.staticTexts["습관 개수 제한 없음"].waitForExistence(timeout: 5), "결제 화면이 열려야 한다")
+        sleep(2)
+        snap("20-paywall")
+    }
+
     /// 목록이 길면 화면 밖 행은 아직 만들어지지 않는다. 위아래로 넘겨 가며 찾는다.
     private func row(_ name: String) -> XCUIElement {
         let element = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", name)).firstMatch
