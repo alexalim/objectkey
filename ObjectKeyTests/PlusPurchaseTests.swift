@@ -13,7 +13,9 @@ final class PlusPurchaseTests: XCTestCase {
         session = try SKTestSession(configurationFileNamed: "MOKIPlus")
         session.disableDialogs = true
         session.clearTransactions()
+        print("plus test: session ready")
         await PlusStore.shared.refresh()
+        print("plus test: refreshed")
     }
 
     override func tearDown() async throws {

@@ -76,6 +76,8 @@ final class PlusStore {
         }
         if product == nil { await loadProduct() }
         guard let product else { return loadProblem }
+        // 결제가 어디서 멈추는지 알 수 있게 단계마다 남긴다(테스트 로그·기기 콘솔에서 "plus " 로 찾는다).
+        print("plus purchase: start \(product.id)")
         do {
             let outcome: Product.PurchaseResult
             if #available(iOS 18.2, *), let scene = UIApplication.shared.connectedScenes
@@ -85,6 +87,7 @@ final class PlusStore {
                 outcome = try await product.purchase()
             }
             log.info("purchase result: \(String(describing: outcome), privacy: .public)")
+            print("plus purchase: result \(outcome)")
             switch outcome {
             case .success(let result):
                 guard case .verified(let transaction) = result else { return "구매를 확인하지 못했어요. 구매 복원을 눌러 주세요." }
