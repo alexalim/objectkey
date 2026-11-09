@@ -1,0 +1,38 @@
+{
+  "identifier" : "4C1D6B4E-9A3F-4E7B-8D2C-6A5F1B0E9C31",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "5900",
+      "familyShareable" : false,
+      "internalID" : "6831395885",
+      "localizations" : [
+        {
+          "description" : "습관 무제한, 위젯·워치, 자세한 통계. 한 번 결제로 평생.",
+          "displayName" : "MOKI 플러스",
+          "locale" : "ko"
+        }
+      ],
+      "productID" : "com.aspynlim.moki.plus",
+      "referenceName" : "MOKI Plus",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_applicationInternalID" : "6828238769",
+    "_locale" : "ko",
+    "_storefront" : "KOR",
+    "_storeKitErrors" : [
+
+    ]
+  },
+  "subscriptionGroups" : [
+
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}

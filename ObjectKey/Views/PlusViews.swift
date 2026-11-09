@@ -10,8 +10,6 @@ struct PlusPaywall: View {
     @State private var plus = PlusStore.shared
     @State private var busy = false
     @State private var message: String?
-    /// SwiftUI가 주는 구매 동작. 결제 창을 이 화면 위에 띄운다.
-    @Environment(\.purchase) private var purchaseAction
 
     var body: some View {
         NavigationStack {
@@ -51,7 +49,18 @@ struct PlusPaywall: View {
                                     await plus.loadProduct()
                                     message = nil
                                 } else {
-                                    message = await plus.purchase(using: purchaseAction)
+                                    // 결제 창이 끝내 안 떠도 화면이 멈춰 있지 않게, 40초가 지나면 버튼을 되돌린다.
+                                    // 결제 요청은 그대로 두므로 늦게 끝나도 거래 알림(Transaction.updates)으로 플러스가 열린다.
+                                    let watchdog = Task {
+                                        try? await Task.sleep(for: .seconds(40))
+                                        if busy {
+                                            busy = false
+                                            message = "결제 창이 뜨지 않았어요. 잠시 뒤 다시 눌러 주세요. (응답 없음)"
+                                        }
+                                    }
+                                    let result = await plus.purchase()
+                                    watchdog.cancel()
+                                    message = result
                                 }
                                 busy = false
                                 if plus.isPlus { dismiss() }

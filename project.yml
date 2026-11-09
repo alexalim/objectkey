@@ -184,6 +184,10 @@ targets:
     platform: iOS
     sources:
       - path: ObjectKeyTests
+        excludes: ["*.storekit"]
+      # 결제 테스트용 상점 설정. SKTestSession이 테스트 번들에서 찾는다.
+      - path: ObjectKeyTests/MOKIPlus.storekit
+        buildPhase: resources
     dependencies:
       - target: ObjectKey
     settings:

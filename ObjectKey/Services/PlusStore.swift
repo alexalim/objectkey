@@ -2,7 +2,7 @@ import Foundation
 import Observation
 import OSLog
 import StoreKit
-import SwiftUI
+import UIKit
 
 /// MOKI 플러스(평생 이용권, 비소모성 인앱 구매). 무료는 습관 3개까지, 플러스는 제한 없음과 편의 기능.
 /// 구매 여부는 StoreKit의 현재 권한(Transaction.currentEntitlements)이 기준이고, 위젯·워치가 볼 수 있게 스냅숏에도 적는다.
@@ -65,10 +65,10 @@ final class PlusStore {
     }
 
     /// 결제. 끝나면 결과 문구를 돌려준다(성공이면 nil).
-    /// 결제. SwiftUI의 구매 동작(PurchaseAction)을 받아 쓴다. 이 동작은 결제 창을 띄울 화면을 알아서 찾는다.
-    /// product.purchase()를 화면 없이 부르면, 시트 위에서 연 결제 화면에서는 결제 창이 뜨지 못하고 바로 끝날 수 있다.
+    /// 결제. iOS 18.2 이상은 지금 앞에 있는 화면(scene)을 넘겨 결제 창을 띄울 곳을 분명히 한다.
+    /// (SwiftUI의 PurchaseAction은 빌드 62에서 결제 창 없이 끝나지 않는 일이 있어 쓰지 않는다.)
     /// 끝나면 결과 문구를 돌려준다(성공이면 nil). 실패는 종류마다 문구를 달리해 원인을 알 수 있게 한다.
-    func purchase(using purchaseAction: PurchaseAction) async -> String? {
+    func purchase() async -> String? {
         let log = Logger(subsystem: "com.aspynlim.moki", category: "plus")
         guard AppStore.canMakePayments else {
             log.error("purchase blocked: canMakePayments false")
@@ -77,7 +77,13 @@ final class PlusStore {
         if product == nil { await loadProduct() }
         guard let product else { return loadProblem }
         do {
-            let outcome = try await purchaseAction(product)
+            let outcome: Product.PurchaseResult
+            if #available(iOS 18.2, *), let scene = UIApplication.shared.connectedScenes
+                .compactMap({ $0 as? UIWindowScene }).first(where: { $0.activationState == .foregroundActive }) {
+                outcome = try await product.purchase(confirmIn: scene)
+            } else {
+                outcome = try await product.purchase()
+            }
             log.info("purchase result: \(String(describing: outcome), privacy: .public)")
             switch outcome {
             case .success(let result):
