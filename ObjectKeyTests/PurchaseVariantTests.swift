@@ -19,7 +19,8 @@ final class PurchaseVariantTests: XCTestCase {
     }
 
     private func product() async throws -> Product {
-        try XCTUnwrap(try await Product.products(for: [PlusStore.productID]).first)
+        let products = try await Product.products(for: [PlusStore.productID])
+        return try XCTUnwrap(products.first)
     }
 
     /// 결과를 20초까지 기다린다. 못 끝내면 nil.
