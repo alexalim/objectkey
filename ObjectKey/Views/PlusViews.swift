@@ -49,14 +49,11 @@ struct PlusPaywall: View {
                                     await plus.loadProduct()
                                     message = nil
                                 } else {
-                                    // 결제 창이 끝내 안 떠도 화면이 멈춰 있지 않게, 40초가 지나면 버튼을 되돌린다.
-                                    // 결제 요청은 그대로 두므로 늦게 끝나도 거래 알림(Transaction.updates)으로 플러스가 열린다.
+                                    // 로그인·결제 창에 오래 머물 수 있다. 40초가 지나면 아직 진행 중이라는 것만 알리고 버튼은 잠근 채 둔다.
+                                    // (버튼을 풀면 결제가 두 번 시작될 수 있다.) 늦게 끝나도 거래 알림으로 플러스가 열린다.
                                     let watchdog = Task {
                                         try? await Task.sleep(for: .seconds(40))
-                                        if busy {
-                                            busy = false
-                                            message = "결제 창이 뜨지 않았어요. 잠시 뒤 다시 눌러 주세요. (응답 없음)"
-                                        }
+                                        if busy { message = "아직 진행 중이에요. 애플 결제 창을 마무리해 주세요. 창이 안 보이면 앱을 닫았다 다시 열어 주세요." }
                                     }
                                     let result = await plus.purchase()
                                     watchdog.cancel()

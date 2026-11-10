@@ -21,6 +21,8 @@ final class PlusStore {
 
     private static let cacheKey = "moki.plus.cached"
     private var updates: Task<Void, Never>?
+    /// 결제가 진행 중인지. 로그인 시트가 오래 떠 있는 동안 다시 눌러도 두 번째 결제를 시작하지 않는다.
+    private(set) var purchasing = false
 
     init() {
         // 실행 직후 권한을 다시 확인하기 전까지는 마지막으로 확인한 값을 쓴다(위젯 깜빡임 방지).
@@ -76,8 +78,10 @@ final class PlusStore {
         }
         if product == nil { await loadProduct() }
         guard let product else { return loadProblem }
-        // 결제가 어디서 멈추는지 알 수 있게 단계마다 남긴다(테스트 로그·기기 콘솔에서 "plus " 로 찾는다).
-        print("plus purchase: start \(product.id)")
+        guard !purchasing else { return "아직 결제가 진행 중이에요. 뜬 창을 마무리해 주세요." }
+        purchasing = true
+        defer { purchasing = false }
+        log.info("purchase start \(product.id, privacy: .public)")
         do {
             let outcome: Product.PurchaseResult
             if #available(iOS 18.2, *), let scene = UIApplication.shared.connectedScenes
@@ -87,11 +91,12 @@ final class PlusStore {
                 outcome = try await product.purchase()
             }
             log.info("purchase result: \(String(describing: outcome), privacy: .public)")
-            print("plus purchase: result \(outcome)")
             switch outcome {
             case .success(let result):
                 guard case .verified(let transaction) = result else { return "구매를 확인하지 못했어요. 구매 복원을 눌러 주세요." }
                 await transaction.finish()
+                // 검증된 거래를 손에 쥐었으니 바로 연다. 권한 목록 갱신 시점에 기대지 않는다.
+                if transaction.productID == Self.productID { setPlus(true) }
                 await refresh()
                 return nil
             case .pending:
@@ -109,10 +114,25 @@ final class PlusStore {
     }
 
     /// 구매 복원. 같은 Apple 계정으로 산 적이 있으면 다시 열린다.
+    /// 로그인 창을 닫거나 네트워크가 끊겨 동기화가 안 됐을 때 "산 기록 없음"으로 잘못 말하지 않는다.
     func restore() async -> String {
-        try? await AppStore.sync()
+        do {
+            try await AppStore.sync()
+        } catch {
+            await refresh()
+            if isPlus { return "플러스를 다시 열었어요." }
+            return "복원을 마치지 못했어요. 다시 시도해 주세요. (\(error.localizedDescription))"
+        }
         await refresh()
         return isPlus ? "플러스를 다시 열었어요." : "이 Apple 계정으로 산 기록을 찾지 못했어요."
+    }
+
+    private func setPlus(_ owned: Bool) {
+        let changed = owned != isPlus
+        isPlus = owned
+        UserDefaults.standard.set(owned, forKey: Self.cacheKey)
+        // 위젯·워치가 잠금 여부를 알 수 있게 요약을 다시 쓴다.
+        if changed { WidgetBridge.refreshFromStore() }
     }
 
     func refresh() async {
@@ -123,10 +143,6 @@ final class PlusStore {
         #if DEBUG
         if Self.demoPlus { owned = true }
         #endif
-        let changed = owned != isPlus
-        isPlus = owned
-        UserDefaults.standard.set(owned, forKey: Self.cacheKey)
-        // 위젯·워치가 잠금 여부를 알 수 있게 요약을 다시 쓴다.
-        if changed { WidgetBridge.refreshFromStore() }
+        setPlus(owned)
     }
 }
