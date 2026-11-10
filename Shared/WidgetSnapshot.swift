@@ -50,3 +50,12 @@ struct WidgetSnapshot: Codable {
 
     var doneCount: Int { items.filter(\.done).count }
 }
+
+extension WidgetSnapshot {
+    /// 위젯 갤러리 미리보기와 워치 화면 점검(-ui-demo)에 쓰는 보기용 요약.
+    static let sample = WidgetSnapshot(day: .now, items: [
+        .init(id: UUID(), name: "영양제", emoji: "💊", done: true, streak: 13, atRisk: false, time: "09:00"),
+        .init(id: UUID(), name: "읽는 책", emoji: "📚", done: false, streak: 4, atRisk: false, time: nil),
+        .init(id: UUID(), name: "아이스하키 수업", emoji: "🏒", done: false, streak: 2, atRisk: false, time: "21:00"),
+    ], plus: true)
+}

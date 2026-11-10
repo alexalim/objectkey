@@ -154,10 +154,3 @@ private struct RectangularView: View {
     }
 }
 
-extension WidgetSnapshot {
-    static let sample = WidgetSnapshot(day: .now, items: [
-        .init(id: UUID(), name: "영양제", emoji: "💊", done: true, streak: 13, atRisk: false, time: "09:00"),
-        .init(id: UUID(), name: "읽는 책", emoji: "📚", done: false, streak: 4, atRisk: false, time: nil),
-        .init(id: UUID(), name: "아이스하키 수업", emoji: "🏒", done: false, streak: 2, atRisk: false, time: "21:00"),
-    ])
-}

@@ -17,6 +17,10 @@ final class WatchStore: NSObject, ObservableObject {
         if let data = UserDefaults.standard.data(forKey: Self.cacheKey) {
             snapshot = try? JSONDecoder().decode(WidgetSnapshot.self, from: data)
         }
+        #if DEBUG
+        // 화면 점검용: 아이폰 없이도 보기용 목록을 띄운다(App Store 워치 스크린샷).
+        if ProcessInfo.processInfo.arguments.contains("-ui-demo") { snapshot = .sample }
+        #endif
         if WCSession.isSupported() {
             WCSession.default.delegate = self
             WCSession.default.activate()

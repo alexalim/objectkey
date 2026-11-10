@@ -1,0 +1,54 @@
+# 워치 화면 점검: 워치 시뮬레이터에 워치 앱만 설치해 보기용 목록을 띄우고 스크린샷을 남깁니다.
+# App Store의 Apple Watch 스크린샷(필수)을 맥 없이 만들려고 둔 수동 워크플로입니다. 결과는 아티팩트 "watch-screens".
+name: Watch screens
+
+on:
+  workflow_dispatch:
+
+jobs:
+  watch:
+    runs-on: macos-26
+    timeout-minutes: 40
+    env:
+      TEAM_ID: ""
+      PROFILE_NAME: ""
+      WIDGET_PROFILE_NAME: ""
+      WATCH_PROFILE_NAME: ""
+      WATCH_WIDGET_PROFILE_NAME: ""
+    steps:
+      - uses: actions/checkout@v7
+      - name: Xcode 프로젝트 생성
+        run: |
+          brew install xcodegen
+          xcodegen
+      - name: 앱 빌드 (시뮬레이터, 워치 앱 포함)
+        run: |
+          set -o pipefail
+          xcodebuild build -project ObjectKey.xcodeproj -scheme ObjectKey -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO \
+            | grep -E "error:|BUILD (SUCCEEDED|FAILED)" || true
+      - name: 워치 시뮬레이터에 설치하고 찍기
+        run: |
+          app=$(find ~/Library/Developer/Xcode/DerivedData -type d -name "MOKIWatch.app" -path "*iphonesimulator*" | head -1)
+          echo "watch app: $app"
+          udid=$(xcrun simctl list devices available -j | python3 -c "
+          import json,sys
+          d=json.load(sys.stdin)['devices']
+          w=sorted((k,v) for k,v in d.items() if 'watchOS' in k)
+          devs=w[-1][1]
+          pick=[x for x in devs if 'Series 10' in x['name'] and '46mm' in x['name']] or [x for x in devs if 'Ultra' in x['name']] or devs
+          print(pick[-1]['udid'])")
+          xcrun simctl list devices | grep "$udid"
+          xcrun simctl boot "$udid" || true
+          xcrun simctl bootstatus "$udid" -b
+          xcrun simctl status_bar "$udid" override --time "9:41" --batteryState charged --batteryLevel 100 || true
+          xcrun simctl install "$udid" "$app"
+          xcrun simctl launch "$udid" com.aspynlim.moki.watchkitapp -ui-demo -AppleLanguages "(ko)" -AppleLocale "ko_KR"
+          sleep 8
+          mkdir -p shots
+          xcrun simctl io "$udid" screenshot shots/watch-today.png
+          sips -g pixelWidth -g pixelHeight shots/watch-today.png
+      - uses: actions/upload-artifact@v7
+        with:
+          name: watch-screens
+          path: shots
