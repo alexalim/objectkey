@@ -4,6 +4,8 @@ import WatchConnectivity
 /// 아이폰 ↔ 워치. 오늘 요약을 워치로 보내고, 워치에서 누른 기록을 받아 단축어와 같은 경로로 남긴다.
 final class WatchBridge: NSObject, WCSessionDelegate {
     static let shared = WatchBridge()
+    /// 마지막으로 보낸 요약. 같은 내용이면 다시 보내지 않는다(컴플리케이션 전송은 하루 횟수 제한이 있다).
+    private var lastPushed: Data?
 
     /// 앱이 켜질 때 바로 부른다. 워치 기록 때문에 앱이 뒤에서 깨어날 때도 이 경로로 받는다.
     func activate() {
@@ -16,7 +18,8 @@ final class WatchBridge: NSObject, WCSessionDelegate {
     func push(_ snapshot: WidgetSnapshot) {
         let session = WCSession.default
         guard WCSession.isSupported(), session.activationState == .activated, session.isPaired, session.isWatchAppInstalled,
-              let data = try? JSONEncoder().encode(snapshot) else { return }
+              let data = try? JSONEncoder().encode(snapshot), data != lastPushed else { return }
+        lastPushed = data
         try? session.updateApplicationContext(["snapshot": data])
         // 시계 화면에 컴플리케이션이 있으면 워치 앱을 깨워 바로 다시 그리게 한다(하루 횟수 제한이 있어 남았을 때만).
         if session.isComplicationEnabled, session.remainingComplicationUserInfoTransfers > 0 {

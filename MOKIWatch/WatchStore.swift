@@ -36,13 +36,21 @@ final class WatchStore: NSObject, ObservableObject {
     func requestSnapshot() {
         let session = WCSession.default
         guard session.activationState == .activated else { return }
+        // 앱이 쉬는 동안 도착해 둔 요약이 있으면 먼저 반영한다(아이폰이 멀리 있어도 여기까지는 된다).
+        receive(session.receivedApplicationContext)
         if session.isReachable {
             session.sendMessage(["want": "snapshot"], replyHandler: { reply in
                 Task { @MainActor in self.receive(reply) }
-            }, errorHandler: { _ in session.transferUserInfo(["want": "snapshot"]) })
+            }, errorHandler: { _ in Self.queueWant(session) })
         } else {
-            session.transferUserInfo(["want": "snapshot"])
+            Self.queueWant(session)
         }
+    }
+
+    /// 아이폰이 깰 때 받을 요청을 쌓는다. 이미 쌓인 요청이 있으면 또 쌓지 않는다(열 때마다 누적되는 것을 막는다).
+    nonisolated private static func queueWant(_ session: WCSession) {
+        guard !session.outstandingUserInfoTransfers.contains(where: { $0.userInfo["want"] != nil }) else { return }
+        session.transferUserInfo(["want": "snapshot"])
     }
 
     /// 기록 요청. 아이폰 앱이 꺼져 있어도 transferUserInfo는 쌓였다가 전달된다.
@@ -83,16 +91,10 @@ final class WatchStore: NSObject, ObservableObject {
 
 extension WatchStore: WCSessionDelegate {
     nonisolated func session(_ session: WCSession, activationDidCompleteWith state: WCSessionActivationState, error: Error?) {
-        let context = session.receivedApplicationContext
         let reachable = session.isReachable
-        // 받은 요약이 없으면(막 설치한 경우 등) 아이폰에 달라고 한다.
-        if context["snapshot"] == nil {
-            if reachable { session.sendMessage(["want": "snapshot"], replyHandler: nil) } else { session.transferUserInfo(["want": "snapshot"]) }
-        }
         Task { @MainActor in
             self.reachable = reachable
-            self.receive(context)
-            // 받아 둔 것이 있어도 옛것일 수 있다. 활성화되면 한 번 더 최신 목록을 요청한다.
+            // 받아 둔 요약을 반영하고, 옛것일 수 있으니 최신 목록을 한 번 더 요청한다.
             self.requestSnapshot()
         }
     }
