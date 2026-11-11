@@ -151,6 +151,13 @@ struct HelpView: View {
                     ("timer", "시간 기록 중에는 잠금 화면에 시간이 보여요"),
                     ("gearshape", "안 보이면 설정 → MOKI → 실시간 현황 켜기"),
                 ])
+                guide("Apple Watch (플러스)", "applewatch", [
+                    ("list.bullet", "워치 MOKI에 오늘 할 일이 보여요. 눌러서 바로 기록해요"),
+                    ("iphone", "아이폰 MOKI를 열어 두지 않아도 돼요. 기록은 알아서 오가요"),
+                    ("arrow.clockwise", "목록이 옛날 것 같으면 워치에서 새로고침을 눌러요"),
+                    ("lock", "플러스를 산 직후 잠겨 보이면 새로고침 한 번이면 풀려요"),
+                    ("circle.grid.2x2", "시계 화면 편집 → 컴플리케이션에서 MOKI를 넣으면 오늘 진행이 보여요"),
+                ])
                 Section {
                     Text("사진과 기록은 이 휴대폰에만 저장돼요.").font(.footnote).foregroundStyle(.secondary)
                 }

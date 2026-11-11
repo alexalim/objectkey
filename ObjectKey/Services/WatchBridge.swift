@@ -46,6 +46,25 @@ final class WatchBridge: NSObject, WCSessionDelegate {
     }
 
     func session(_ session: WCSession, didReceiveMessage message: [String: Any]) { handle(message) }
+
+    /// 워치가 답장을 기다리는 요청. "want"면 최신 요약을 바로 돌려준다(앱이 꺼져 있어도 iOS가 깨워 준다).
+    func session(_ session: WCSession, didReceiveMessage message: [String: Any], replyHandler: @escaping ([String: Any]) -> Void) {
+        guard message["want"] != nil else { handle(message); replyHandler([:]); return }
+        Task { @MainActor in
+            WidgetBridge.refreshFromStore()
+            if let data = try? JSONEncoder().encode(WidgetSnapshot.load() ?? WidgetSnapshot(day: .now, items: [], plus: PlusStore.shared.isPlus)) {
+                replyHandler(["snapshot": data])
+            } else {
+                replyHandler([:])
+            }
+        }
+    }
+
+    /// 아이폰과 워치가 다시 가까워지면 최신 요약을 보낸다.
+    func sessionReachabilityDidChange(_ session: WCSession) {
+        guard session.isReachable else { return }
+        Task { @MainActor in WidgetBridge.refreshFromStore() }
+    }
     func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) { handle(userInfo) }
     func sessionDidBecomeInactive(_ session: WCSession) {}
     func sessionDidDeactivate(_ session: WCSession) { session.activate() }

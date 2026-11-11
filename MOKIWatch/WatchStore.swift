@@ -28,6 +28,22 @@ final class WatchStore: NSObject, ObservableObject {
     }
 
     var today: WidgetSnapshot? { snapshot?.current() }
+    /// 마지막으로 아이폰에서 목록을 받은 때. 화면에 "방금 받음"처럼 보여 준다.
+    @Published private(set) var receivedAt: Date? = UserDefaults.standard.object(forKey: "moki.watch.receivedAt") as? Date
+
+    /// 아이폰에 최신 목록을 달라고 한다. 워치 앱을 열 때와 새로고침 버튼에서 부른다.
+    /// 연결돼 있으면 바로 답을 받고, 아니면 요청을 쌓아 뒀다가 아이폰이 깨어날 때 받는다.
+    func requestSnapshot() {
+        let session = WCSession.default
+        guard session.activationState == .activated else { return }
+        if session.isReachable {
+            session.sendMessage(["want": "snapshot"], replyHandler: { reply in
+                Task { @MainActor in self.receive(reply) }
+            }, errorHandler: { _ in session.transferUserInfo(["want": "snapshot"]) })
+        } else {
+            session.transferUserInfo(["want": "snapshot"])
+        }
+    }
 
     /// 기록 요청. 아이폰 앱이 꺼져 있어도 transferUserInfo는 쌓였다가 전달된다.
     func record(_ id: UUID) {
@@ -46,8 +62,12 @@ final class WatchStore: NSObject, ObservableObject {
         }
     }
 
-    private func apply(_ s: WidgetSnapshot) {
+    private func apply(_ s: WidgetSnapshot, fromPhone: Bool = false) {
         snapshot = s
+        if fromPhone {
+            receivedAt = .now
+            UserDefaults.standard.set(receivedAt, forKey: "moki.watch.receivedAt")
+        }
         if let data = try? JSONEncoder().encode(s) { UserDefaults.standard.set(data, forKey: Self.cacheKey) }
         // 시계 화면 컴플리케이션이 읽도록 워치 안 공유 공간에도 쓰고 다시 그리게 한다.
         s.save()
@@ -57,7 +77,7 @@ final class WatchStore: NSObject, ObservableObject {
     fileprivate func receive(_ context: [String: Any]) {
         guard let data = context["snapshot"] as? Data,
               let s = try? JSONDecoder().decode(WidgetSnapshot.self, from: data) else { return }
-        apply(s)
+        apply(s, fromPhone: true)
     }
 }
 
