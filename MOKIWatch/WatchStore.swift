@@ -92,6 +92,8 @@ extension WatchStore: WCSessionDelegate {
         Task { @MainActor in
             self.reachable = reachable
             self.receive(context)
+            // 받아 둔 것이 있어도 옛것일 수 있다. 활성화되면 한 번 더 최신 목록을 요청한다.
+            self.requestSnapshot()
         }
     }
 
