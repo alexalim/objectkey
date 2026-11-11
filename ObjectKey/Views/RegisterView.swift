@@ -13,7 +13,9 @@ struct RegisterView: View {
 
     @State private var name = ""
     @State private var emoji = ""
-    @State private var kind = "session"
+    /// 기본은 가장 단순한 "했어요 체크". 시간을 재는 습관은 두 번째, 나머지는 "더 보기" 안에.
+    @State private var kind = "counter"
+    @State private var showMoreKinds = false
     /// 이름 칸에 한 번이라도 썼는지.
     @State private var nameTouched = false
     @State private var minutes = 5
@@ -62,6 +64,8 @@ struct RegisterView: View {
         _name = State(initialValue: d.name)
         _emoji = State(initialValue: d.emoji)
         _kind = State(initialValue: d.kind)
+        // 미리 채운 방식이 "더 보기" 안에 있으면 펼쳐서 보이게 한다.
+        if ["attend", "quit", "countdown"].contains(d.kind) { _showMoreKinds = State(initialValue: true) }
         _minutes = State(initialValue: d.countdownMinutes)
         _goal = State(initialValue: d.goal)
         _cue = State(initialValue: d.cue)
@@ -120,6 +124,7 @@ struct RegisterView: View {
                             Button {
                                 emoji = preset.emoji
                                 kind = preset.suggestedKind
+                                if ["attend", "quit", "countdown"].contains(kind) { showMoreKinds = true }
                                 // 태그를 아직 안 골랐으면 아이콘에 어울리는 태그를 하나 제안한다.
                                 if tags.isEmpty, let tag = preset.suggestedTag { tags = [tag] }
                                 focus = nil
@@ -149,15 +154,14 @@ struct RegisterView: View {
                     }
                 }
                 Section {
-                    Picker("동작", selection: $kind) {
-                        Text("시간 기록 시작·종료").tag("session")
-                        Text("휴식 타이머").tag("countdown")
-                        Text("횟수 +1").tag("counter")
-                        Text("정해진 시간 참석 (수업·레슨)").tag("attend")
-                        Text("끊기 (안 한 날이 성공)").tag("quit")
+                    // 처음 쓰는 사람에게는 둘이면 충분하다. 나머지 셋은 펼쳐야 보인다.
+                    kindRow("counter", "했어요 체크", "누를 때마다 1회. 영양제, 물 마시기")
+                    kindRow("session", "시간 재기", "시작·끝을 재거나 분 단위로 기록. 독서, 운동")
+                    DisclosureGroup("더 보기", isExpanded: $showMoreKinds) {
+                        kindRow("attend", "정해진 시간 참석", "수업·레슨처럼 시간이 정해진 활동")
+                        kindRow("quit", "끊기", "안 한 날이 성공. 담배, 야식")
+                        kindRow("countdown", "휴식 타이머", "쉬는 시간을 재요. 기록은 남지 않아요")
                     }
-                    .pickerStyle(.inline)
-                    .labelsHidden()
                     if kind == "countdown" {
                         Stepper("\(minutes)분", value: $minutes, in: 1...60)
                     }
@@ -173,7 +177,7 @@ struct RegisterView: View {
                     Text(kind == "attend" ? HabitCopy.attendFooter
                          : kind == "quit" ? HabitCopy.quitFooter
                          : kind == "counter" ? HabitCopy.measureFooter
-                         : "아이콘을 고르면 어울리는 동작이 먼저 골라져요. 원하는 동작으로 바꿔도 돼요.")
+                         : "아이콘을 고르면 어울리는 방식이 먼저 골라져요. 바꿔도 돼요.")
                 }
                 if kind != "countdown" {
                     Section {
@@ -348,6 +352,24 @@ struct RegisterView: View {
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
+    /// 기록 방식 한 줄. 고른 것에 체크가 붙는다.
+    private func kindRow(_ value: String, _ title: String, _ detail: String) -> some View {
+        Button {
+            kind = value
+            focus = nil
+        } label: {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title).foregroundStyle(.primary)
+                    Text(detail).font(.caption).foregroundStyle(.secondary)
+                }
+                Spacer()
+                if kind == value { Image(systemName: "checkmark").foregroundStyle(Color.accentColor) }
+            }
+        }
+        .accessibilityAddTraits(kind == value ? .isSelected : [])
+    }
+
     /// 접힌 습관 줄에 보일 요약. 정한 게 없으면 무엇을 정할 수 있는지 보여 준다.
     private var habitSummary: String {
         var parts: [String] = []
@@ -414,6 +436,8 @@ struct RegisterView: View {
             key.schedule = schedule
             key.tags = tags
         }
+        // 첫 습관이면 저장 뒤 바로 실행 화면을 열어 첫 완료까지 데려간다(홈이 route를 받아 연다).
+        let isFirstHabit = existing.filter(\.supportsGoal).isEmpty && key.supportsGoal
         context.insert(key)
         // 미리 채운 알림은 권한 창을 거치지 않았을 수 있다. 저장할 때 한 번 묻는다.
         if key.reminderMinute >= 0 { Task { _ = await HabitReminders.requestPermission() } }
@@ -426,6 +450,7 @@ struct RegisterView: View {
             saveFailed = true
             return
         }
+        if isFirstHabit { NotificationRoute.shared.keyID = key.id }
         onSaved?()
         dismiss()
     }

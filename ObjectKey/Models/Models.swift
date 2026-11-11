@@ -234,9 +234,9 @@ enum AppModel {
 extension KeyAction {
     var label: String {
         switch self {
-        case .session: return "시간 기록 시작·종료"
+        case .session: return "시간 재기"
         case .countdown(let minutes): return "\(minutes)분 휴식 타이머"
-        case .counter: return "횟수 +1"
+        case .counter: return "했어요 체크"
         case .attend(let start, let minutes): return "\(Self.clock(start))–\(Self.clock(start + minutes)) 참석"
         }
     }

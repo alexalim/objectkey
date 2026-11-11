@@ -229,7 +229,7 @@ struct KeyRow: View {
                     if let time { Text(time).font(.caption.monospacedDigit()).foregroundStyle(.secondary) }
                 }
                 // 두 줄로 끝낸다: 이름 / 오늘 진행 · 일정 · 신호. 습관 단계는 불꽃 숫자와 겹쳐 상세에서만 보여 준다.
-                // 오늘 진행이 없어 동작 이름("횟수 +1")만 보일 때는 일정·신호가 잘리지 않게 동작 이름을 뺀다.
+                // 오늘 진행이 없어 방식 이름("했어요 체크")만 보일 때는 일정·신호가 잘리지 않게 동작 이름을 뺀다.
                 Text((subtitle == key.actionTitle ? [habitLine ?? subtitle] : [subtitle, habitLine].compactMap { $0 }).joined(separator: " · "))
                     .font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
             }
