@@ -33,7 +33,7 @@ struct HabitShareCard: View {
             }
             HStack {
                 number("\(metDays)일", "채운 날")
-                number("\(bestStreak)일", "최고 연속")
+                number("\(bestStreak)일", "최고 기록")
                 if let strength { number("\(Int((strength * 100).rounded()))", "습관 힘") }
             }
             YearHeatmap(days: days)
@@ -71,7 +71,7 @@ struct YearShareCard: View {
             VStack(spacing: 8) {
                 line("채운 날", "\(metDays)일")
                 line("함께한 습관", "\(habits)개")
-                line("가장 긴 연속", "\(bestStreak)일")
+                line("가장 길게 이어 간 기록", "\(bestStreak)일")
                 if let topHabit { line("가장 많이 한 습관", topHabit) }
                 line("모은 스티커", "\(stickers) / \(Stickers.order.count)")
             }

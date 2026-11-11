@@ -116,7 +116,7 @@ extension PeriodCompare {
     /// "지난 30일보다 4번 더 했어요". 줄었으면 탓하지 않고 이번 숫자만 담담히 말한다.
     static func sentence(recent: Int, previous: Int, days: Int) -> String {
         if recent > previous { return "지난 \(days)일보다 \(recent - previous)번 더 했어요." }
-        if recent == previous { return "지난 \(days)일과 같은 \(recent)번이에요. 꾸준해요." }
+        if recent == previous { return "지난 \(days)일과 똑같이 \(recent)번 했어요. 꾸준해요." }
         return "최근 \(days)일 동안 \(recent)번 했어요. 한 번씩 다시 쌓아 가요."
     }
 }

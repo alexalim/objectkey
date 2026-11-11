@@ -43,7 +43,7 @@ struct KeyEntityQuery: EntityQuery {
 /// 카메라 없이 물건의 동작을 실행한다. 목록에서 "지금 기록"을 누른 것과 같다.
 struct RecordKeyIntent: AppIntent {
     static let title: LocalizedStringResource = "MOKI 물건 기록"
-    static let description = IntentDescription("등록한 물건을 카메라 없이 기록해요(시간 기록, +1, 참석, 휴식).")
+    static let description = IntentDescription("등록한 습관을 카메라 없이 기록해요(했어요 체크, 시간 재기, 참석, 휴식).")
 
     @Parameter(title: "물건")
     var key: KeyEntity

@@ -21,7 +21,7 @@ struct PlusPaywall: View {
                     VStack(alignment: .leading, spacing: 12) {
                         feature("infinity", "습관 개수 제한 없음", "무료는 \(PlusStore.freeHabitLimit)개까지예요")
                         feature("link", "물건 하나에 습관 여러 개", "운동화 → 걷기, 스트레칭")
-                        feature("square.grid.2x2", "위젯 · 잠금 화면 · Apple Watch", "앱을 열지 않고 확인하고 기록")
+                        feature("square.grid.2x2", "위젯 · 잠금 화면 · Apple Watch", "앱을 열지 않아도 보고 기록해요")
                         feature("chart.xyaxis.line", "자세한 통계", "주별 · 요일별 · 시간대")
                         feature("heart", "건강 앱 자동 완료 · 단계별 루틴", "걸음 수로 채우기, 세수 → 양치 → 스트레칭")
                         // 기기 안 AI가 있는 iOS 26 이상에서만 쓸 수 있으니, 그 아래에서는 팔지 않는다.

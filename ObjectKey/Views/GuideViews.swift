@@ -17,7 +17,7 @@ struct OnboardingView: View {
         Page(mood: .key, title: "물건이 열쇠가 돼요",
              body: "책, 컵, 영양제처럼\n늘 쓰는 물건에 습관을 붙여요.\n누르기만 해도 되고, 스캔은 원할 때만."),
         Page(mood: .scan, title: "등록은 이름 하나면 돼요",
-             body: "시간 기록, 횟수, 참석, 끊기 중에서 골라요.\n사진을 찍어 두면 스캔으로 알아봐요.\n무료로 습관 3개까지 만들 수 있어요."),
+             body: "했어요 체크나 시간 재기로 기록해요.\n사진을 찍어 두면 스캔으로 알아봐요.\n무료로 습관 3개까지 만들 수 있어요."),
         Page(mood: .success, title: "끊기지 않는 습관",
              body: "오늘 할 일은 오늘 화면에서 누르면 돼요.\n한 번 빠져도 괜찮아요.\n평균 66일이면 습관이 돼요."),
         Page(mood: .reading, title: "카메라 없이도 돼요",
@@ -154,7 +154,7 @@ struct HelpView: View {
                 guide("Apple Watch (플러스)", "applewatch", [
                     ("list.bullet", "워치 MOKI에 오늘 할 일이 보여요. 눌러서 바로 기록해요"),
                     ("iphone", "아이폰 MOKI를 열어 두지 않아도 돼요. 기록은 알아서 오가요"),
-                    ("arrow.clockwise", "목록이 옛날 것 같으면 워치에서 새로고침을 눌러요"),
+                    ("arrow.clockwise", "목록이 오래된 것 같으면 워치에서 새로고침을 눌러요"),
                     ("lock", "플러스를 산 직후 잠겨 보이면 새로고침 한 번이면 풀려요"),
                     ("circle.grid.2x2", "시계 화면 편집 → 컴플리케이션에서 MOKI를 넣으면 오늘 진행이 보여요"),
                 ])

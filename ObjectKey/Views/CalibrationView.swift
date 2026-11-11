@@ -62,7 +62,7 @@ struct CalibrationView: View {
                 } header: {
                     Text("물건별 결과")
                 } footer: {
-                    Text("숫자가 작을수록 같은 물건으로 봐요. '갈림'이면 기준값으로 두 무리를 나눌 수 있고, '겹침'이면 잘못 알아보지 않는 쪽으로 권해요.")
+                    Text("숫자가 작을수록 같은 물건으로 봐요. '갈림'이면 기준값으로 두 무리를 나눌 수 있고, '겹침'이면 다른 물건을 잘못 알아보지 않도록 기준을 낮춰 잡아요.")
                 }
                 Section {
                     ShareLink(item: report(), preview: SharePreview("MOKI 인식 점검 결과")) {

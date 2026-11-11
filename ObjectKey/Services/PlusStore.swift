@@ -121,7 +121,7 @@ final class PlusStore {
         } catch {
             await refresh()
             if isPlus { return "플러스를 다시 열었어요." }
-            return "복원을 마치지 못했어요. 다시 시도해 주세요. (\(error.localizedDescription))"
+            return "복원을 마치지 못했어요. 다시 해 주세요. (\(error.localizedDescription))"
         }
         await refresh()
         return isPlus ? "플러스를 다시 열었어요." : "이 Apple 계정으로 산 기록을 찾지 못했어요."
