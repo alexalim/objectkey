@@ -367,6 +367,7 @@ struct RegisterView: View {
                 if kind == value { Image(systemName: "checkmark").foregroundStyle(Color.accentColor) }
             }
         }
+        .tint(.primary)
         .accessibilityAddTraits(kind == value ? .isSelected : [])
     }
 
