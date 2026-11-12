@@ -111,4 +111,42 @@ struct TodayMediumView: View {
     }
 }
 
+struct TodayLockView: View {
+    let state: TodayActivityAttributes.ContentState
 
+    var body: some View {
+        HStack(spacing: 12) {
+            Image("wmoki-\(state.mood)").resizable().scaledToFit().frame(width: 56, height: 56)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(TodayCopy.headline(state)).font(.headline).lineLimit(1)
+                Text(TodayCopy.detail(state)).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                ProgressView(value: Double(state.total - state.remaining), total: Double(max(1, state.total))).tint(.orange)
+            }
+            if let id = state.nextID.flatMap(UUID.init(uuidString:)) {
+                Button(intent: WidgetRecordIntent(keyID: id)) {
+                    Text("완료").font(.subheadline.bold()).padding(.horizontal, 4)
+                }
+                .buttonStyle(.borderedProminent).tint(.orange)
+            }
+        }
+        .padding(14)
+    }
+}
+
+/// 오늘 현황 문구. 저녁에 끊기기 직전 습관이 있으면 남은 시간을 함께 말하되, 다그치지 않는다.
+enum TodayCopy {
+    static func headline(_ s: TodayActivityAttributes.ContentState) -> String {
+        s.remaining == 0 ? "오늘 다 했어요!" : "오늘 \(s.remaining)개 남았어요"
+    }
+
+    static func detail(_ s: TodayActivityAttributes.ContentState) -> String {
+        if s.remaining == 0 { return "토끼도 뿌듯해요. 내일 또 만나요." }
+        let hour = Calendar.current.component(.hour, from: .now)
+        if let risk = s.atRiskName, hour >= 18 {
+            let left = max(1, Int(s.dayEnd.timeIntervalSinceNow / 3600))
+            return "자정까지 \(left)시간 · \(risk) 한 번이면 이어져요"
+        }
+        let emoji = s.nextEmoji.isEmpty ? "" : s.nextEmoji + " "
+        return "다음: \(emoji)\(s.nextName)"
+    }
+}
