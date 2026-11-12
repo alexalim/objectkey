@@ -17,3 +17,21 @@ struct MokiActivityAttributes: ActivityAttributes {
         var end: Date?
     }
 }
+
+/// 잠금 화면·Dynamic Island의 "오늘 남은 습관" 현황.
+struct TodayActivityAttributes: ActivityAttributes {
+    struct ContentState: Codable, Hashable {
+        var remaining: Int
+        var total: Int
+        /// 다음에 할 습관. 잠금 화면의 완료 버튼이 이 습관을 기록한다. 없으면 nil.
+        var nextID: String?
+        var nextName: String
+        var nextEmoji: String
+        /// 오늘 안 하면 연속이 끊기는 습관 이름. 저녁 문구에 쓴다.
+        var atRiskName: String?
+        /// 오늘이 끝나는 시각. 지나면 내린다.
+        var dayEnd: Date
+        /// 토끼 표정 이름.
+        var mood: String
+    }
+}

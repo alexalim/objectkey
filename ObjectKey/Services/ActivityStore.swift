@@ -206,6 +206,7 @@ final class ActivityStore {
     func reset() {
         engine = ActivityEngine()
         LiveActivitySync.endAll()
+        TodayActivitySync.endAll()
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [Self.countdownNotificationID])
         try? FileManager.default.removeItem(at: stateURL)
     }

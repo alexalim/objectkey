@@ -149,6 +149,7 @@ struct HelpView: View {
                     ("square.grid.2x2", "홈 화면 길게 누르기 → 편집 → 위젯 추가 → MOKI"),
                     ("lock.iphone", "잠금 화면 길게 누르기 → 사용자화 → MOKI"),
                     ("timer", "시간 기록 중에는 잠금 화면에 시간이 보여요"),
+                    ("sun.max", "아침에 MOKI를 열면 잠금 화면에 오늘 남은 습관이 떠요. 거기서 바로 완료해요"),
                     ("gearshape", "안 보이면 설정 → MOKI → 실시간 현황 켜기"),
                 ])
                 guide("Apple Watch (플러스)", "applewatch", [

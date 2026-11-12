@@ -64,26 +64,59 @@ struct TodayWidgetView: View {
     }
 }
 
+/// 토끼 표정 + 연속 일수 + 이번 주 요일 점 + 남은 개수. 숫자만 있던 전 모습보다 홈 화면에 남겨 둘 이유가 생긴다.
 private struct SmallView: View {
     let snapshot: WidgetSnapshot
 
     var body: some View {
         let best = snapshot.items.max { $0.streak < $1.streak }
         VStack(alignment: .leading, spacing: 6) {
-            Text("오늘 할 일").font(.caption.bold()).foregroundStyle(.secondary)
-            HStack(alignment: .firstTextBaseline, spacing: 2) {
-                Text("\(snapshot.doneCount)").font(.system(size: 40, weight: .bold, design: .rounded))
-                Text("/\(snapshot.items.count)").font(.title3.bold()).foregroundStyle(.secondary)
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 0) {
+                    if let best, best.streak > 0 {
+                        Label("\(best.streak)일", systemImage: best.atRisk ? "flame" : "flame.fill")
+                            .font(.title3.bold()).foregroundStyle(best.atRisk ? .red : .orange)
+                    } else {
+                        Text("오늘").font(.title3.bold())
+                    }
+                    Text(snapshot.remaining == 0 ? "오늘 다 했어요!" : "\(snapshot.remaining)개 남았어요")
+                        .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                }
+                Spacer(minLength: 2)
+                Image("wmoki-\(snapshot.mood ?? "peek")").resizable().scaledToFit().frame(width: 52, height: 52)
             }
-            ProgressView(value: Double(snapshot.doneCount), total: Double(max(1, snapshot.items.count)))
-                .tint(.orange)
             Spacer(minLength: 0)
-            if let best, best.streak > 0 {
-                Label("\(best.name) \(best.streak)일", systemImage: best.atRisk ? "flame" : "flame.fill")
-                    .font(.caption2).foregroundStyle(best.atRisk ? .red : .orange).lineLimit(1)
-            }
+            WeekDots(days: snapshot.weekDays)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// 이번 주 7칸. 채운 날은 주황 원, 오늘은 테두리, 지난 빈 날은 옅게, 미래는 더 옅게.
+struct WeekDots: View {
+    let days: [Bool]?
+
+    var body: some View {
+        let calendar = Calendar.current
+        let symbols = calendar.veryShortWeekdaySymbols
+        let first = calendar.firstWeekday - 1
+        let todayIndex = (calendar.component(.weekday, from: .now) - calendar.firstWeekday + 7) % 7
+        HStack(spacing: 4) {
+            ForEach(0..<7, id: \.self) { i in
+                let done = days?[i] ?? false
+                VStack(spacing: 2) {
+                    ZStack {
+                        Circle().fill(done ? Color.orange : Color.secondary.opacity(i > todayIndex ? 0.08 : 0.18))
+                        if done { Image(systemName: "checkmark").font(.system(size: 7, weight: .bold)).foregroundStyle(.white) }
+                    }
+                    .frame(width: 14, height: 14)
+                    .overlay { if i == todayIndex { Circle().stroke(Color.orange, lineWidth: 1.5) } }
+                    Text(symbols[(first + i) % 7]).font(.system(size: 8)).foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .opacity(days == nil ? 0.4 : 1)
     }
 }
 
@@ -91,13 +124,25 @@ private struct MediumView: View {
     let snapshot: WidgetSnapshot
 
     var body: some View {
+        let best = snapshot.items.max { $0.streak < $1.streak }
+        HStack(spacing: 10) {
+            // 왼쪽: 토끼 · 연속 · 요일 점
+            VStack(spacing: 4) {
+                Image("wmoki-\(snapshot.mood ?? "peek")").resizable().scaledToFit().frame(width: 48, height: 48)
+                if let best, best.streak > 0 {
+                    Label("\(best.streak)일", systemImage: best.atRisk ? "flame" : "flame.fill")
+                        .font(.caption.bold()).foregroundStyle(best.atRisk ? .red : .orange)
+                }
+                WeekDots(days: snapshot.weekDays)
+            }
+            .frame(width: 112)
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text("오늘 할 일").font(.caption.bold()).foregroundStyle(.secondary)
+                Text(snapshot.remaining == 0 ? "오늘 다 했어요!" : "\(snapshot.remaining)개 남았어요").font(.caption.bold()).foregroundStyle(.secondary)
                 Spacer()
                 Text("\(snapshot.doneCount)/\(snapshot.items.count)").font(.caption.bold().monospacedDigit())
             }
-            ForEach(snapshot.items.prefix(4)) { item in
+            ForEach(snapshot.items.prefix(3)) { item in
                 HStack(spacing: 8) {
                     // 아직 안 한 것만 누를 수 있다. 이미 한 것은 실수로 또 기록되지 않게 버튼이 아니다.
                     if item.done {
@@ -121,6 +166,7 @@ private struct MediumView: View {
                 }
             }
             Spacer(minLength: 0)
+        }
         }
     }
 }

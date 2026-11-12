@@ -16,10 +16,27 @@ enum WidgetBridge {
                                        time: key.todoMinute.map(KeyAction.clock), quit: key.isQuit ? true : nil)
         }
         .sorted { ($0.time ?? "99", $0.name) < ($1.time ?? "99", $1.name) }
-        let snapshot = WidgetSnapshot(day: Calendar.current.startOfDay(for: now), items: items, plus: PlusStore.shared.isPlus)
+        let calendar = Calendar.current
+        // 이번 주 요일 점: 어느 습관이든 채운 날이면 켠다. 미래 날은 위젯이 알아서 비운다.
+        var metDays = Set<Date>()
+        for key in keys where key.supportsGoal {
+            let entries = KeyProgress.entries(key, logs: logs.filter { $0.keyID == key.id }, state: state, now: now)
+            for (day, status) in DailyProgress.days(entries, goal: key.goalAmount, calendar: calendar) where status == .met { metDays.insert(day) }
+        }
+        let weekStart = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? now
+        let weekDays = (0..<7).map { offset -> Bool in
+            guard let day = calendar.date(byAdding: .day, value: offset, to: weekStart) else { return false }
+            return metDays.contains(calendar.startOfDay(for: day))
+        }
+        let remaining = items.filter { !$0.done }.count
+        // 토끼 표정: 다 했으면 축하, 끊기기 직전이면 걱정, 아직이면 기다림, 할 일이 없으면 둘러보기.
+        let mood = items.isEmpty ? "scan" : remaining == 0 ? "success" : items.contains(where: { $0.atRisk && !$0.done }) ? "question" : "peek"
+        let snapshot = WidgetSnapshot(day: calendar.startOfDay(for: now), items: items, plus: PlusStore.shared.isPlus,
+                                      weekDays: weekDays, mood: mood)
         snapshot.save()
         WidgetCenter.shared.reloadAllTimelines()
         WatchBridge.shared.push(snapshot)
+        TodayActivitySync.update(snapshot, now: now)
     }
 
     /// 화면 밖(위젯 버튼·단축어·알림)에서 기록한 뒤 부른다.
