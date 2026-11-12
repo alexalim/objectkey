@@ -42,7 +42,7 @@ struct WeekDots: View {
         let todayIndex = (calendar.component(.weekday, from: .now) - calendar.firstWeekday + 7) % 7
         HStack(spacing: 4) {
             ForEach(0..<7, id: \.self) { i in
-                let done = days?[i] ?? false
+                let done = days.flatMap { i < $0.count ? $0[i] : nil } ?? false
                 VStack(spacing: 2) {
                     ZStack {
                         Circle().fill(done ? Color.orange : Color.secondary.opacity(i > todayIndex ? 0.08 : 0.18))
@@ -113,16 +113,19 @@ struct TodayMediumView: View {
 
 struct TodayLockView: View {
     let state: TodayActivityAttributes.ContentState
+    var isStale = false
 
     var body: some View {
         HStack(spacing: 12) {
-            Image("wmoki-\(state.mood)").resizable().scaledToFit().frame(width: 56, height: 56)
+            Image("wmoki-\(isStale ? "peek" : state.mood)").resizable().scaledToFit().frame(width: 56, height: 56)
             VStack(alignment: .leading, spacing: 3) {
-                Text(TodayCopy.headline(state)).font(.headline).lineLimit(1)
-                Text(TodayCopy.detail(state)).font(.caption).foregroundStyle(.secondary).lineLimit(2)
-                ProgressView(value: Double(state.total - state.remaining), total: Double(max(1, state.total))).tint(.orange)
+                Text(isStale ? "MOKI" : TodayCopy.headline(state)).font(.headline).lineLimit(1)
+                Text(isStale ? TodayCopy.stale : TodayCopy.detail(state)).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                if !isStale {
+                    ProgressView(value: Double(state.total - state.remaining), total: Double(max(1, state.total))).tint(.orange)
+                }
             }
-            if let id = state.nextID.flatMap(UUID.init(uuidString:)) {
+            if !isStale, let id = state.nextID.flatMap(UUID.init(uuidString:)) {
                 Button(intent: WidgetRecordIntent(keyID: id)) {
                     Text("완료").font(.subheadline.bold()).padding(.horizontal, 4)
                 }
@@ -141,12 +144,14 @@ enum TodayCopy {
 
     static func detail(_ s: TodayActivityAttributes.ContentState) -> String {
         if s.remaining == 0 { return "토끼도 뿌듯해요. 내일 또 만나요." }
-        let hour = Calendar.current.component(.hour, from: .now)
-        if let risk = s.atRiskName, hour >= 18 {
-            let left = max(1, Int(s.dayEnd.timeIntervalSinceNow / 3600))
-            return "자정까지 \(left)시간 · \(risk) 한 번이면 이어져요"
-        }
+        // 시간을 세어 보여 주면 재촉이 된다. 무엇을 하면 이어지는지만 말한다.
+        if let risk = s.atRiskName { return "\(risk) 한 번이면 오늘도 이어져요" }
+        // 다음 할 게 없는데 남은 게 있으면 끊기 습관을 오늘 어긴 경우다.
+        if s.nextName.isEmpty { return "끊기 습관만 남았어요. 내일 다시 지켜 봐요." }
         let emoji = s.nextEmoji.isEmpty ? "" : s.nextEmoji + " "
         return "다음: \(emoji)\(s.nextName)"
     }
+
+    /// 자정이 지나 묵은 카드일 때. 어제 숫자와 완료 버튼을 보여 주지 않는다.
+    static let stale = "새 날이에요 · MOKI를 열면 오늘 할 일이 떠요"
 }

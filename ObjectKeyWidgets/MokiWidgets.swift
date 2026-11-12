@@ -91,7 +91,7 @@ private struct Clock: View {
 struct TodayLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: TodayActivityAttributes.self) { context in
-            TodayLockView(state: context.state)
+            TodayLockView(state: context.state, isStale: context.isStale)
                 .activityBackgroundTint(Color(.systemBackground).opacity(0.9))
         } dynamicIsland: { context in
             DynamicIsland {
@@ -100,12 +100,12 @@ struct TodayLiveActivity: Widget {
                 }
                 DynamicIslandExpandedRegion(.center) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(TodayCopy.headline(context.state)).font(.headline).lineLimit(1)
-                        Text(TodayCopy.detail(context.state)).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                        Text(context.isStale ? "MOKI" : TodayCopy.headline(context.state)).font(.headline).lineLimit(1)
+                        Text(context.isStale ? TodayCopy.stale : TodayCopy.detail(context.state)).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                     }
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    if let id = context.state.nextID.flatMap(UUID.init(uuidString:)) {
+                    if !context.isStale, let id = context.state.nextID.flatMap(UUID.init(uuidString:)) {
                         Button(intent: WidgetRecordIntent(keyID: id)) {
                             Text("완료").font(.subheadline.bold())
                         }
