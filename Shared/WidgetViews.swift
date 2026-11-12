@@ -18,11 +18,11 @@ struct TodaySmallView: View {
                     } else {
                         Text("오늘").font(.title3.bold())
                     }
-                    Text(snapshot.remaining == 0 ? "오늘 다 했어요!" : "\(snapshot.remaining)개 남았어요")
-                        .font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    Text(snapshot.remaining == 0 ? "다 했어요!" : "\(snapshot.remaining)개 남았어요")
+                        .font(.caption).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.8)
                 }
                 Spacer(minLength: 2)
-                Image("wmoki-\(snapshot.mood ?? "peek")").resizable().scaledToFit().frame(width: 52, height: 52)
+                Image("wmoki-\(snapshot.mood ?? "peek")").resizable().scaledToFit().frame(width: 48, height: 48)
             }
             Spacer(minLength: 0)
             WeekDots(days: snapshot.weekDays)
@@ -75,7 +75,7 @@ struct TodayMediumView: View {
                 }
                 WeekDots(days: snapshot.weekDays)
             }
-            .frame(width: 112)
+            .frame(width: 104)
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text(snapshot.remaining == 0 ? "오늘 다 했어요!" : "\(snapshot.remaining)개 남았어요").font(.caption.bold()).foregroundStyle(.secondary)
@@ -102,6 +102,7 @@ struct TodayMediumView: View {
                     if item.streak > 0 {
                         Label("\(item.streak)", systemImage: item.atRisk ? "flame" : "flame.fill")
                             .font(.caption2.bold()).foregroundStyle(item.atRisk ? .red : .orange)
+                            .fixedSize()
                     }
                 }
             }
