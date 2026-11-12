@@ -11,7 +11,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"            # Swift 6 컴파일러에서도 Swift 5 언어 모드로 빌드
-    MARKETING_VERSION: "1.0.2"
+    MARKETING_VERSION: "1.0.3"
     CURRENT_PROJECT_VERSION: "1"
     # 팀 ID는 CI에서 환경 변수(TEAM_ID)로 넣습니다.
     DEVELOPMENT_TEAM: "${TEAM_ID}"
