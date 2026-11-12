@@ -212,6 +212,18 @@ final class ScreenTourTests: XCTestCase {
         snap("12-scan")
     }
 
+    /// 위젯·잠금 화면 현황 미리보기. 위젯은 앱 밖에서 돌아 직접 찍을 수 없어 앱 안에서 같은 그림을 그려 본다.
+    func test_widgets() {
+        app.terminate()
+        app.launchArguments += ["-ui-widgets"]
+        app.launch()
+        XCTAssertTrue(app.navigationBars["위젯 미리보기"].waitForExistence(timeout: 10), "위젯 미리보기가 열려야 한다")
+        sleep(1)
+        snap("30-widgets")
+        app.swipeUp()
+        snap("31-widgets-lock")
+    }
+
     /// 무료 상태의 결제 화면. App Store 인앱 구입 심사용 스크린샷으로도 쓴다.
     func test_paywall() {
         app.terminate()

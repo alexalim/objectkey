@@ -59,8 +59,9 @@ struct ObjectKeyApp: App {
             }
         }
         #if DEBUG
-        // UI 테스트: 실제 저장소 대신 데모 데이터가 든 메모리 저장소를 쓴다.
-        if DemoData.isEnabled { content.modelContainer(DemoData.container) } else { content }
+        // UI 테스트: 실제 저장소 대신 데모 데이터가 든 메모리 저장소를 쓴다. -ui-widgets면 위젯 미리보기만 띄운다.
+        if WidgetGalleryView.isEnabled { WidgetGalleryView() }
+        else if DemoData.isEnabled { content.modelContainer(DemoData.container) } else { content }
         #else
         content
         #endif

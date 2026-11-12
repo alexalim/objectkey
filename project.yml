@@ -27,6 +27,8 @@ targets:
     sources:
       - path: ObjectKey
       - path: Shared
+      # 위젯용 작은 토끼 그림. 앱 안 위젯 미리보기(-ui-widgets)가 같은 그림을 쓴다.
+      - path: ObjectKeyWidgets/Assets.xcassets
     dependencies:
       - package: ObjectKeyCore
       - target: ObjectKeyWidgets
