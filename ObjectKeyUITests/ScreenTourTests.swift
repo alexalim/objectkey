@@ -224,6 +224,22 @@ final class ScreenTourTests: XCTestCase {
         snap("31-widgets-lock")
     }
 
+    /// 새 버전 안내가 뜬 시작 화면. 안내 줄을 눌러도 시작 버튼이 같이 눌리지 않아야 한다.
+    func test_updateNotice() {
+        app.terminate()
+        app.launchArguments += ["-ui-update", "9.9"]
+        app.launch()
+        let start = app.buttons["MOKI 시작하기"]
+        XCTAssertTrue(start.waitForExistence(timeout: 10), "시작 화면이 보여야 한다")
+        let notice = app.buttons["splash-update"]
+        XCTAssertTrue(notice.waitForExistence(timeout: 5), "새 버전 안내 줄이 보여야 한다")
+        XCTAssertTrue(notice.label.contains("9.9"), "안내 줄에 새 버전 번호가 들어가야 한다")
+        snap("32-splash-update")
+        // 시작 버튼은 그대로 동작해야 한다.
+        start.tap()
+        XCTAssertTrue(start.waitForNonExistence(timeout: 5), "누르면 시작 화면이 사라져야 한다")
+    }
+
     /// 무료 상태의 결제 화면. App Store 인앱 구입 심사용 스크린샷으로도 쓴다.
     func test_paywall() {
         app.terminate()
