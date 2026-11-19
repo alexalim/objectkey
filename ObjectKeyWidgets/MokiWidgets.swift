@@ -96,7 +96,7 @@ struct TodayLiveActivity: Widget {
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    Image("wmoki-\(context.state.mood)").resizable().scaledToFit().frame(width: 44, height: 44)
+                    Image("lmoki-\(context.state.mood)").resizable().scaledToFit().frame(width: 44, height: 44)
                 }
                 DynamicIslandExpandedRegion(.center) {
                     VStack(alignment: .leading, spacing: 2) {
@@ -113,7 +113,7 @@ struct TodayLiveActivity: Widget {
                     }
                 }
             } compactLeading: {
-                Image("wmoki-\(context.state.mood)").resizable().scaledToFit().padding(2)
+                Image("lmoki-\(context.state.mood)").resizable().scaledToFit().padding(2)
             } compactTrailing: {
                 Text(context.state.remaining == 0 ? "✓" : "\(context.state.remaining)").font(.caption.bold().monospacedDigit())
                     .foregroundStyle(context.state.remaining == 0 ? .green : .orange)

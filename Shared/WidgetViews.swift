@@ -112,13 +112,15 @@ struct TodayMediumView: View {
     }
 }
 
+/// 잠금 화면 '오늘' 카드. 라이브 액티비티는 그림 크기 제한이 빡빡해서(워치 스마트 스택은 큰 그림을 회색 칸으로 바꾼다)
+/// 토끼는 위젯용(wmoki) 대신 56pt에 맞춘 작은 그림(lmoki)을 쓴다.
 struct TodayLockView: View {
     let state: TodayActivityAttributes.ContentState
     var isStale = false
 
     var body: some View {
         HStack(spacing: 12) {
-            Image("wmoki-\(isStale ? "peek" : state.mood)").resizable().scaledToFit().frame(width: 56, height: 56)
+            Image("lmoki-\(isStale ? "peek" : state.mood)").resizable().scaledToFit().frame(width: 56, height: 56)
             VStack(alignment: .leading, spacing: 3) {
                 Text(isStale ? "MOKI" : TodayCopy.headline(state)).font(.headline).lineLimit(1)
                 Text(isStale ? TodayCopy.stale : TodayCopy.detail(state)).font(.caption).foregroundStyle(.secondary).lineLimit(2)
