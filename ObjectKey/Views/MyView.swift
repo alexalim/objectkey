@@ -132,6 +132,7 @@ struct MyView: View {
     }
 
     private func wipe() {
+        HealthSync.removeAllWritten()
         try? context.delete(model: ActivityLog.self)
         try? context.delete(model: DayNote.self)
         try? context.delete(model: ReferenceShot.self)

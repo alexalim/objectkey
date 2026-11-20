@@ -157,7 +157,10 @@ final class ActivityStore {
                                        startedAt: at, duration: Double(minutes * 60)))
         }
         guard context.saveOrReport() else { return "저장하지 못했어요." }
-        if key.kind == .session { HealthSync.write(keyID: key.id, start: at, duration: Double(minutes * 60), keys: [key]) }
+        // 지난 날에 더한 기록은 실제 시각이 없어(정오로 둔다) 건강 앱에 쓰지 않는다.
+        if key.kind == .session, calendar.isDateInToday(day) {
+            HealthSync.write(keyID: key.id, start: at, duration: Double(minutes * 60), keys: [key])
+        }
         WidgetBridge.refreshFromStore()
         return nil
     }

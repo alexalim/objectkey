@@ -124,7 +124,7 @@ enum HealthSync {
     static func write(keyID: UUID, start: Date, duration: Double, keys: [KeyObject]) {
         guard let key = keys.first(where: { $0.id == keyID }),
               let sample = HealthWrite.sample(keyID: keyID, writeTarget: key.healthWrite, readMetric: key.healthMetric,
-                                              logKind: "session", start: start, duration: duration),
+                                              logKind: "session", start: start, duration: duration, now: .now),
               canWrite(sample.target) else { return }
         // 같은 열쇠로 다시 쓰면 건강 앱이 하나로 합친다(백업 복원 등).
         let metadata: [String: Any] = [HKMetadataKeySyncIdentifier: sample.syncID, HKMetadataKeySyncVersion: 1]
@@ -154,6 +154,16 @@ enum HealthSync {
         try await builder.addMetadata(metadata)
         try await builder.endCollection(at: sample.end)
         _ = try await builder.finishWorkout()
+    }
+
+    /// 모든 데이터 삭제: MOKI가 건강 앱에 쓴 것을 모두 지운다. 다른 앱이 쓴 기록은 건드리지 않는다.
+    static func removeAllWritten() {
+        guard isAvailable else { return }
+        let predicate = HKQuery.predicateForObjects(from: HKSource.default())
+        for type in [HKCategoryType(.mindfulSession), HKObjectType.workoutType()] as [HKSampleType]
+        where store.authorizationStatus(for: type) == .sharingAuthorized {
+            store.deleteObjects(of: type, predicate: predicate) { _, _, _ in }
+        }
     }
 
     /// MOKI에서 지운 시간 기록을 건강 앱에서도 지운다. MOKI가 쓴 것만 지울 수 있다.
