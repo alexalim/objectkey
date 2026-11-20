@@ -79,6 +79,81 @@ struct RecordKeyIntent: AppIntent {
     }
 }
 
+/// 단축어에서 묻는 오늘 현황. 위젯 요약은 늦을 수 있어 저장소에서 바로 계산한다.
+@MainActor
+private enum IntentFacts {
+    static func load() -> (keys: [KeyObject], logs: [ActivityLog])? {
+        let context = AppModel.container.mainContext
+        guard let keys = try? context.fetch(FetchDescriptor<KeyObject>(sortBy: [SortDescriptor(\.createdAt)])),
+              let logs = try? context.fetch(FetchDescriptor<ActivityLog>()) else { return nil }
+        return (keys, logs)
+    }
+
+    static func progress(_ id: UUID) -> (key: KeyObject, progress: KeyProgress)? {
+        guard let facts = load(), let key = facts.keys.first(where: { $0.id == id }) else { return nil }
+        return (key, KeyProgress.of(key, logs: facts.logs, state: ActivityStore.shared.state))
+    }
+}
+
+/// 오늘 아직 안 한 습관 수. 자동화의 조건("0보다 크면 알림")이나 다른 앱에 넘길 값으로 쓴다.
+struct TodayRemainingIntent: AppIntent {
+    static let title: LocalizedStringResource = "MOKI 오늘 남은 습관"
+    static let description = IntentDescription("오늘 아직 안 한 습관 수를 알려 줘요. 이름은 말로 읽어 줘요.")
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ReturnsValue<Int> & ProvidesDialog {
+        guard let facts = IntentFacts.load() else { return .result(value: 0, dialog: "기록을 읽지 못했어요.") }
+        let state = ActivityStore.shared.state
+        let left = facts.keys.filter(\.supportsGoal).filter { key in
+            let progress = KeyProgress.of(key, logs: facts.logs, state: state)
+            return TodayPlan.isTodo(key, progress) && !progress.metToday
+        }
+        if left.isEmpty { return .result(value: 0, dialog: "오늘 할 습관을 다 했어요!") }
+        let names = left.map(\.name).joined(separator: ", ")
+        return .result(value: left.count, dialog: "오늘 \(left.count)개 남았어요. \(names)")
+    }
+}
+
+/// 습관 하나의 연속 일수.
+struct HabitStreakIntent: AppIntent {
+    static let title: LocalizedStringResource = "MOKI 연속 일수"
+    static let description = IntentDescription("습관을 며칠째 이어 가고 있는지 알려 줘요.")
+
+    @Parameter(title: "물건")
+    var key: KeyEntity
+
+    static var parameterSummary: some ParameterSummary {
+        Summary("\(\.$key) 연속 일수")
+    }
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ReturnsValue<Int> & ProvidesDialog {
+        guard let found = IntentFacts.progress(key.id) else { return .result(value: 0, dialog: "물건을 찾을 수 없어요.") }
+        let streak = found.progress.streak
+        return .result(value: streak, dialog: streak > 0 ? "\(found.key.name) \(streak)일째 이어 가고 있어요." : "\(found.key.name), 오늘부터 다시 시작이에요.")
+    }
+}
+
+/// 오늘 했는지. 자동화에서 "안 했으면 알림" 같은 조건에 쓴다.
+struct HabitDoneTodayIntent: AppIntent {
+    static let title: LocalizedStringResource = "MOKI 오늘 했는지"
+    static let description = IntentDescription("습관을 오늘 채웠는지 참/거짓으로 알려 줘요.")
+
+    @Parameter(title: "물건")
+    var key: KeyEntity
+
+    static var parameterSummary: some ParameterSummary {
+        Summary("\(\.$key) 오늘 했는지")
+    }
+
+    @MainActor
+    func perform() async throws -> some IntentResult & ReturnsValue<Bool> & ProvidesDialog {
+        guard let found = IntentFacts.progress(key.id) else { return .result(value: false, dialog: "물건을 찾을 수 없어요.") }
+        let done = found.progress.metToday
+        return .result(value: done, dialog: done ? "\(found.key.name), 오늘 했어요." : "\(found.key.name), 아직 안 했어요.")
+    }
+}
+
 struct MokiShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
@@ -90,6 +165,24 @@ struct MokiShortcuts: AppShortcutsProvider {
             ],
             shortTitle: "물건 기록",
             systemImageName: "checkmark.circle"
+        )
+        AppShortcut(
+            intent: TodayRemainingIntent(),
+            phrases: [
+                "\(.applicationName) 오늘 남은 습관",
+                "\(.applicationName)에서 오늘 뭐 남았어",
+            ],
+            shortTitle: "오늘 남은 습관",
+            systemImageName: "list.bullet"
+        )
+        AppShortcut(
+            intent: HabitStreakIntent(),
+            phrases: [
+                "\(.applicationName) \(\.$key) 연속 며칠",
+                "\(.applicationName)에서 \(\.$key) 며칠째야",
+            ],
+            shortTitle: "연속 일수",
+            systemImageName: "flame"
         )
     }
 }
