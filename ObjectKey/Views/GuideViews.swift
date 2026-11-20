@@ -226,6 +226,8 @@ struct SuggestedHabits: View {
                 }
                 .padding(.horizontal, 16)
             }
+            // 빈 화면 안에서 가로 스크롤이 세로로 늘어나 위아래에 큰 빈칸이 생기지 않게 높이를 내용에 맞춘다.
+            .fixedSize(horizontal: false, vertical: true)
         }
     }
 

@@ -85,12 +85,16 @@ struct HomeBadges: View {
 
     var body: some View {
         NavigationLink { StickerBookView() } label: {
-            HStack(spacing: 10) {
-                Label("\(streak)", systemImage: "flame.fill").foregroundStyle(streak > 0 ? Color.orange : Color.secondary)
-                Label("\(stickers)", systemImage: "star.fill").foregroundStyle(Color.yellow)
+            // 툴바는 Label을 아이콘만 남기고 숫자를 숨긴다. 그림과 숫자를 따로 놓는다.
+            HStack(spacing: 4) {
+                Image(systemName: "flame.fill").foregroundStyle(streak > 0 ? Color.orange : Color.secondary)
+                Text("\(streak)")
+                Image(systemName: "star.fill").foregroundStyle(Color.yellow).padding(.leading, 6)
+                Text("\(stickers)")
             }
-            .labelStyle(.titleAndIcon)
             .font(.subheadline.bold().monospacedDigit())
+            .foregroundStyle(.primary)
+            .fixedSize()
         }
         .accessibilityLabel("지금 \(streak)일째 이어 가는 중, 스티커 \(stickers)개")
         .accessibilityHint("스티커 모음을 열어요")
