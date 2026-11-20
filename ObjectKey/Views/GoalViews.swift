@@ -297,6 +297,41 @@ struct ScheduleEditor: View {
     }
 }
 
+/// 시간 기록을 건강 앱에도 남기기. 시간 재기 습관에서만 고른다.
+struct HealthWriteEditor: View {
+    @Binding var target: String
+    /// 건강 앱에서 읽어 와 채우는 습관이면 쓰지 않는다.
+    let readsHealth: Bool
+    @State private var plus = PlusStore.shared
+    @State private var allowed = true
+
+    var body: some View {
+        if readsHealth {
+            Text("건강 앱에서 읽어 와 채우는 습관이라 건강 앱에 남기지 않아요. 남기면 자기 기록으로 다시 채워져요.")
+                .font(.subheadline).foregroundStyle(.secondary)
+        } else if plus.isPlus || !target.isEmpty {
+            Picker("건강 앱에 남기기", selection: $target) {
+                Text("남기지 않음").tag("")
+                ForEach(HealthWriteTarget.allCases, id: \.rawValue) { Text($0.label).tag($0.rawValue) }
+            }
+            .onChange(of: target) { _, new in
+                guard let t = HealthWriteTarget(rawValue: new) else { return }
+                Task {
+                    await HealthSync.requestWriteAccess(t)
+                    allowed = HealthSync.canWrite(t)
+                }
+            }
+            .task(id: target) { allowed = HealthWriteTarget(rawValue: target).map(HealthSync.canWrite) ?? true }
+            if HealthWriteTarget(rawValue: target) != nil, !allowed {
+                Label("설정 → 건강 → 데이터 접근 및 기기 → MOKI에서 쓰기를 켜 주세요.", systemImage: "heart.text.square")
+                    .font(.footnote).foregroundStyle(.secondary)
+            }
+        } else {
+            PlusLockRow(title: "건강 앱에 남기기")
+        }
+    }
+}
+
 /// 습관 쌓기 신호 입력. "[아침 커피 내린] 다음에"처럼 문장으로 읽히게, 칸 뒤에 "다음에"를 붙여 둔다.
 struct CueField: View {
     @Binding var cue: String
@@ -316,7 +351,8 @@ enum HabitCopy {
     static let cuePlaceholder = "예: 아침 커피 내린"
     static let cueFooter = "매일 하는 행동 바로 뒤에 붙이면 덜 잊어요."
     static let routineFooter = "시작하면 지금 단계와 남은 시간을 보여 주고, 단계가 바뀔 때 알려 줘요. 예: 세수 3분 → 양치 2분 → 스트레칭 5분."
-    static let healthFooter = "건강 앱 기록이 목표를 넘으면 그날을 자동으로 채워요. 앱을 열 때 최근 7일을 확인해요. 건강 기록은 읽기만 하고 어디에도 보내지 않아요."
+    static let healthFooter = "건강 앱 기록이 목표를 넘으면 그날을 자동으로 채워요. 앱을 열 때 최근 7일을 확인해요. 건강 기록은 어디에도 보내지 않아요."
+    static let healthWriteFooter = "시간 재기로 남긴 기록을 건강 앱에도 마음챙김이나 운동으로 남겨요. 1분이 안 되는 기록은 빼요. MOKI에서 기록을 지우면 건강 앱에서도 지워져요."
     static let quitFooter = "했을 때만 기록해요. 기록이 없는 날이 지킨 날이에요. 한 번 했어도 이어지고, 이틀 연속이면 끊겨요."
     static let measureFooter = "단위를 쓰면 완료할 때마다 정한 양만큼 더해져요. 예: 물 250ml, 책 10쪽."
     static let attendFooter = "[참석했어요]나 알림의 '참석'을 누르면 정한 시간만큼 바로 기록돼요. 시작·종료를 따로 하지 않아도 되고, 진행 중인 다른 기록도 멈추지 않아요."
@@ -384,11 +420,25 @@ struct GoalEditor: View {
                     }
                 }
                 Section {
-                    HealthLinkEditor(metric: $key.healthMetric, target: $key.healthTarget)
+                    // 읽기와 쓰기를 같이 켜면 자기가 쓴 기록을 다시 읽어 스스로 채운다. 하나만 고르게 한다.
+                    if key.healthWrite.isEmpty {
+                        HealthLinkEditor(metric: $key.healthMetric, target: $key.healthTarget)
+                    } else {
+                        Text("건강 앱에 남기는 습관이라 건강 앱에서 읽어 오지 않아요.").font(.subheadline).foregroundStyle(.secondary)
+                    }
                 } header: {
                     Text("건강 앱으로 자동 완료 (선택)")
                 } footer: {
                     Text(HabitCopy.healthFooter)
+                }
+                if key.kind == .session {
+                    Section {
+                        HealthWriteEditor(target: $key.healthWrite, readsHealth: !key.healthMetric.isEmpty)
+                    } header: {
+                        Text("건강 앱에 남기기 (선택)")
+                    } footer: {
+                        Text(HabitCopy.healthWriteFooter)
+                    }
                 }
                 if key.kind == .counter {
                     Section {

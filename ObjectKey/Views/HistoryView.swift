@@ -25,7 +25,7 @@ struct HistoryView: View {
                     }
                 }
                 .onDelete { offsets in
-                    for i in offsets { context.delete(logs[i]) }
+                    for i in offsets { HealthSync.removeWritten(logs[i]); context.delete(logs[i]) }
                     context.saveOrReport()
                 }
             }

@@ -3,7 +3,7 @@ import HealthKit
 import SwiftData
 import ObjectKeyCore
 
-/// 건강 앱 값으로 습관을 자동 완료한다. 읽기만 하고, 건강 데이터를 기기 밖으로 보내지 않는다.
+/// 건강 앱 값으로 습관을 자동 완료하고, 고른 시간 기록은 건강 앱에도 남긴다. 건강 데이터를 기기 밖으로 보내지 않는다.
 @MainActor
 enum HealthSync {
     private static let store = HKHealthStore()
@@ -101,6 +101,69 @@ enum HealthSync {
         if added {
             context.saveOrReport()
             WidgetBridge.refreshFromStore()
+        }
+    }
+
+    // MARK: 건강 앱에 쓰기
+
+    private static func writeType(_ target: HealthWriteTarget) -> HKSampleType {
+        target.isWorkout ? HKObjectType.workoutType() : HKCategoryType(.mindfulSession)
+    }
+
+    static func requestWriteAccess(_ target: HealthWriteTarget) async {
+        guard isAvailable else { return }
+        try? await store.requestAuthorization(toShare: [writeType(target)], read: [])
+    }
+
+    /// 쓰기 권한이 켜져 있는지. 읽기와 달리 쓰기는 허용 여부를 알 수 있다.
+    static func canWrite(_ target: HealthWriteTarget) -> Bool {
+        isAvailable && store.authorizationStatus(for: writeType(target)) == .sharingAuthorized
+    }
+
+    /// 방금 남긴 시간 기록을 건강 앱에도 쓴다. 실패해도(잠금 중·권한 꺼짐) MOKI 기록은 그대로다.
+    static func write(keyID: UUID, start: Date, duration: Double, keys: [KeyObject]) {
+        guard let key = keys.first(where: { $0.id == keyID }),
+              let sample = HealthWrite.sample(keyID: keyID, writeTarget: key.healthWrite, readMetric: key.healthMetric,
+                                              logKind: "session", start: start, duration: duration),
+              canWrite(sample.target) else { return }
+        // 같은 열쇠로 다시 쓰면 건강 앱이 하나로 합친다(백업 복원 등).
+        let metadata: [String: Any] = [HKMetadataKeySyncIdentifier: sample.syncID, HKMetadataKeySyncVersion: 1]
+        Task {
+            if sample.target.isWorkout {
+                try? await saveWorkout(sample, metadata: metadata)
+            } else {
+                let mindful = HKCategorySample(type: HKCategoryType(.mindfulSession), value: HKCategoryValue.notApplicable.rawValue,
+                                               start: sample.start, end: sample.end, metadata: metadata)
+                try? await store.save(mindful)
+            }
+        }
+    }
+
+    private static func saveWorkout(_ sample: HealthWriteSample, metadata: [String: Any]) async throws {
+        let configuration = HKWorkoutConfiguration()
+        configuration.activityType = switch sample.target {
+        case .walking: .walking
+        case .running: .running
+        case .cycling: .cycling
+        case .strength: .traditionalStrengthTraining
+        case .yoga: .yoga
+        case .mindful, .other: .other
+        }
+        let builder = HKWorkoutBuilder(healthStore: store, configuration: configuration, device: .local())
+        try await builder.beginCollection(at: sample.start)
+        try await builder.addMetadata(metadata)
+        try await builder.endCollection(at: sample.end)
+        _ = try await builder.finishWorkout()
+    }
+
+    /// MOKI에서 지운 시간 기록을 건강 앱에서도 지운다. MOKI가 쓴 것만 지울 수 있다.
+    static func removeWritten(_ log: ActivityLog) {
+        guard isAvailable, log.kind == "session" else { return }
+        let predicate = HKQuery.predicateForObjects(withMetadataKey: HKMetadataKeySyncIdentifier,
+                                                    allowedValues: [HealthWrite.syncID(keyID: log.keyID, start: log.startedAt)])
+        for type in [HKCategoryType(.mindfulSession), HKObjectType.workoutType()] as [HKSampleType]
+        where store.authorizationStatus(for: type) == .sharingAuthorized {
+            store.deleteObjects(of: type, predicate: predicate) { _, _, _ in }
         }
     }
 }

@@ -276,12 +276,13 @@ struct KeyDetailView: View {
     /// 그날 가장 나중 기록 하나만 지운다. 횟수는 −1, 시간 기록은 마지막 한 번.
     private func removeLatest(on day: Date) {
         guard let last = records(on: day).max(by: { $0.startedAt < $1.startedAt }) else { return }
+        HealthSync.removeWritten(last)
         context.delete(last)
         context.saveOrReport()
     }
 
     private func removeRecords(on day: Date) {
-        records(on: day).forEach { context.delete($0) }
+        records(on: day).forEach { HealthSync.removeWritten($0); context.delete($0) }
         context.saveOrReport()
     }
 }

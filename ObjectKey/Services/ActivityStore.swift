@@ -68,6 +68,7 @@ final class ActivityStore {
         let attendIDs = Set(keys.filter { $0.kind == .attend }.map(\.id))
         let amounts = Dictionary(uniqueKeysWithValues: keys.map { ($0.id, $0.recordAmount) })
         let units = Dictionary(uniqueKeysWithValues: keys.map { ($0.id, $0.measureStep > 0 ? "+\($0.measureStep)\($0.measureUnit)" : "+1") })
+        var sessions: [(id: UUID, startedAt: Date, duration: Double)] = []
         for effect in effects {
             switch effect {
             case .recordSession(let id, let startedAt, let duration):
@@ -78,6 +79,7 @@ final class ActivityStore {
                 }
                 context.insert(ActivityLog(keyID: id, keyName: names[id] ?? "삭제된 물건", kind: "session",
                                            startedAt: startedAt, duration: duration))
+                sessions.append((id, startedAt, duration))
                 lastMessage = "\(names[id] ?? "세션") \(Self.format(duration)) 기록"
             case .incrementCounter(let id, let at):
                 context.insert(ActivityLog(keyID: id, keyName: names[id] ?? "삭제된 물건", kind: "counter",
@@ -91,7 +93,9 @@ final class ActivityStore {
                 play(feedback)
             }
         }
-        context.saveOrReport()
+        if context.saveOrReport() {
+            for s in sessions { HealthSync.write(keyID: s.id, start: s.startedAt, duration: s.duration, keys: keys) }
+        }
         persist()
         syncLiveActivity(keys: keys)
     }
@@ -153,6 +157,7 @@ final class ActivityStore {
                                        startedAt: at, duration: Double(minutes * 60)))
         }
         guard context.saveOrReport() else { return "저장하지 못했어요." }
+        if key.kind == .session { HealthSync.write(keyID: key.id, start: at, duration: Double(minutes * 60), keys: [key]) }
         WidgetBridge.refreshFromStore()
         return nil
     }
