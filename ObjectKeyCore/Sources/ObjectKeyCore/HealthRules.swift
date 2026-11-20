@@ -2,13 +2,14 @@ import Foundation
 
 /// 건강 앱 자동 완료 규칙. 하루 값이 목표를 넘은 날마다 기록을 하나씩 남긴다.
 public enum HealthMetric: String, CaseIterable, Sendable {
-    case steps, exerciseMinutes, mindfulMinutes
+    case steps, exerciseMinutes, mindfulMinutes, water
 
     public var label: String {
         switch self {
         case .steps: return "걸음 수"
         case .exerciseMinutes: return "운동 시간"
         case .mindfulMinutes: return "마음챙김"
+        case .water: return "물 마시기"
         }
     }
 
@@ -16,6 +17,7 @@ public enum HealthMetric: String, CaseIterable, Sendable {
         switch self {
         case .steps: return "걸음"
         case .exerciseMinutes, .mindfulMinutes: return "분"
+        case .water: return "ml"
         }
     }
 
@@ -25,10 +27,17 @@ public enum HealthMetric: String, CaseIterable, Sendable {
         case .steps: return 6000
         case .exerciseMinutes: return 30
         case .mindfulMinutes: return 10
+        case .water: return 1500
         }
     }
 
-    public var targetStep: Int { self == .steps ? 500 : 5 }
+    public var targetStep: Int {
+        switch self {
+        case .steps: return 500
+        case .water: return 250
+        case .exerciseMinutes, .mindfulMinutes: return 5
+        }
+    }
 }
 
 public enum HealthRules {

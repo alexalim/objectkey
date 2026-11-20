@@ -23,6 +23,7 @@ enum HealthSync {
         case .steps: return HKQuantityType(.stepCount)
         case .exerciseMinutes: return HKQuantityType(.appleExerciseTime)
         case .mindfulMinutes: return HKCategoryType(.mindfulSession)
+        case .water: return HKQuantityType(.dietaryWater)
         }
     }
 
@@ -46,9 +47,12 @@ enum HealthSync {
         guard let start = calendar.date(byAdding: .day, value: -(days - 1), to: calendar.startOfDay(for: end)) else { return [:] }
         let predicate = HKQuery.predicateForSamples(withStart: start, end: end)
         switch metric {
-        case .steps, .exerciseMinutes:
-            let type = HKQuantityType(metric == .steps ? .stepCount : .appleExerciseTime)
-            let unit = metric == .steps ? HKUnit.count() : HKUnit.minute()
+        case .steps, .exerciseMinutes, .water:
+            let (type, unit): (HKQuantityType, HKUnit) = switch metric {
+            case .steps: (HKQuantityType(.stepCount), .count())
+            case .water: (HKQuantityType(.dietaryWater), .literUnit(with: .milli))
+            default: (HKQuantityType(.appleExerciseTime), .minute())
+            }
             let descriptor = HKStatisticsCollectionQueryDescriptor(
                 predicate: HKSamplePredicate.quantitySample(type: type, predicate: predicate),
                 options: .cumulativeSum, anchorDate: start, intervalComponents: DateComponents(day: 1))

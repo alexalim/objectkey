@@ -141,7 +141,7 @@ struct HealthLinkEditor: View {
             ForEach(HealthMetric.allCases, id: \.rawValue) { Text($0.label).tag($0.rawValue) }
         }
         if let m = HealthMetric(rawValue: metric) {
-            Stepper("하루 \(target)\(m.unit) 이상", value: $target, in: m.targetStep...(m == .steps ? 50000 : 600), step: m.targetStep)
+            Stepper("하루 \(target)\(m.unit) 이상", value: $target, in: m.targetStep...(m == .steps ? 50000 : m == .water ? 5000 : 600), step: m.targetStep)
             permissionRow(m)
                 .task(id: metric) { canAsk = await HealthSync.shouldAsk(m) }
         }
@@ -154,7 +154,7 @@ struct HealthLinkEditor: View {
             Label("이 기기에서는 건강 앱을 쓸 수 없어요.", systemImage: "heart.slash").foregroundStyle(.secondary)
         } else if canAsk == true {
             VStack(alignment: .leading, spacing: 6) {
-                Label("건강 앱의 \(m.label)를 읽으려면 권한이 필요해요.", systemImage: "heart.text.square")
+                Label("건강 앱의 \(m.label) 기록을 읽으려면 권한이 필요해요.", systemImage: "heart.text.square")
                     .font(.subheadline)
                 Button {
                     Task {
@@ -165,7 +165,7 @@ struct HealthLinkEditor: View {
                     Label("권한 허용하기", systemImage: "checkmark.shield").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
-                Text("다음 화면에서 '\(m.label)'를 켜고 '허용'을 눌러 주세요.").font(.caption).foregroundStyle(.secondary)
+                Text("다음 화면에서 '\(m.label)' 항목을 켜고 '허용'을 눌러 주세요.").font(.caption).foregroundStyle(.secondary)
             }
             .padding(.vertical, 4)
         } else if canAsk == false {
