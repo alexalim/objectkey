@@ -72,3 +72,33 @@ struct StickerBookView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 }
+
+/// 홈 위 불꽃(지금 가장 길게 이어 가는 일수)과 모은 스티커 수. 누르면 스티커 모음이 열린다.
+/// 홈은 1초마다 다시 그려지므로, 모든 기록을 훑는 계산은 기록 수가 바뀔 때만 한다.
+/// 태그로 걸러 봐도 숫자가 바뀌지 않게 모든 습관을 본다.
+struct HomeBadges: View {
+    let keys: [KeyObject]
+    let logs: [ActivityLog]
+    let state: ActivityState
+    @State private var streak = 0
+    @State private var stickers = 0
+
+    var body: some View {
+        NavigationLink { StickerBookView() } label: {
+            HStack(spacing: 10) {
+                Label("\(streak)", systemImage: "flame.fill").foregroundStyle(streak > 0 ? Color.orange : Color.secondary)
+                Label("\(stickers)", systemImage: "star.fill").foregroundStyle(Color.yellow)
+            }
+            .labelStyle(.titleAndIcon)
+            .font(.subheadline.bold().monospacedDigit())
+        }
+        .accessibilityLabel("지금 \(streak)일째 이어 가는 중, 스티커 \(stickers)개")
+        .accessibilityHint("스티커 모음을 열어요")
+        .task(id: "\(logs.count)-\(keys.count)-\(Calendar.current.startOfDay(for: .now).timeIntervalSince1970)") {
+            let tracked = keys.filter(\.supportsGoal)
+            streak = tracked.map { KeyProgress.of($0, logs: logs, state: state).streak }.max() ?? 0
+            // 스티커는 본 개수가 아니라 받은 개수로 센다. 위젯·워치로 기록하면 본 개수는 늦게 바뀐다.
+            stickers = Milestones.unlocked(bestStreak: Stickers.bestStreak(keys: keys, logs: logs, state: state))
+        }
+    }
+}

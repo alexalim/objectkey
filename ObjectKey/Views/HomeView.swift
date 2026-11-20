@@ -100,6 +100,11 @@ struct HomeView: View {
                 }
             }
             .navigationTitle("오늘")
+            .toolbar {
+                if keys.contains(where: \.supportsGoal) {
+                    ToolbarItem(placement: .topBarTrailing) { HomeBadges(keys: keys, logs: logs, state: store.state) }
+                }
+            }
             .safeAreaInset(edge: .bottom) {
                 // 사진을 찍어 둔 물건이 없으면 스캔할 것도 없다. 이때는 버튼을 숨겨 막다른 길을 만들지 않는다.
                 if keys.contains(where: { !$0.shots.isEmpty }) {
