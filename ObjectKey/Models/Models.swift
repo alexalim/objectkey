@@ -37,6 +37,8 @@ final class KeyObject {
     /// 건강 앱 자동 완료. HealthMetric 원시값("steps" 등)과 하루 목표. 빈 문자열이면 쓰지 않음. (v0.4)
     var healthMetric: String = ""
     var healthTarget: Int = 0
+    /// 시간 기록을 건강 앱에도 남길 종류. HealthWriteTarget 원시값. 빈 문자열이면 남기지 않음. 읽기와 같이 쓰지 않는다. (v0.6)
+    var healthWrite: String = ""
     /// 단계별 루틴. "세수|3" 형식의 단계 목록. 시간 기록 물건에만 쓴다. (v0.4)
     var routineSteps: [String] = []
     /// 같은 물건을 쓰는 다른 습관(물건 주인). 그 사진으로 스캔한다. nil이면 자기 사진을 쓴다. (v0.5)

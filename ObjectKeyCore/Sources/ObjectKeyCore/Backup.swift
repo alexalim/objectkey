@@ -48,13 +48,15 @@ public struct BackupFile: Codable, Equatable, Sendable {
         public var photoSourceID: UUID?
         /// 건너뛴 날(그날 0시).
         public var skippedDays: [Date]?
+        /// 건강 앱에 남길 종류(HealthWriteTarget).
+        public var healthWrite: String?
 
         public init(id: UUID, name: String, emoji: String, actionKind: String, countdownMinutes: Int, threshold: Float,
                     createdAt: Date, dailyGoal: Int, cue: String, reminderMinute: Int, scheduleKind: String,
                     scheduleWeekdays: Int, timesPerWeek: Int, attendStartMinute: Int, attendMinutes: Int,
                     tags: [String], shots: [Shot], isQuit: Bool? = nil, measureStep: Int? = nil, measureUnit: String? = nil,
                     healthMetric: String? = nil, healthTarget: Int? = nil, routineSteps: [String]? = nil,
-                    photoSourceID: UUID? = nil, skippedDays: [Date]? = nil) {
+                    photoSourceID: UUID? = nil, skippedDays: [Date]? = nil, healthWrite: String? = nil) {
             self.id = id; self.name = name; self.emoji = emoji; self.actionKind = actionKind
             self.countdownMinutes = countdownMinutes; self.threshold = threshold; self.createdAt = createdAt
             self.dailyGoal = dailyGoal; self.cue = cue; self.reminderMinute = reminderMinute
@@ -64,6 +66,7 @@ public struct BackupFile: Codable, Equatable, Sendable {
             self.healthMetric = healthMetric; self.healthTarget = healthTarget; self.routineSteps = routineSteps
             self.photoSourceID = photoSourceID
             self.skippedDays = skippedDays
+            self.healthWrite = healthWrite
         }
     }
 
