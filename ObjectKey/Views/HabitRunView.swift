@@ -16,6 +16,8 @@ struct HabitRunView: View {
     @State private var finished: String?
     /// 이번 완료로 새로 받은 스티커.
     @State private var newSticker: Moki?
+    /// 완료 화면의 작은 칩(연속 일수·이번 주·레벨).
+    @State private var chips: [DoneChip] = []
     @State private var showDetail = false
     @State private var problem: String?
 
@@ -24,7 +26,7 @@ struct HabitRunView: View {
             Group {
                 if let finished {
                     HabitDoneView(key: key, message: finished, progress: TodayPlan.counts(keys: keys, logs: logs, state: store.state),
-                                  sticker: newSticker) {
+                                  sticker: newSticker, chips: chips) {
                         dismiss()
                     }
                 } else {
@@ -170,18 +172,50 @@ struct HabitRunView: View {
     // MARK: - 실행
 
     private func record(minutes: Int) {
+        let before = Before.now(key, context: context, state: store.state, fallback: logs)
         if let reason = store.addRecord(key, on: .now, minutes: minutes, context: context) {
             problem = reason
             return
         }
-        finished = key.isQuit ? "기록했어요. 내일 다시 지켜 봐요." : "좋아요! 오늘의 작은 약속 하나 완료."
-        checkSticker()
+        celebrate(since: before)
     }
 
-    /// 방금 기록으로 새 스티커를 받았는지. 기록이 저장소에 반영된 뒤 다시 센다.
-    private func checkSticker() {
+    /// 기록 전 모습. 칭찬을 고르려면 기록 뒤와 비교해야 해서, 저장하기 전에 잡아 둔다.
+    private struct Before {
+        let progress: KeyProgress
+        let level: Int
+        let lastRecord: Date?
+
+        @MainActor
+        static func now(_ key: KeyObject, context: ModelContext, state: ActivityState, fallback: [ActivityLog]) -> Before {
+            let all = (try? context.fetch(FetchDescriptor<ActivityLog>())) ?? fallback
+            return Before(progress: KeyProgress.of(key, logs: all, state: state),
+                          level: HabitLevel.of(score: key.strength(logs: all, state: state) ?? 0).level,
+                          lastRecord: all.filter { $0.keyID == key.id }.map(\.startedAt).max())
+        }
+    }
+
+    /// 방금 기록으로 무엇이 달라졌는지 보고 칭찬 한 줄과 칩, 새 스티커를 정한다. 기록이 저장소에 반영된 뒤 다시 센다.
+    private func celebrate(since before: Before) {
         let all = (try? context.fetch(FetchDescriptor<ActivityLog>())) ?? logs
-        newSticker = Stickers.claimNew(bestStreak: Stickers.bestStreak(keys: keys, logs: all, state: store.state))
+        let state = store.state
+        newSticker = Stickers.claimNew(bestStreak: Stickers.bestStreak(keys: keys, logs: all, state: state))
+        let after = KeyProgress.of(key, logs: all, state: state)
+        let level = HabitLevel.of(score: key.strength(logs: all, state: state) ?? 0).level
+        let today = TodayPlan.counts(keys: keys, logs: all, state: state)
+        let calendar = Calendar.current
+        let gap = before.lastRecord.flatMap {
+            calendar.dateComponents([.day], from: calendar.startOfDay(for: $0), to: calendar.startOfDay(for: .now)).day
+        }
+        finished = Praise.message(.init(isQuit: key.isQuit, isFirst: before.lastRecord == nil, daysSinceLast: gap,
+                                        wasAtRisk: before.progress.atRisk && !before.progress.metToday,
+                                        streakAfter: after.streak, allDoneToday: today.total > 0 && today.done == today.total,
+                                        levelBefore: before.level, levelAfter: level, newSticker: newSticker != nil))
+        // 끊기 습관의 기록은 저지른 날이라 일수·레벨을 자랑하지 않는다. 오늘 개수는 아래 진행 카드가 보여 준다.
+        guard !key.isQuit else { chips = []; return }
+        chips = [after.streak > 0 ? DoneChip(symbol: "flame.fill", text: "\(after.streak)일째") : nil,
+                 after.weekDone > 0 ? DoneChip(symbol: "calendar", text: "이번 주 \(after.weekDone)일") : nil,
+                 DoneChip(symbol: "chart.bar.fill", text: "Lv.\(level)")].compactMap { $0 }
     }
 
     private func startTimer() {
@@ -190,10 +224,16 @@ struct HabitRunView: View {
 
     /// 진행 중인 세션을 같은 물건으로 다시 실행하면 끝나고 기록된다.
     private func stopTimer() {
+        let before = Before.now(key, context: context, state: store.state, fallback: logs)
         _ = store.activate(key, keys: keys, context: context)
-        finished = "좋아요! 오늘의 작은 약속 하나 완료."
-        checkSticker()
+        celebrate(since: before)
     }
+}
+
+/// 완료 화면의 작은 칩 하나.
+struct DoneChip: Hashable {
+    let symbol: String
+    let text: String
 }
 
 /// 완료 피드백. 짧게 칭찬하고 오늘 진행을 보여 준 뒤 오늘 화면으로 돌아간다.
@@ -202,6 +242,7 @@ struct HabitDoneView: View {
     let message: String
     let progress: (done: Int, total: Int)
     var sticker: Moki? = nil
+    var chips: [DoneChip] = []
     let onClose: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -215,6 +256,14 @@ struct HabitDoneView: View {
                 .opacity(shown || reduceMotion ? 1 : 0)
             Text(message).font(.title3.bold()).multilineTextAlignment(.center)
             Text(key.name).foregroundStyle(.secondary)
+            if !chips.isEmpty {
+                // 큰 글씨에서는 칩이 한 줄에 안 들어가므로 세로로 쌓는다.
+                ViewThatFits {
+                    HStack(spacing: 8) { chipViews }
+                    VStack(spacing: 6) { chipViews }
+                }
+                .accessibilityElement(children: .combine)
+            }
             if let sticker {
                 HStack(spacing: 12) {
                     Image(sticker).resizable().scaledToFit().frame(width: 56, height: 56)
@@ -251,6 +300,19 @@ struct HabitDoneView: View {
         .sensoryFeedback(.success, trigger: shown)
         .onAppear {
             if reduceMotion { shown = true } else { withAnimation(.spring(duration: 0.3)) { shown = true } }
+        }
+    }
+}
+
+extension HabitDoneView {
+    @ViewBuilder
+    fileprivate var chipViews: some View {
+        ForEach(chips, id: \.self) { chip in
+            Label(chip.text, systemImage: chip.symbol)
+                .font(.subheadline.weight(.semibold).monospacedDigit())
+                .foregroundStyle(.orange)
+                .padding(.horizontal, 10).padding(.vertical, 5)
+                .background(Color.orange.opacity(0.14), in: Capsule())
         }
     }
 }
