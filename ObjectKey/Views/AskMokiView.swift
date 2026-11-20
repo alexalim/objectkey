@@ -16,6 +16,9 @@ struct RegisterDraft: Identifiable {
     var attendStart = 21 * 60
     var attendMinutes = 90
     var tags: [String] = []
+    /// 수치 습관(예: 물 250ml). 0이면 그냥 횟수.
+    var measureStep = 0
+    var measureUnit = ""
 }
 
 /// 자연어로 확인을 받은 뒤 남길 기록.

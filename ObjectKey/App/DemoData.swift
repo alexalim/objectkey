@@ -4,6 +4,7 @@ import SwiftData
 import ObjectKeyCore
 
 /// UI 테스트용 데모 데이터. `-ui-demo` 인자로 켜면 메모리 저장소에 물건과 기록을 채운다.
+/// `-ui-empty`를 함께 주면 비워 둔다(첫 화면·추천 습관 확인용).
 /// 실제 저장소와 출시 빌드에는 영향이 없다.
 enum DemoData {
     static var isEnabled: Bool { ProcessInfo.processInfo.arguments.contains("-ui-demo") }
@@ -12,7 +13,7 @@ enum DemoData {
     static let container: ModelContainer = {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         let container = try! ModelContainer(for: Schema(AppModel.types), configurations: config)
-        seed(container.mainContext)
+        if !ProcessInfo.processInfo.arguments.contains("-ui-empty") { seed(container.mainContext) }
         return container
     }()
 

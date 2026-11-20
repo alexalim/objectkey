@@ -188,3 +188,50 @@ struct HelpView: View {
         }
     }
 }
+
+/// 처음 쓰는 사람에게 보여 주는 추천 습관. 누르면 값을 채운 등록 화면이 열려 고쳐서 저장한다.
+/// 이미 같은 이름의 습관이 있으면 빼고, 무료 한도(3개)를 넘으면 아예 보이지 않게 부르는 쪽에서 막는다.
+struct SuggestedHabits: View {
+    let existingNames: [String]
+    let onPick: (RegisterDraft) -> Void
+
+    static let all: [RegisterDraft] = [
+        RegisterDraft(name: "물 마시기", emoji: "💧", kind: "counter", goal: 1500, measureStep: 250, measureUnit: "ml"),
+        RegisterDraft(name: "영양제", emoji: "💊", kind: "counter"),
+        RegisterDraft(name: "책 읽기", emoji: "📖", kind: "session", goal: 10),
+        RegisterDraft(name: "스트레칭", emoji: "🧘", kind: "session", goal: 5),
+        RegisterDraft(name: "산책", emoji: "🚶", kind: "session", goal: 20),
+        RegisterDraft(name: "일기 한 줄", emoji: "✍️", kind: "counter"),
+    ]
+
+    var body: some View {
+        let names = Set(existingNames.map { $0.replacingOccurrences(of: " ", with: "") })
+        let picks = Self.all.filter { !names.contains($0.name.replacingOccurrences(of: " ", with: "")) }
+        if !picks.isEmpty {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(picks) { draft in
+                        Button { onPick(draft) } label: {
+                            VStack(spacing: 6) {
+                                Text(draft.emoji).font(.largeTitle)
+                                Text(draft.name).font(.subheadline.weight(.semibold)).lineLimit(1)
+                                Text(Self.detail(draft)).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                            }
+                            .frame(width: 104).padding(.vertical, 12)
+                            .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
+                        }
+                        .tint(.primary)
+                        .accessibilityHint("값을 채운 등록 화면을 열어요")
+                    }
+                }
+                .padding(.horizontal, 16)
+            }
+        }
+    }
+
+    private static func detail(_ d: RegisterDraft) -> String {
+        if d.measureStep > 0 { return "하루 \(d.goal)\(d.measureUnit)" }
+        if d.kind == "session" { return "하루 \(d.goal)분" }
+        return "하루 한 번"
+    }
+}

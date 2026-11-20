@@ -224,6 +224,23 @@ final class ScreenTourTests: XCTestCase {
         snap("31-widgets-lock")
     }
 
+    /// 습관이 없는 첫 화면의 추천 습관 카드. 누르면 값을 채운 등록 화면이 열려야 한다.
+    func test_suggestions() {
+        app.terminate()
+        app.launchArguments += ["-ui-empty"]
+        app.launch()
+        let start = app.buttons["MOKI 시작하기"]
+        if start.waitForExistence(timeout: 10) { start.tap() }
+        if app.buttons["건너뛰기"].waitForExistence(timeout: 3) { app.buttons["건너뛰기"].tap() }
+        let water = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "물 마시기")).firstMatch
+        XCTAssertTrue(water.waitForExistence(timeout: 5), "추천 습관 카드가 보여야 한다")
+        snap("33-suggestions")
+        water.tap()
+        XCTAssertTrue(app.textFields.matching(NSPredicate(format: "value == %@", "물 마시기")).firstMatch.waitForExistence(timeout: 5),
+                      "이름이 채워진 등록 화면이 열려야 한다")
+        snap("34-suggestion-register")
+    }
+
     /// 새 버전 안내가 뜬 시작 화면. 안내 줄을 눌러도 시작 버튼이 같이 눌리지 않아야 한다.
     func test_updateNotice() {
         app.terminate()

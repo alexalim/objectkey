@@ -74,6 +74,8 @@ struct RegisterView: View {
         _attendStart = State(initialValue: d.attendStart)
         _attendMinutes = State(initialValue: d.attendMinutes)
         _tags = State(initialValue: d.tags)
+        _measureStep = State(initialValue: d.measureStep)
+        _measureUnit = State(initialValue: d.measureUnit)
         let filled = d.schedule != .daily || d.goal > 0 || d.reminderMinute >= 0 || !d.cue.isEmpty
         if filled { _showHabit = State(initialValue: true) }
     }

@@ -25,6 +25,9 @@ struct HomeView: View {
     @State private var tagFilter = ""
     /// 밀어서 지우려는 습관. 기록과 연속 일수가 함께 사라지므로 한 번 묻는다.
     @State private var deleting: [KeyObject] = []
+    /// 추천 습관 카드에서 고른 것. 값을 채운 등록 화면을 연다.
+    @State private var suggested: RegisterDraft?
+    @State private var plus = PlusStore.shared
 
     private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -86,6 +89,13 @@ struct HomeView: View {
                 if !tools.isEmpty {
                     Section("휴식 타이머") { rows(tools, progress: progressByID, asTodo: false) }
                 }
+                if !keys.isEmpty, showsSuggestions {
+                    Section("이런 습관은 어때요?") {
+                        SuggestedHabits(existingNames: keys.map(\.name)) { suggested = $0 }
+                            .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                            .listRowBackground(Color.clear)
+                    }
+                }
             }
             .overlay {
                 if keys.isEmpty {
@@ -96,6 +106,8 @@ struct HomeView: View {
                         Text("책, 컵, 영양제처럼 늘 쓰는 물건을 등록해 보세요.")
                     } actions: {
                         Button("첫 습관 만들기") { showRegister = true }.buttonStyle(.borderedProminent)
+                        Text("이런 습관으로 시작해도 좋아요").font(.subheadline).foregroundStyle(.secondary).padding(.top, 8)
+                        SuggestedHabits(existingNames: []) { suggested = $0 }
                     }
                 }
             }
@@ -117,6 +129,7 @@ struct HomeView: View {
                 }
             }
             .sheet(isPresented: $showRegister, onDismiss: rescheduleReminders) { RegisterView() }
+            .sheet(item: $suggested, onDismiss: rescheduleReminders) { RegisterView(draft: $0) }
             .sheet(item: $editingGoal, onDismiss: rescheduleReminders) { GoalEditor(key: $0) }
             .sheet(item: $detailKey, onDismiss: rescheduleReminders) { KeyDetailView(key: $0, keys: keys) }
             .sheet(item: $runKey, onDismiss: rescheduleReminders) { HabitRunView(key: $0) }
@@ -171,6 +184,12 @@ struct HomeView: View {
     }
 
     /// 기록·설정이 바뀌면 알림과 홈 화면 위젯을 같이 맞춘다.
+    /// 습관이 아직 적을 때만 추천한다. 무료 한도에 닿았으면 눌러도 막히므로 보여 주지 않는다.
+    private var showsSuggestions: Bool {
+        let count = keys.filter(\.supportsGoal).count
+        return count < PlusStore.freeHabitLimit && plus.canAddHabit(currentCount: count)
+    }
+
     private func rescheduleReminders() {
         WidgetBridge.refresh(keys: keys, logs: logs, state: store.state)
         Task { await HabitReminders.reschedule(keys: keys, logs: logs, state: store.state) }
