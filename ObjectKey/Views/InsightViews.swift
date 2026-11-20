@@ -69,25 +69,24 @@ struct YearHeatmap: View {
     }
 }
 
-/// 습관 힘 한 줄. 0~100 숫자와 막대, 짧은 설명.
+/// 습관 힘 한 줄. 레벨, 레벨마다 한 칸씩 나눈 막대, 짧은 설명.
 struct StrengthRow: View {
     let score: Double
 
     var body: some View {
-        // 막대는 다음 레벨까지 채운 정도. 가장 높은 레벨이면 가득 찬 막대로 둔다.
         let level = HabitLevel.of(score: score)
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text("습관 힘").font(.subheadline)
                 Spacer()
-                Text("Lv.\(level.level)").font(.headline.monospacedDigit())
-                Text("\(Int((score * 100).rounded()))").font(.subheadline.monospacedDigit()).foregroundStyle(.secondary)
+                Text("Lv.\(level.level)").font(.headline.monospacedDigit()).foregroundStyle(LevelBar.color(level.level))
             }
-            ProgressView(value: level.progress ?? 1).tint(.orange)
-            Text(level.progress.map { "다음 레벨까지 \(Int(((1 - $0) * 100).rounded()))% 남았어요 · " + Self.caption(score) } ?? Self.caption(score))
-                .font(.caption).foregroundStyle(.secondary)
+            LevelBar(score: score)
+            Text(Self.caption(score)).font(.caption).foregroundStyle(.secondary)
         }
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("습관 힘 레벨 \(level.level)")
+        .accessibilityValue(level.progress.map { "다음 레벨까지 \(Int(((1 - $0) * 100).rounded()))퍼센트 남음. " + Self.caption(score) } ?? Self.caption(score))
     }
 
     /// 점수대별 말. 낮아도 탓하지 않고 다음 한 번을 권한다.
@@ -122,5 +121,38 @@ extension PeriodCompare {
         if recent > previous { return "지난 \(days)일보다 \(recent - previous)번 더 했어요." }
         if recent == previous { return "지난 \(days)일과 똑같이 \(recent)번 했어요. 꾸준해요." }
         return "최근 \(days)일 동안 \(recent)번 했어요. 한 번씩 다시 쌓아 가요."
+    }
+}
+
+/// 레벨 막대. 레벨 수만큼 칸을 나누고, 지난 레벨 칸은 가득, 지금 레벨 칸은 다음 레벨까지 채운 만큼, 남은 칸은 비워 둔다.
+/// 칸마다 색이 달라 어느 레벨인지 글자 없이도 보인다. 쉬면 지금 칸이 덜 차거나 앞 칸으로 돌아간다.
+struct LevelBar: View {
+    let score: Double
+
+    /// 노랑에서 진한 주황으로, 레벨이 오를수록 진해진다.
+    static func color(_ level: Int) -> Color {
+        switch level {
+        case ...1: Color(red: 1.0, green: 0.80, blue: 0.25)
+        case 2: Color(red: 1.0, green: 0.65, blue: 0.20)
+        case 3: Color(red: 1.0, green: 0.50, blue: 0.10)
+        default: Color(red: 0.92, green: 0.33, blue: 0.08)
+        }
+    }
+
+    var body: some View {
+        let level = HabitLevel.of(score: score)
+        HStack(spacing: 4) {
+            ForEach(1...HabitLevel.maxLevel, id: \.self) { n in
+                let fill = n < level.level ? 1 : n == level.level ? (level.progress ?? 1) : 0
+                Capsule().fill(Color(.systemFill))
+                    .overlay(alignment: .leading) {
+                        GeometryReader { g in
+                            Capsule().fill(Self.color(n)).frame(width: g.size.width * fill)
+                        }
+                    }
+                    .clipShape(Capsule())
+            }
+        }
+        .frame(height: 8)
     }
 }
