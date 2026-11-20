@@ -1,6 +1,16 @@
 import Foundation
 import ObjectKeyCore
 
+extension KeyObject {
+    /// 지금 습관 힘(0...1). 처음 시작한 날(등록일·가장 이른 기록)부터 센다. 기록이 아직 없으면 nil.
+    func strength(logs: [ActivityLog], state: ActivityState, now: Date = .now) -> Double? {
+        let mine = logs.filter { $0.keyID == id }
+        let began = min(createdAt, mine.map(\.startedAt).min() ?? createdAt)
+        return HabitStrength.series(KeyProgress.entries(self, logs: mine, state: state, now: now), goal: goalAmount, schedule: schedule,
+                                    skipped: skipped, since: began, now: now, calendar: .current).last?.score
+    }
+}
+
 extension KeyProgress {
     /// 기록과 진행 중(또는 휴식으로 멈춰 둔) 세션에서 이 물건의 오늘 진행·연속 일수를 구한다.
     static func of(_ key: KeyObject, logs: [ActivityLog], state: ActivityState, now: Date = .now) -> KeyProgress {

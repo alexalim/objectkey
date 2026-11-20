@@ -74,14 +74,18 @@ struct StrengthRow: View {
     let score: Double
 
     var body: some View {
+        // 막대는 다음 레벨까지 채운 정도. 가장 높은 레벨이면 가득 찬 막대로 둔다.
+        let level = HabitLevel.of(score: score)
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text("습관 힘").font(.subheadline)
                 Spacer()
-                Text("\(Int((score * 100).rounded()))").font(.headline.monospacedDigit())
+                Text("Lv.\(level.level)").font(.headline.monospacedDigit())
+                Text("\(Int((score * 100).rounded()))").font(.subheadline.monospacedDigit()).foregroundStyle(.secondary)
             }
-            ProgressView(value: score).tint(.orange)
-            Text(Self.caption(score)).font(.caption).foregroundStyle(.secondary)
+            ProgressView(value: level.progress ?? 1).tint(.orange)
+            Text(level.progress.map { "다음 레벨까지 \(Int(((1 - $0) * 100).rounded()))% 남았어요 · " + Self.caption(score) } ?? Self.caption(score))
+                .font(.caption).foregroundStyle(.secondary)
         }
         .accessibilityElement(children: .combine)
     }
