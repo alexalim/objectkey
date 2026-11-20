@@ -105,9 +105,12 @@ struct HomeView: View {
                     } description: {
                         Text("책, 컵, 영양제처럼 늘 쓰는 물건을 등록해 보세요.")
                     } actions: {
-                        Button("첫 습관 만들기") { showRegister = true }.buttonStyle(.borderedProminent)
-                        Text("이런 습관으로 시작해도 좋아요").font(.subheadline).foregroundStyle(.secondary).padding(.top, 8)
-                        SuggestedHabits(existingNames: []) { suggested = $0 }
+                        // 하나로 묶어야 빈 화면이 항목 사이를 크게 벌리지 않는다.
+                        VStack(spacing: 12) {
+                            Button("첫 습관 만들기") { showRegister = true }.buttonStyle(.borderedProminent)
+                            Text("이런 습관으로 시작해도 좋아요").font(.subheadline).foregroundStyle(.secondary).padding(.top, 12)
+                            SuggestedHabits(existingNames: []) { suggested = $0 }
+                        }
                     }
                 }
             }
