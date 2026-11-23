@@ -97,6 +97,8 @@ final class ScreenTourTests: XCTestCase {
         // 3. 달력 날짜 → 고치기 창
         // 데모 기록은 지난 2주다. 달 초에 돌리면 이번 달에 채운 날이 없으니 지난달로 넘긴다.
         let day = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "채움")).firstMatch
+        // 큰 화면(Pro Max)에서는 위로 쓸면 달력이 화면 밖으로 나가 목록에서 빠진다. 달력이 다시 보이게 한 번 내린다.
+        if !day.waitForExistence(timeout: 2), !app.buttons["이전 달"].exists { app.swipeDown() }
         if !day.waitForExistence(timeout: 3) { tapIfExists(app.buttons["이전 달"]) }
         if day.waitForExistence(timeout: 3) {
             day.tap()
