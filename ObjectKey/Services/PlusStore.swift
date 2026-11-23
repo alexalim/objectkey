@@ -3,6 +3,7 @@ import Observation
 import OSLog
 import StoreKit
 import UIKit
+import ObjectKeyCore
 
 /// MOKI 플러스(평생 이용권, 비소모성 인앱 구매). 무료는 습관 3개까지, 플러스는 제한 없음과 편의 기능.
 /// 구매 여부는 StoreKit의 현재 권한(Transaction.currentEntitlements)이 기준이고, 위젯·워치가 볼 수 있게 스냅숏에도 적는다.
@@ -11,27 +12,40 @@ import UIKit
 final class PlusStore {
     static let shared = PlusStore()
     static let productID = "com.aspynlim.moki.plus"
+    /// 7일 맛보기. 0원 비소모성 상품이라 Apple 계정에 한 번만 남고, 받은 때(purchaseDate)부터 센다.
+    static let trialID = "com.aspynlim.moki.trial7"
     /// 무료로 만들 수 있는 습관 수. 이미 더 있는 사람은 그대로 쓰고, 새로 더하는 것만 막는다.
     static let freeHabitLimit = 3
 
+    /// 플러스 기능이 열려 있는지(샀거나 맛보기 중). 기능 잠금은 모두 이것으로 판단한다.
     private(set) var isPlus: Bool
+    /// 평생 이용권을 샀는지. 맛보기 중에도 결제 버튼은 보여야 해서 따로 둔다.
+    private(set) var owned: Bool
+    /// 맛보기를 시작한 때. 없으면 아직 안 썼다.
+    private(set) var trialStarted: Date?
     private(set) var product: Product?
+    private(set) var trialProduct: Product?
     /// 상품 정보를 못 받았을 때의 이유(심사·네트워크). 결제 화면에 보여 준다.
     private(set) var loadProblem: String?
 
     private static let cacheKey = "moki.plus.cached"
+    private static let trialKey = "moki.plus.trialStarted"
     private var updates: Task<Void, Never>?
     /// 결제가 진행 중인지. 로그인 시트가 오래 떠 있는 동안 다시 눌러도 두 번째 결제를 시작하지 않는다.
     private(set) var purchasing = false
 
     init() {
         // 실행 직후 권한을 다시 확인하기 전까지는 마지막으로 확인한 값을 쓴다(위젯 깜빡임 방지).
-        isPlus = UserDefaults.standard.bool(forKey: Self.cacheKey)
+        owned = UserDefaults.standard.bool(forKey: Self.cacheKey)
+        trialStarted = UserDefaults.standard.object(forKey: Self.trialKey) as? Date
+        isPlus = PlusTrial.access(owned: owned, trialStarted: trialStarted, now: .now).grantsPlus
         #if DEBUG
         // UI 테스트는 결제 없이 모든 화면을 돈다. -ui-free면 무료 상태(결제 화면 확인용).
-        if Self.demoPlus { isPlus = true }
+        if Self.demoPlus { owned = true; isPlus = true }
         #endif
     }
+
+    var access: PlusAccess { PlusTrial.access(owned: owned, trialStarted: trialStarted, now: .now) }
 
     /// 앱이 켜질 때 한 번. 권한 확인, 상품 정보, 다른 기기·환불로 바뀐 거래 듣기.
     func start() {
@@ -59,7 +73,9 @@ final class PlusStore {
 
     func loadProduct() async {
         do {
-            product = try await Product.products(for: [Self.productID]).first
+            let products = try await Product.products(for: [Self.productID, Self.trialID])
+            product = products.first { $0.id == Self.productID }
+            trialProduct = products.first { $0.id == Self.trialID }
             loadProblem = product == nil ? "지금은 App Store에서 상품을 받아 오지 못했어요. 잠시 뒤 [다시 불러오기]를 눌러 주세요." : nil
         } catch {
             loadProblem = "지금은 상품 정보를 불러오지 못했어요. 인터넷 연결을 확인해 주세요."
@@ -96,7 +112,7 @@ final class PlusStore {
                 guard case .verified(let transaction) = result else { return "구매를 확인하지 못했어요. 구매 복원을 눌러 주세요." }
                 await transaction.finish()
                 // 검증된 거래를 손에 쥐었으니 바로 연다. 권한 목록 갱신 시점에 기대지 않는다.
-                if transaction.productID == Self.productID { setPlus(true) }
+                if transaction.productID == Self.productID { setAccess(owned: true, trialStarted: trialStarted) }
                 await refresh()
                 return nil
             case .pending:
@@ -110,6 +126,33 @@ final class PlusStore {
         } catch {
             log.error("purchase error: \(String(describing: error), privacy: .public)")
             return "결제하지 못했어요. (\(error.localizedDescription))"
+        }
+    }
+
+    /// 7일 맛보기 시작. 0원 결제 창이 뜬다. 끝나면 결과 문구(시작했으면 nil).
+    /// 플러스 결제와 길을 나눈다: 맛보기 거래로 "샀다"고 표시하면 7일 뒤에도 잠기지 않는다.
+    func startTrial() async -> String? {
+        guard let trialProduct else { return "지금은 맛보기를 불러오지 못했어요. 잠시 뒤 다시 해 주세요." }
+        guard !purchasing else { return "아직 진행 중이에요. 뜬 창을 마무리해 주세요." }
+        purchasing = true
+        defer { purchasing = false }
+        do {
+            switch try await trialProduct.purchase() {
+            case .success(.verified(let transaction)):
+                await transaction.finish()
+                setAccess(owned: owned, trialStarted: transaction.purchaseDate)
+                return nil
+            case .success:
+                return "맛보기를 확인하지 못했어요. 구매 복원을 눌러 주세요."
+            case .pending:
+                return "승인을 기다리고 있어요. 승인되면 자동으로 열려요."
+            case .userCancelled:
+                return "맛보기를 시작하지 않았어요."
+            @unknown default:
+                return "결과를 알 수 없어요. 구매 복원을 눌러 확인해 주세요."
+            }
+        } catch {
+            return "맛보기를 시작하지 못했어요. (\(error.localizedDescription))"
         }
     }
 
@@ -127,22 +170,31 @@ final class PlusStore {
         return isPlus ? "플러스를 다시 열었어요." : "이 Apple 계정으로 산 기록을 찾지 못했어요."
     }
 
-    private func setPlus(_ owned: Bool) {
-        let changed = owned != isPlus
-        isPlus = owned
+    private func setAccess(owned: Bool, trialStarted: Date?) {
+        let unlocked = PlusTrial.access(owned: owned, trialStarted: trialStarted, now: .now).grantsPlus
+        let changed = unlocked != isPlus
+        self.owned = owned
+        self.trialStarted = trialStarted
+        isPlus = unlocked
         UserDefaults.standard.set(owned, forKey: Self.cacheKey)
-        // 위젯·워치가 잠금 여부를 알 수 있게 요약을 다시 쓴다.
+        UserDefaults.standard.set(trialStarted, forKey: Self.trialKey)
+        // 위젯·워치가 잠금 여부를 알 수 있게 요약을 다시 쓴다(맛보기가 끝났을 때도 여기서 잠긴다).
         if changed { WidgetBridge.refreshFromStore() }
     }
 
+    /// 권한 다시 읽기. 앱이 앞으로 올 때마다 부른다: 맛보기가 끝났으면 이때 잠긴다.
+    /// 맛보기 거래는 7일이 지나도 권한 목록에 남는다. 그래서 "썼다"는 표시로만 쓰고, 열지는 않는다.
     func refresh() async {
         var owned = false
+        var trial: Date?
         for await entitlement in Transaction.currentEntitlements {
-            if case .verified(let t) = entitlement, t.productID == Self.productID, t.revocationDate == nil { owned = true }
+            guard case .verified(let t) = entitlement, t.revocationDate == nil else { continue }
+            if t.productID == Self.productID { owned = true }
+            if t.productID == Self.trialID { trial = t.purchaseDate }
         }
         #if DEBUG
         if Self.demoPlus { owned = true }
         #endif
-        setPlus(owned)
+        setAccess(owned: owned, trialStarted: trial ?? trialStarted)
     }
 }

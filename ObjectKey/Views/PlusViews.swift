@@ -1,5 +1,6 @@
 import StoreKit
 import SwiftUI
+import ObjectKeyCore
 
 /// MOKI 플러스 안내와 결제. 무엇이 열리는지, 값이 얼마인지, 한 번 결제라는 것을 먼저 보여 준다.
 struct PlusPaywall: View {
@@ -38,9 +39,13 @@ struct PlusPaywall: View {
                 VStack(spacing: 8) {
                     // 무료 범위는 처음부터 보이게 하단 바 안에 둔다(스크롤 끝에 두면 가려졌다).
                     Text("기록·스캔·알림·기본 통계·백업은 계속 무료예요.").font(.footnote).foregroundStyle(.secondary)
-                    if plus.isPlus {
+                    if plus.owned {
                         Label("플러스를 쓰고 있어요", systemImage: "checkmark.seal.fill").font(.headline).foregroundStyle(.green)
                     } else {
+                        if case .trial(let endsAt) = plus.access {
+                            Label("맛보기 \(PlusTrial.daysLeft(until: endsAt, now: .now))일 남았어요", systemImage: "hourglass")
+                                .font(.subheadline.weight(.semibold)).foregroundStyle(.orange)
+                        }
                         // 상품 정보가 없으면 결제를 시도해도 아무 일도 안 일어난다. 그때는 다시 불러오기로 바꾼다.
                         Button {
                             Task {
@@ -60,7 +65,7 @@ struct PlusPaywall: View {
                                     message = result
                                 }
                                 busy = false
-                                if plus.isPlus { dismiss() }
+                                if plus.owned { dismiss() }
                             }
                         } label: {
                             Group {
@@ -77,13 +82,29 @@ struct PlusPaywall: View {
                             .font(.headline).frame(maxWidth: .infinity).padding(.vertical, 6)
                         }
                         .buttonStyle(.borderedProminent).controlSize(.large).disabled(busy)
+                        // 맛보기는 Apple 계정에 한 번만. 시작 전에 기간·끝나면 잠기는 것·계속 쓰는 값을 먼저 보여 준다(지침 3.1.1).
+                        if plus.access == .none, let trial = plus.trialProduct {
+                            Button {
+                                Task {
+                                    busy = true
+                                    message = await plus.startTrial()
+                                    busy = false
+                                    if plus.isPlus { dismiss() }
+                                }
+                            } label: {
+                                Text("\(PlusTrial.days)일 무료로 써 보기").font(.headline).frame(maxWidth: .infinity).padding(.vertical, 4)
+                            }
+                            .buttonStyle(.bordered).controlSize(.large).disabled(busy)
+                            .accessibilityHint(trial.displayName)
+                            Text(trialTerms).font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                        }
                         Button("구매 복원") {
                             Task { busy = true; message = await plus.restore(); busy = false }
                         }
                         .font(.subheadline).disabled(busy)
                     }
                     if let message, !message.isEmpty { Text(message).font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center) }
-                    else if let problem = plus.loadProblem, !plus.isPlus { Text(problem).font(.footnote).foregroundStyle(.secondary) }
+                    else if let problem = plus.loadProblem, !plus.owned { Text(problem).font(.footnote).foregroundStyle(.secondary) }
                 }
                 .padding()
                 .background(.bar)
@@ -92,6 +113,12 @@ struct PlusPaywall: View {
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("닫기") { dismiss() } } }
             .task { if plus.product == nil { await plus.loadProduct() } }
         }
+    }
+
+    /// 맛보기 조건. 기간, 끝나면 잠기는 것, 계속 쓰려면 드는 값.
+    private var trialTerms: String {
+        let price = plus.product.map { "\($0.displayPrice) 한 번 결제" } ?? "한 번 결제"
+        return "\(PlusTrial.days)일 동안 플러스를 모두 써요. 결제 정보는 받지 않아요. 끝나면 위젯·잠금 화면·워치·자세한 통계가 다시 잠기고, 만든 습관과 기록은 그대로예요. 계속 쓰려면 \(price)."
     }
 
     private func feature(_ icon: String, _ title: String, _ detail: String) -> some View {

@@ -23,18 +23,18 @@ struct MyView: View {
             Section {
                 Button { showPaywall = true } label: {
                     HStack {
-                        Label(plus.isPlus ? "MOKI 플러스 사용 중" : "MOKI 플러스", systemImage: plus.isPlus ? "checkmark.seal.fill" : "sparkles")
+                        Label(plusTitle, systemImage: plus.owned ? "checkmark.seal.fill" : "sparkles")
                         Spacer()
-                        if !plus.isPlus, let price = plus.product?.displayPrice { Text(price).foregroundStyle(.secondary) }
+                        if !plus.owned, let price = plus.product?.displayPrice { Text(price).foregroundStyle(.secondary) }
                     }
                 }
-                if !plus.isPlus {
+                if !plus.owned {
                     Button("구매 복원", systemImage: "arrow.clockwise") {
                         Task { restoreMessage = await plus.restore() }
                     }
                 }
             } footer: {
-                Text(plus.isPlus ? "습관 무제한, 위젯·워치, 자세한 통계를 쓸 수 있어요." : "한 번 결제로 평생 써요. 습관 무제한, 위젯·워치, 자세한 통계.")
+                Text(plus.owned ? "습관 무제한, 위젯·워치, 자세한 통계를 쓸 수 있어요." : "한 번 결제로 평생 써요. 습관 무제한, 위젯·워치, 자세한 통계.")
             }
             Section {
                 Button("사용 안내", systemImage: "questionmark.circle") { showHelp = true }
@@ -103,6 +103,14 @@ struct MyView: View {
         }
         .confirmationDialog("등록한 물건, 사진, 기록을 모두 지워요. 되돌릴 수 없어요.", isPresented: $confirmWipe, titleVisibility: .visible) {
             Button("모두 삭제", role: .destructive, action: wipe)
+        }
+    }
+
+    private var plusTitle: String {
+        switch plus.access {
+        case .owned: "MOKI 플러스 사용 중"
+        case .trial(let endsAt): "MOKI 플러스 맛보기 · \(PlusTrial.daysLeft(until: endsAt, now: .now))일 남음"
+        case .trialUsed, .none: "MOKI 플러스"
         }
     }
 
