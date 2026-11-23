@@ -36,9 +36,12 @@ final class PlusStore {
 
     init() {
         // 실행 직후 권한을 다시 확인하기 전까지는 마지막으로 확인한 값을 쓴다(위젯 깜빡임 방지).
-        owned = UserDefaults.standard.bool(forKey: Self.cacheKey)
-        trialStarted = UserDefaults.standard.object(forKey: Self.trialKey) as? Date
-        isPlus = PlusTrial.access(owned: owned, trialStarted: trialStarted, now: .now).grantsPlus
+        // @Observable 속성은 모두 채우기 전에 서로 읽을 수 없어 지역 값으로 계산한다.
+        let cachedOwned = UserDefaults.standard.bool(forKey: Self.cacheKey)
+        let cachedTrial = UserDefaults.standard.object(forKey: Self.trialKey) as? Date
+        owned = cachedOwned
+        trialStarted = cachedTrial
+        isPlus = PlusTrial.access(owned: cachedOwned, trialStarted: cachedTrial, now: .now).grantsPlus
         #if DEBUG
         // UI 테스트는 결제 없이 모든 화면을 돈다. -ui-free면 무료 상태(결제 화면 확인용).
         if Self.demoPlus { owned = true; isPlus = true }
