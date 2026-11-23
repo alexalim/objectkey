@@ -87,7 +87,11 @@ final class ScreenTourTests: XCTestCase {
             snap("03b-stats")
             app.swipeUp()
             snap("03c-stats-scrolled")
-            app.navigationBars.buttons.element(boundBy: 0).tap()
+            // 큰 화면에서는 쓸어 올린 뒤 스크롤이 멈추기 전에 누르면 뒤로 가기가 먹지 않았다. 상세로 돌아올 때까지 한 번 더 누른다.
+            let back = app.navigationBars["영양제 통계"].buttons.firstMatch
+            for _ in 0..<2 where !app.navigationBars["영양제"].waitForExistence(timeout: 1) {
+                if back.exists { back.tap() }
+            }
         } else {
             XCTFail("통계 화면이 열려야 한다")
         }
@@ -97,8 +101,6 @@ final class ScreenTourTests: XCTestCase {
         // 3. 달력 날짜 → 고치기 창
         // 데모 기록은 지난 2주다. 달 초에 돌리면 이번 달에 채운 날이 없으니 지난달로 넘긴다.
         let day = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "채움")).firstMatch
-        // 큰 화면(Pro Max)에서는 위로 쓸면 달력이 화면 밖으로 나가 목록에서 빠진다. 달력이 다시 보이게 한 번 내린다.
-        if !day.waitForExistence(timeout: 2), !app.buttons["이전 달"].exists { app.swipeDown() }
         if !day.waitForExistence(timeout: 3) { tapIfExists(app.buttons["이전 달"]) }
         if day.waitForExistence(timeout: 3) {
             day.tap()
