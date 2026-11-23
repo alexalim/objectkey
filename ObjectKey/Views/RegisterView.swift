@@ -300,58 +300,9 @@ struct RegisterView: View {
         case .some(false):
             CameraDeniedView()
         case .some(true):
-            VStack(spacing: 12) {
-                ZStack {
-                    CameraPreview(session: camera.session)
-                    ScanGuide()
-                    ObjectHighlight(region: latest?.region)
-                }
-                .aspectRatio(3 / 4, contentMode: .fit)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-
-                ScrollView(.horizontal) {
-                    HStack {
-                        ForEach(shots.indices, id: \.self) { i in
-                            thumbnail(shots[i].thumbnail)
-                                .overlay(alignment: .topTrailing) {
-                                    Button { shots.remove(at: i) } label: { Image(systemName: "xmark.circle.fill") }
-                                        .buttonStyle(.plain).foregroundStyle(.white, .black.opacity(0.6))
-                                }
-                        }
-                    }
-                }
-
-                if latest?.vector == nil {
-                    Text("네모 칸 안에서 물건을 찾는 중… 노란 상자가 물건을 감싸면 촬영할 수 있어요.")
-                        .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
-                }
-                Button {
-                    focus = nil
-                    if let latest, latest.vector != nil { shots.append(latest) }
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "camera.fill")
-                        Text("촬영")
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(latest?.vector == nil || shots.count >= Self.maxShots)
-            }
+            ShotCaptureArea(camera: camera, latest: latest, shots: $shots, maxShots: Self.maxShots) { focus = nil }
             .listRowInsets(EdgeInsets(top: 12, leading: 12, bottom: 12, trailing: 12))
         }
-    }
-
-    private func thumbnail(_ data: Data?) -> some View {
-        Group {
-            if let data, let image = UIImage(data: data) {
-                Image(uiImage: image).resizable().scaledToFill()
-            } else {
-                Color.secondary.opacity(0.2)
-            }
-        }
-        .frame(width: 64, height: 64)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
     /// 기록 방식 한 줄. 고른 것에 체크가 붙는다.

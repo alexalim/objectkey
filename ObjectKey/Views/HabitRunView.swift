@@ -18,6 +18,9 @@ struct HabitRunView: View {
     @State private var newSticker: Moki?
     /// 완료 화면의 작은 칩(연속 일수·이번 주·레벨).
     @State private var chips: [DoneChip] = []
+    /// 사진 없이 쓰는 습관을 세 번째로 했을 때 한 번, 사진을 찍어 스캔을 켜 보라고 권한다.
+    @State private var suggestPhotos = false
+    @State private var addingPhotos = false
     @State private var showDetail = false
     @State private var problem: String?
 
@@ -26,7 +29,8 @@ struct HabitRunView: View {
             Group {
                 if let finished {
                     HabitDoneView(key: key, message: finished, progress: TodayPlan.counts(keys: keys, logs: logs, state: store.state),
-                                  sticker: newSticker, chips: chips) {
+                                  sticker: newSticker, chips: chips,
+                                  onAddPhotos: suggestPhotos ? { addingPhotos = true } : nil) {
                         dismiss()
                     }
                 } else {
@@ -41,6 +45,7 @@ struct HabitRunView: View {
                 }
             }
             .sheet(isPresented: $showDetail) { KeyDetailView(key: key, keys: keys) }
+            .sheet(isPresented: $addingPhotos, onDismiss: { if !key.shots.isEmpty { suggestPhotos = false } }) { AddPhotosView(key: key) }
             .switchConfirmation($pending, keys: keys)
             .alert("기록하지 않았어요", isPresented: Binding(get: { problem != nil }, set: { if !$0 { problem = nil } })) {
                 Button("확인", role: .cancel) {}
@@ -211,6 +216,9 @@ struct HabitRunView: View {
                                         wasAtRisk: before.progress.atRisk && !before.progress.metToday,
                                         streakAfter: after.streak, allDoneToday: today.total > 0 && today.done == today.total,
                                         levelBefore: before.level, levelAfter: level, newSticker: newSticker != nil))
+        // 세 번 해 봤으면 이 습관을 계속 쓸 사람이다. 그때 한 번만 스캔을 권한다(물건을 같이 쓰는 습관은 주인 사진을 쓴다).
+        suggestPhotos = !key.isQuit && key.shots.isEmpty && key.photoSourceID == nil
+            && all.filter { $0.keyID == key.id }.count == 3
         // 끊기 습관의 기록은 저지른 날이라 일수·레벨을 자랑하지 않는다. 오늘 개수는 아래 진행 카드가 보여 준다.
         guard !key.isQuit else { chips = []; return }
         chips = [after.streak > 0 ? DoneChip(symbol: "flame.fill", text: "\(after.streak)일째") : nil,
@@ -243,6 +251,8 @@ struct HabitDoneView: View {
     let progress: (done: Int, total: Int)
     var sticker: Moki? = nil
     var chips: [DoneChip] = []
+    /// 있으면 "사진 찍어 스캔 켜기" 권유 카드를 보여 준다.
+    var onAddPhotos: (() -> Void)? = nil
     let onClose: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -275,6 +285,22 @@ struct HabitDoneView: View {
                 }
                 .padding()
                 .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 16))
+            }
+            if let onAddPhotos {
+                Button(action: onAddPhotos) {
+                    HStack(spacing: 12) {
+                        Image(.scan).resizable().scaledToFit().frame(width: 52, height: 52)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("물건 사진을 찍어 둘까요?").font(.headline)
+                            Text("다음부터는 물건을 비추기만 해도 바로 열려요.").font(.caption).foregroundStyle(.secondary)
+                        }
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right").font(.footnote.bold()).foregroundStyle(.tertiary)
+                    }
+                    .padding()
+                    .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 16))
+                }
+                .tint(.primary)
             }
             if progress.total > 0 {
                 VStack(alignment: .leading, spacing: 6) {

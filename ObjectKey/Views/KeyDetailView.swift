@@ -14,6 +14,7 @@ struct KeyDetailView: View {
     @State private var pending: PendingSwitch?
     @State private var selectedDay: Date?
     @State private var editingGoal = false
+    @State private var addingPhotos = false
     /// 메모를 쓰는 날과 입력 중인 내용.
     @State private var noteDay: Date?
     @State private var noteText = ""
@@ -45,8 +46,11 @@ struct KeyDetailView: View {
                                 Label("'\(owner.name)' 물건을 함께 써요", systemImage: "link")
                                     .font(.caption2).foregroundStyle(.secondary)
                             } else if key.shots.isEmpty {
-                                Label("사진 없음 · 아래 버튼이나 Siri로 기록", systemImage: "camera.badge.ellipsis")
-                                    .font(.caption2).foregroundStyle(.secondary)
+                                // 사진을 나중에 붙이면 스캔이 켜진다. 처음에 사진 없이 시작한 사람이 스캔을 써 볼 수 있는 길.
+                                Button { addingPhotos = true } label: {
+                                    Label("사진 찍어 스캔 켜기", systemImage: "camera.badge.ellipsis").font(.caption2.weight(.semibold))
+                                }
+                                .buttonStyle(.borderless)
                             }
                         }
                     }
@@ -131,6 +135,7 @@ struct KeyDetailView: View {
                 }
             }
             .sheet(isPresented: $editingGoal) { GoalEditor(key: key) }
+            .sheet(isPresented: $addingPhotos) { AddPhotosView(key: key) }
             .sheet(item: $card) { ShareCardSheet(image: $0.image) }
             .confirmationDialog(selectedDay.map { $0.formatted(.dateTime.month().day().weekday()) } ?? "",
                                 isPresented: Binding(get: { selectedDay != nil }, set: { if !$0 { selectedDay = nil } }),
